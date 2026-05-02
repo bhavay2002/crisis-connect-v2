@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -15,13 +14,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard, AlertTriangle, PlusCircle, FileText, Users, BarChart3,
-  Bell, User, Settings, LogOut, Moon, Sun, Map as MapIcon, Package,
+  User, Settings, LogOut, Moon, Sun, Map as MapIcon, Package,
   Heart, Sparkles, Award, Shield, Zap, MessageSquare, Wifi, WifiOff,
   Brain, Building2, ShieldCheck, Code, Activity, Globe, ShieldAlert,
-  ChevronDown, ChevronRight, Radio, Search, Menu, X,
+  ChevronDown, Radio, Menu, X,
 } from "lucide-react";
 import { useLowBandwidth } from "@/context/LowBandwidthContext";
 import { useOfflineSync } from "@/context/OfflineSyncContext";
+import { NotificationBell } from "@/components/NotificationBell";
+import { useWSContext } from "@/providers/WebSocketProvider";
+import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps { children: React.ReactNode }
 
@@ -39,51 +41,51 @@ const NAV_GROUPS = [
   {
     label: "Response & Aid",
     items: [
-      { title: "Volunteer Hub",       url: "/volunteer",        icon: Heart,        roles: ["volunteer","ngo","admin","authority","super_admin"] },
-      { title: "Aid Matching",        url: "/aid-matching",     icon: Sparkles,     roles: ["volunteer","ngo","admin","authority","super_admin"] },
-      { title: "Matching Engine",     url: "/matching-engine",  icon: Zap,          roles: ["volunteer","ngo","admin","authority","super_admin"] },
-      { title: "Resource Requests",   url: "/resource-requests",icon: Package,      roles: ["citizen","volunteer","ngo","admin","authority","super_admin"] },
-      { title: "Resource Management", url: "/resource-management",icon: Package,    roles: ["ngo","admin","authority","super_admin"] },
-      { title: "Response Teams",      url: "/teams",            icon: Users,        roles: ["volunteer","ngo","admin","authority","super_admin"] },
-      { title: "Broadcast Alerts",    url: "/broadcast-alerts", icon: Radio,        roles: ["ngo","admin","authority","super_admin"] },
+      { title: "Volunteer Hub",        url: "/volunteer",         icon: Heart,    roles: ["volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Aid Matching",         url: "/aid-matching",      icon: Sparkles, roles: ["volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Matching Engine",      url: "/matching-engine",   icon: Zap,      roles: ["volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Resource Requests",    url: "/resource-requests", icon: Package,  roles: ["citizen","volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Resource Management",  url: "/resource-management",icon: Package, roles: ["ngo","admin","authority","super_admin"] },
+      { title: "Response Teams",       url: "/teams",             icon: Users,    roles: ["volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Broadcast Alerts",     url: "/broadcast-alerts",  icon: Radio,    roles: ["ngo","admin","authority","super_admin"] },
     ],
   },
   {
     label: "AI & Intelligence",
     items: [
-      { title: "Analytics",        url: "/analytics",        icon: BarChart3,   roles: ["admin","government","authority","super_admin"] },
-      { title: "Intelligence",     url: "/intelligence",     icon: Sparkles,    roles: ["admin","government","authority","super_admin"] },
-      { title: "AI Copilot",       url: "/copilot",          icon: Brain,       roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "Risk Map",         url: "/risk-map",         icon: Shield,      roles: ["volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "AI Audit",         url: "/explainability",   icon: Brain,       roles: ["admin","government","authority","super_admin"] },
-      { title: "Multimodal AI",    url: "/multimodal-ai",    icon: Brain,       roles: ["admin","authority","super_admin"] },
+      { title: "Analytics",    url: "/analytics",      icon: BarChart3,  roles: ["admin","government","authority","super_admin"] },
+      { title: "Intelligence", url: "/intelligence",   icon: Sparkles,   roles: ["admin","government","authority","super_admin"] },
+      { title: "AI Copilot",   url: "/copilot",        icon: Brain,      roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Risk Map",     url: "/risk-map",       icon: Shield,     roles: ["volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "AI Audit",     url: "/explainability", icon: Brain,      roles: ["admin","government","authority","super_admin"] },
+      { title: "Multimodal AI",url: "/multimodal-ai",  icon: Brain,      roles: ["admin","authority","super_admin"] },
     ],
   },
   {
     label: "Top 1% Platform",
     items: [
-      { title: "Simulation Engine", url: "/simulation",    icon: Zap,          roles: ["admin","authority","super_admin"] },
-      { title: "Digital Twin",      url: "/digital-twin",  icon: Globe,        roles: ["admin","authority","super_admin"] },
-      { title: "AI Override",       url: "/ai-override",   icon: ShieldAlert,  roles: ["admin","authority","super_admin"] },
+      { title: "Simulation Engine", url: "/simulation",   icon: Zap,       roles: ["admin","authority","super_admin"] },
+      { title: "Digital Twin",      url: "/digital-twin", icon: Globe,     roles: ["admin","authority","super_admin"] },
+      { title: "AI Override",       url: "/ai-override",  icon: ShieldAlert,roles: ["admin","authority","super_admin"] },
     ],
   },
   {
     label: "Administration",
     items: [
-      { title: "Organizations",    url: "/organizations",  icon: Building2,   roles: ["ngo","admin","government","authority","super_admin"] },
-      { title: "Trust & Fraud",    url: "/trust",          icon: Shield,      roles: ["admin","authority","super_admin"] },
-      { title: "Developer Platform",url: "/developer",     icon: Code,        roles: ["admin","government","authority","super_admin"] },
-      { title: "Monitoring",       url: "/monitoring",     icon: Activity,    roles: ["admin","government","authority","super_admin"] },
+      { title: "Organizations",     url: "/organizations", icon: Building2, roles: ["ngo","admin","government","authority","super_admin"] },
+      { title: "Trust & Fraud",     url: "/trust",         icon: Shield,    roles: ["admin","authority","super_admin"] },
+      { title: "Developer Platform",url: "/developer",     icon: Code,      roles: ["admin","government","authority","super_admin"] },
+      { title: "Monitoring",        url: "/monitoring",    icon: Activity,  roles: ["admin","government","authority","super_admin"] },
     ],
   },
   {
     label: "Personal",
     items: [
-      { title: "Messages",         url: "/chat",           icon: MessageSquare,  roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "My Profile",       url: "/profile",        icon: User,           roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "Verification",     url: "/verify",         icon: Shield,         roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "Reputation",       url: "/reputation",     icon: Award,          roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "Privacy & Data",   url: "/compliance",     icon: ShieldCheck,    roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Messages",     url: "/chat",        icon: MessageSquare, roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "My Profile",   url: "/profile",     icon: User,          roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Verification", url: "/verify",      icon: Shield,        roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Reputation",   url: "/reputation",  icon: Award,         roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Privacy & Data",url: "/compliance", icon: ShieldCheck,   roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
     ],
   },
 ];
@@ -98,6 +100,11 @@ const ROLE_COLORS: Record<string, string> = {
   super_admin: "bg-rose-100 text-rose-700",
 };
 
+function userInitials(name?: string | null) {
+  if (!name) return "U";
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+}
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [location] = useLocation();
   const [isDark, setIsDark] = useState(false);
@@ -105,6 +112,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user } = useAuth();
   const { isLowBandwidth, toggle: toggleBandwidth } = useLowBandwidth();
   const { isOnline, queueLength } = useOfflineSync();
+
+  // Realtime WS connection status from singleton provider
+  const { isConnected: wsConnected } = useWSContext();
 
   const { data: reputation } = useQuery<{ trustScore: number }>({
     queryKey: ["/api/reputation/me"],
@@ -118,25 +128,49 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     document.documentElement.classList.toggle("dark");
   };
 
-  const filteredGroups = NAV_GROUPS.map(g => ({
+  const filteredGroups = NAV_GROUPS.map((g) => ({
     ...g,
-    items: g.items.filter(i => i.roles.includes(userRole)),
-  })).filter(g => g.items.length > 0);
+    items: g.items.filter((i) => i.roles.includes(userRole)),
+  })).filter((g) => g.items.length > 0);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
+
       {/* ── Sidebar ── */}
-      <aside className={`
-        flex-shrink-0 flex flex-col bg-slate-950 text-slate-100 border-r border-white/5 transition-all duration-300 overflow-hidden
-        ${sidebarOpen ? "w-64" : "w-0 md:w-14"}
-      `}>
+      <aside className={cn(
+        "flex-shrink-0 flex flex-col bg-slate-950 text-slate-100 border-r border-white/5 transition-all duration-300 overflow-hidden",
+        sidebarOpen ? "w-64" : "w-0 md:w-14"
+      )}>
         {/* Logo */}
-        <div className={`flex items-center h-16 px-4 border-b border-white/5 flex-shrink-0 ${sidebarOpen ? "gap-2" : "justify-center"}`}>
+        <div className={cn(
+          "flex items-center h-16 px-4 border-b border-white/5 flex-shrink-0",
+          sidebarOpen ? "gap-2" : "justify-center"
+        )}>
           <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center flex-shrink-0">
             <AlertTriangle className="w-4 h-4 text-white" />
           </div>
-          {sidebarOpen && <span className="font-black text-white text-sm tracking-tight whitespace-nowrap">CrisisConnect</span>}
+          {sidebarOpen && (
+            <span className="font-black text-white text-sm tracking-tight whitespace-nowrap">
+              CrisisConnect
+            </span>
+          )}
         </div>
+
+        {/* WS live indicator strip */}
+        {sidebarOpen && (
+          <div className={cn(
+            "flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium border-b border-white/5",
+            wsConnected
+              ? "text-green-400 bg-green-500/5"
+              : "text-slate-500 bg-transparent"
+          )}>
+            <span className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              wsConnected ? "bg-green-400 animate-pulse" : "bg-slate-600"
+            )} />
+            {wsConnected ? "Live updates active" : "Connecting…"}
+          </div>
+        )}
 
         {/* Nav scroll */}
         <nav className="flex-1 overflow-y-auto py-3 scrollbar-thin">
@@ -148,21 +182,29 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </p>
               )}
               {group.items.map((item) => {
-                const isActive = location === item.url || (item.url !== "/dashboard" && location.startsWith(item.url));
+                const isActive =
+                  location === item.url ||
+                  (item.url !== "/dashboard" && location.startsWith(item.url));
+
                 return (
-                  <Link key={item.url} href={item.url}>
-                    <a className={`
-                      flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-all duration-150 group
-                      ${isActive
+                  <Link
+                    key={item.url}
+                    href={item.url}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-all duration-150 group",
+                      isActive
                         ? "bg-red-600/90 text-white shadow-sm"
-                        : "text-slate-400 hover:text-white hover:bg-white/5"
-                      }
-                      ${!sidebarOpen ? "justify-center" : ""}
-                    `} title={!sidebarOpen ? item.title : undefined}
-                      data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"}`} />
-                      {sidebarOpen && <span className="truncate">{item.title}</span>}
-                    </a>
+                        : "text-slate-400 hover:text-white hover:bg-white/5",
+                      !sidebarOpen && "justify-center"
+                    )}
+                    title={!sidebarOpen ? item.title : undefined}
+                    data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    <item.icon className={cn(
+                      "w-4 h-4 flex-shrink-0",
+                      isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
+                    )} />
+                    {sidebarOpen && <span className="truncate">{item.title}</span>}
                   </Link>
                 );
               })}
@@ -177,12 +219,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Avatar className="h-7 w-7">
                 <AvatarImage src={user.profileImageUrl || ""} />
                 <AvatarFallback className="text-xs bg-red-600 text-white">
-                  {user.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "U"}
+                  {userInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-white truncate">{user.name || "User"}</p>
-                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${ROLE_COLORS[userRole] || "bg-slate-100 text-slate-700"}`}>
+                <span className={cn(
+                  "text-xs px-1.5 py-0.5 rounded font-medium",
+                  ROLE_COLORS[userRole] || "bg-slate-100 text-slate-700"
+                )}>
                   {userRole}
                 </span>
               </div>
@@ -191,14 +236,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
       </aside>
 
-      {/* ── Main ── */}
+      {/* ── Main area ── */}
       <div className="flex flex-col flex-1 min-w-0">
+
         {/* Header */}
         <header className="flex items-center justify-between h-16 px-4 bg-background border-b gap-4 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
               {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </Button>
+
             {/* Breadcrumb */}
             <div className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground">
               <span className="font-semibold text-foreground capitalize">
@@ -208,6 +260,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Offline badge */}
             {!isOnline && (
               <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-full px-2.5 py-1">
                 <WifiOff className="w-3 h-3" />
@@ -215,7 +268,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             )}
 
-            {/* Trust score pill */}
+            {/* Trust score */}
             {reputation && (
               <div className="hidden sm:flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-full px-2.5 py-1">
                 <Award className="w-3 h-3" />
@@ -223,28 +276,46 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             )}
 
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleBandwidth} title={isLowBandwidth ? "Low-bandwidth ON" : "Normal bandwidth"} data-testid="button-bandwidth-toggle">
-              {isLowBandwidth ? <WifiOff className="w-4 h-4 text-amber-500" /> : <Wifi className="w-4 h-4" />}
+            {/* Bandwidth toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={toggleBandwidth}
+              title={isLowBandwidth ? "Low-bandwidth ON" : "Normal bandwidth"}
+              data-testid="button-bandwidth-toggle"
+            >
+              {isLowBandwidth
+                ? <WifiOff className="w-4 h-4 text-amber-500" />
+                : <Wifi className="w-4 h-4" />}
             </Button>
 
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme} data-testid="button-theme-toggle">
+            {/* Theme toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={toggleTheme}
+              data-testid="button-theme-toggle"
+            >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
 
-            <Link href="/notifications">
-              <Button variant="ghost" size="icon" className="h-8 w-8 relative" data-testid="button-notifications">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              </Button>
-            </Link>
+            {/* Notification bell with unread count */}
+            <NotificationBell />
 
+            {/* User menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 px-2 gap-2 rounded-full" data-testid="button-user-menu">
+                <Button
+                  variant="ghost"
+                  className="h-8 px-2 gap-2 rounded-full"
+                  data-testid="button-user-menu"
+                >
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={user?.profileImageUrl || ""} />
                     <AvatarFallback className="text-xs bg-red-600 text-white">
-                      {user?.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "U"}
+                      {userInitials(user?.name)}
                     </AvatarFallback>
                   </Avatar>
                   <ChevronDown className="w-3 h-3 text-muted-foreground hidden sm:block" />
@@ -255,15 +326,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <div className="flex flex-col gap-1">
                     <p className="font-semibold text-sm">{user?.name || "User"}</p>
                     <p className="text-xs text-muted-foreground font-normal">{user?.email}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium w-fit ${ROLE_COLORS[userRole]}`}>{userRole}</span>
+                    <span className={cn(
+                      "text-xs px-2 py-0.5 rounded-full font-medium w-fit",
+                      ROLE_COLORS[userRole]
+                    )}>
+                      {userRole}
+                    </span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <Link href="/profile"><DropdownMenuItem data-testid="menu-profile"><User className="mr-2 h-4 w-4" />Profile</DropdownMenuItem></Link>
-                <Link href="/select-role"><DropdownMenuItem data-testid="menu-change-role"><Settings className="mr-2 h-4 w-4" />Switch Role</DropdownMenuItem></Link>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" data-testid="menu-profile">
+                    <User className="mr-2 h-4 w-4" />Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/select-role" data-testid="menu-change-role">
+                    <Settings className="mr-2 h-4 w-4" />Switch Role
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <a href="/api/logout" data-testid="menu-logout" className="text-red-600 focus:text-red-600">
+                  <a
+                    href="/api/logout"
+                    data-testid="menu-logout"
+                    className="text-red-600 focus:text-red-600"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />Log out
                   </a>
                 </DropdownMenuItem>
@@ -272,6 +360,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
+        {/* Page content */}
         <main className="flex-1 overflow-auto bg-muted/30">
           {children}
         </main>

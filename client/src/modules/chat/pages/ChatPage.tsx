@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useRealtimeMessage } from "@/providers/WebSocketProvider";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,8 +167,7 @@ export default function ChatPage() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
-  useWebSocket({
-    onMessage: (parsed: any) => {
+  useRealtimeMessage((parsed: any) => {
       if (parsed.type !== "chat_message") return;
 
       if (parsed.event === "RECEIVE_MESSAGE" && parsed.data?.roomId === selectedRoomId) {
@@ -203,7 +202,6 @@ export default function ChatPage() {
       if (parsed.event === "READ_RECEIPT" && parsed.data?.roomId === selectedRoomId) {
         refetchMessages();
       }
-    },
   });
 
   const selectedRoom = rooms.find(r => r.id === selectedRoomId);

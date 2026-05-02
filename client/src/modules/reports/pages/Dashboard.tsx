@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatsCard from "@/components/feed/StatsCard";
 import DisasterReportCard from "@/components/feed/DisasterReportCard";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useRealtimeMessage } from "@/providers/WebSocketProvider";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -45,16 +45,11 @@ export default function Dashboard() {
 
   const reports = reportsResponse?.data || [];
 
-  useWebSocket({
-    onMessage: useCallback((message: any) => {
-      if (["new_report","report_updated","report_verified"].includes(message.type)) {
-        queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
-        if (message.type === "new_report") {
-          toast({ title: "🚨 New Emergency Report", description: message.data?.title || "A new incident has been reported" });
-        }
-      }
-    }, [queryClient, toast]),
-  });
+  useRealtimeMessage(useCallback((message: any) => {
+    if (message.type === "new_report") {
+      toast({ title: "🚨 New Emergency Report", description: message.data?.title || "A new incident has been reported" });
+    }
+  }, [toast]));
 
   const handleVerify = async (reportId: string) => {
     try {

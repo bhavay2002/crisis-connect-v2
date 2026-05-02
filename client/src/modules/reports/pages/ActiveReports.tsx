@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import DisasterReportCard from "@/components/feed/DisasterReportCard";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useRealtimeMessage } from "@/providers/WebSocketProvider";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,14 +41,11 @@ export default function ActiveReports() {
   });
   const reports = reportsResponse?.data || [];
 
-  useWebSocket({
-    onMessage: useCallback((message: any) => {
-      if (["new_report","report_updated","report_verified","report_confirmed","report_unconfirmed"].includes(message.type)) {
-        queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/verifications/mine"] });
-      }
-    }, [queryClient]),
-  });
+  useRealtimeMessage(useCallback((message: any) => {
+    if (["new_report","report_updated","report_verified","report_confirmed","report_unconfirmed"].includes(message.type)) {
+      queryClient.invalidateQueries({ queryKey: ["/api/verifications/mine"] });
+    }
+  }, [queryClient]));
 
   const handleVerify = async (reportId: string) => {
     try {

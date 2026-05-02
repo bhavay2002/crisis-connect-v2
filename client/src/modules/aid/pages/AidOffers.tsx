@@ -10,7 +10,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { AidOffer } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useRealtimeMessage } from "@/providers/WebSocketProvider";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const resourceIcons = {
@@ -114,24 +114,16 @@ export default function AidOffers() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  useWebSocket({
-    onMessage: (message) => {
-      if (message.type === "new_aid_offer") {
-        queryClient.invalidateQueries({ queryKey: ["/api/aid-offers"] });
-        toast({
-          title: "New Aid Offer",
-          description: "A new aid offer has been submitted.",
-        });
-      } else if (message.type === "aid_offer_updated") {
-        queryClient.invalidateQueries({ queryKey: ["/api/aid-offers"] });
-      } else if (message.type === "aid_offer_delivered") {
-        queryClient.invalidateQueries({ queryKey: ["/api/aid-offers"] });
-        toast({
-          title: "Aid Delivered",
-          description: "An aid offer has been marked as delivered.",
-        });
-      }
-    },
+  useRealtimeMessage((message) => {
+    if (message.type === "new_aid_offer") {
+      queryClient.invalidateQueries({ queryKey: ["/api/aid-offers"] });
+      toast({ title: "New Aid Offer", description: "A new aid offer has been submitted." });
+    } else if (message.type === "aid_offer_updated") {
+      queryClient.invalidateQueries({ queryKey: ["/api/aid-offers"] });
+    } else if (message.type === "aid_offer_delivered") {
+      queryClient.invalidateQueries({ queryKey: ["/api/aid-offers"] });
+      toast({ title: "Aid Delivered", description: "An aid offer has been marked as delivered." });
+    }
   });
 
   const { data: allOffers = [], isLoading: isLoadingAll } = useQuery<AidOffer[]>({

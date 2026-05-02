@@ -2,8 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { BarChart3, MapPin, Clock, Users, TrendingUp, AlertTriangle, CheckCircle, Package, Download, FileJson, FileSpreadsheet } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import {
+  BarChart3, MapPin, Clock, Users, TrendingUp, AlertTriangle,
+  CheckCircle, Package, Download, FileJson, FileSpreadsheet
+} from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, PieChart, Pie, Cell
+} from "recharts";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   DropdownMenu,
@@ -11,8 +17,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+const COLORS = ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899"];
 
 interface AnalyticsSummary {
   totalEvents: number;
@@ -26,29 +33,22 @@ interface AnalyticsSummary {
   avgResponseTime: number;
 }
 
-// Utility function to convert data to CSV
 function convertToCSV(data: any[], headers: string[]): string {
-  const csvRows = [];
-  csvRows.push(headers.join(','));
-  
+  const csvRows = [headers.join(",")];
   for (const row of data) {
-    const values = headers.map(header => {
-      const value = row[header];
-      return typeof value === 'string' && value.includes(',') 
-        ? `"${value}"` 
-        : value;
+    const values = headers.map(h => {
+      const v = row[h];
+      return typeof v === "string" && v.includes(",") ? `"${v}"` : v;
     });
-    csvRows.push(values.join(','));
+    csvRows.push(values.join(","));
   }
-  
-  return csvRows.join('\n');
+  return csvRows.join("\n");
 }
 
-// Utility function to download data as file
 function downloadFile(content: string, filename: string, type: string) {
   const blob = new Blob([content], { type });
   const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
@@ -58,470 +58,175 @@ function downloadFile(content: string, filename: string, type: string) {
 }
 
 export default function AnalyticsDashboard() {
-  const { data: summary } = useQuery<AnalyticsSummary>({
-    queryKey: ["/api/analytics/summary"],
-  });
-
-  const { data: disasterFrequency } = useQuery<Record<string, number>>({
-    queryKey: ["/api/analytics/disaster-frequency"],
-  });
-
-  const { data: geographicData } = useQuery<Array<{
-    id: string;
-    type: string;
-    severity: string;
-    location: string;
-    latitude: number;
-    longitude: number;
-    status: string;
-  }>>({
+  const { data: summary } = useQuery<AnalyticsSummary>({ queryKey: ["/api/analytics/summary"] });
+  const { data: disasterFrequency } = useQuery<Record<string, number>>({ queryKey: ["/api/analytics/disaster-frequency"] });
+  const { data: geographicData } = useQuery<Array<{ id: string; type: string; severity: string; location: string; latitude: number; longitude: number; status: string }>>({
     queryKey: ["/api/analytics/geographic-impact"],
   });
 
-  const { data: reportsResponse } = useQuery<{ 
-    data: Array<{
-      id: string;
-      type: string;
-      severity: string;
-      status: string;
-    }>; 
-    pagination: any 
-  }>({
-    queryKey: ["/api/reports"],
-  });
-  
-  const reports = reportsResponse?.data || [];
-
-  const frequencyChartData = disasterFrequency 
-    ? Object.entries(disasterFrequency).map(([type, count]) => ({
-        type: type.charAt(0).toUpperCase() + type.slice(1),
-        count,
-      }))
+  const frequencyData = disasterFrequency
+    ? Object.entries(disasterFrequency).map(([name, count]) => ({ name: name.replace(/_/g, " "), count }))
     : [];
 
-  const severityData = reports.reduce((acc: Record<string, number>, r: any) => {
-    acc[r.severity] = (acc[r.severity] || 0) + 1;
-    return acc;
-  }, {});
-
-  const severityChartData = Object.entries(severityData).map(([severity, count]) => ({
-    name: severity.charAt(0).toUpperCase() + severity.slice(1),
-    value: count,
-  }));
-
-  const statusData = reports.reduce((acc: Record<string, number>, r: any) => {
-    acc[r.status] = (acc[r.status] || 0) + 1;
-    return acc;
-  }, {});
-
-  const statusChartData = Object.entries(statusData).map(([status, count]) => ({
-    status: status.charAt(0).toUpperCase() + status.slice(1),
-    count,
-  }));
-
-  const heatmapData = geographicData?.reduce((acc: Record<string, number>, point) => {
-    const key = `${Math.round(point.latitude * 10) / 10},${Math.round(point.longitude * 10) / 10}`;
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {}) || {};
-
-  const topHotspots = Object.entries(heatmapData)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 10)
-    .map(([coords, count]) => ({
-      coordinates: coords,
-      incidents: count,
-    }));
-
-  const responseTime = summary?.avgResponseTime 
-    ? Math.round(summary.avgResponseTime / 60000)
-    : 0;
-
-  // Export handlers
-  const handleExportCSV = () => {
-    const timestamp = new Date().toISOString().split('T')[0];
-    
-    // Build comprehensive CSV with multiple sections
-    let csvContent = '';
-    
-    // Section 1: Summary Metrics
-    csvContent += 'SUMMARY METRICS\n';
-    csvContent += 'Metric,Value,Period\n';
-    csvContent += `Total Reports Submitted,${summary?.reportSubmitted || 0},Last 30 days\n`;
-    csvContent += `Reports Verified,${summary?.reportVerified || 0},Last 30 days\n`;
-    csvContent += `Reports Resolved,${summary?.reportResolved || 0},Last 30 days\n`;
-    csvContent += `Resource Requests,${summary?.resourceRequested || 0},Last 30 days\n`;
-    csvContent += `Resources Fulfilled,${summary?.resourceFulfilled || 0},Last 30 days\n`;
-    csvContent += `Aid Offered,${summary?.aidOffered || 0},Last 30 days\n`;
-    csvContent += `Aid Delivered,${summary?.aidDelivered || 0},Last 30 days\n`;
-    csvContent += `Average Response Time (minutes),${responseTime},Last 30 days\n`;
-    csvContent += '\n';
-    
-    // Section 2: Disaster Frequency
-    csvContent += 'DISASTER FREQUENCY BY TYPE\n';
-    csvContent += 'Disaster Type,Count\n';
-    if (disasterFrequency && Object.keys(disasterFrequency).length > 0) {
-      Object.entries(disasterFrequency).forEach(([type, count]) => {
-        csvContent += `${type.charAt(0).toUpperCase() + type.slice(1)},${count}\n`;
-      });
-    } else {
-      csvContent += 'No data available\n';
-    }
-    csvContent += '\n';
-    
-    // Section 3: Reports by Severity
-    csvContent += 'REPORTS BY SEVERITY\n';
-    csvContent += 'Severity Level,Count\n';
-    if (Object.keys(severityData).length > 0) {
-      Object.entries(severityData).forEach(([severity, count]) => {
-        csvContent += `${severity.charAt(0).toUpperCase() + severity.slice(1)},${count}\n`;
-      });
-    } else {
-      csvContent += 'No data available\n';
-    }
-    csvContent += '\n';
-    
-    // Section 4: Reports by Status
-    csvContent += 'REPORTS BY STATUS\n';
-    csvContent += 'Status,Count\n';
-    if (Object.keys(statusData).length > 0) {
-      Object.entries(statusData).forEach(([status, count]) => {
-        csvContent += `${status.charAt(0).toUpperCase() + status.slice(1)},${count}\n`;
-      });
-    } else {
-      csvContent += 'No data available\n';
-    }
-    csvContent += '\n';
-    
-    // Section 5: Top Incident Hotspots
-    csvContent += 'TOP INCIDENT HOTSPOTS\n';
-    csvContent += 'Coordinates (Lat,Lon),Number of Incidents\n';
-    if (topHotspots.length > 0) {
-      topHotspots.forEach(({ coordinates, incidents }) => {
-        csvContent += `"${coordinates}",${incidents}\n`;
-      });
-    } else {
-      csvContent += 'No data available\n';
-    }
-    
-    downloadFile(csvContent, `crisis-connect-analytics-${timestamp}.csv`, 'text/csv');
-  };
-
   const handleExportJSON = () => {
-    const timestamp = new Date().toISOString().split('T')[0];
-    
-    // Prepare comprehensive report data
-    const reportData = {
-      generatedAt: new Date().toISOString(),
-      period: 'Last 30 days',
-      summary: {
-        totalReports: summary?.reportSubmitted || 0,
-        verifiedReports: summary?.reportVerified || 0,
-        resolvedReports: summary?.reportResolved || 0,
-        resourceRequests: summary?.resourceRequested || 0,
-        resourcesFulfilled: summary?.resourceFulfilled || 0,
-        aidOffered: summary?.aidOffered || 0,
-        aidDelivered: summary?.aidDelivered || 0,
-        averageResponseTimeMinutes: responseTime
-      },
-      disasterFrequency: disasterFrequency,
-      reportsBySeverity: severityData,
-      reportsByStatus: statusData,
-      topIncidentHotspots: topHotspots
-    };
-
-    const json = JSON.stringify(reportData, null, 2);
-    downloadFile(json, `crisis-connect-analytics-${timestamp}.json`, 'application/json');
+    if (!summary) return;
+    downloadFile(JSON.stringify({ summary, disasterFrequency, geographicData }, null, 2), "crisisconnect-analytics.json", "application/json");
   };
+
+  const handleExportCSV = () => {
+    if (!frequencyData.length) return;
+    downloadFile(convertToCSV(frequencyData, ["name", "count"]), "disaster-frequency.csv", "text/csv");
+  };
+
+  const STAT_CARDS = [
+    { label: "Reports Submitted",  value: summary?.reportSubmitted  ?? "–", icon: AlertTriangle, color: "text-red-500",    bg: "bg-red-500/10" },
+    { label: "Reports Verified",   value: summary?.reportVerified   ?? "–", icon: CheckCircle,   color: "text-blue-500",   bg: "bg-blue-500/10" },
+    { label: "Reports Resolved",   value: summary?.reportResolved   ?? "–", icon: CheckCircle,   color: "text-green-500",  bg: "bg-green-500/10" },
+    { label: "Resources Requested",value: summary?.resourceRequested ?? "–", icon: Package,       color: "text-orange-500", bg: "bg-orange-500/10" },
+    { label: "Resources Fulfilled",value: summary?.resourceFulfilled ?? "–", icon: Package,       color: "text-emerald-500",bg: "bg-emerald-500/10" },
+    { label: "Aid Offered",        value: summary?.aidOffered        ?? "–", icon: Users,         color: "text-purple-500", bg: "bg-purple-500/10" },
+    { label: "Aid Delivered",      value: summary?.aidDelivered      ?? "–", icon: TrendingUp,    color: "text-teal-500",   bg: "bg-teal-500/10" },
+    { label: "Avg Response (min)", value: summary?.avgResponseTime != null ? `${Math.round(summary.avgResponseTime)}` : "–", icon: Clock, color: "text-yellow-500", bg: "bg-yellow-500/10" },
+  ];
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
+      <div className="p-6 space-y-6 max-w-screen-2xl mx-auto">
+
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center">
-                <BarChart3 className="w-4 h-4 text-indigo-500" />
-              </div>
-              <h1 className="text-2xl font-black" data-testid="text-page-title">Analytics Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-blue-500" />
             </div>
-            <p className="text-sm text-muted-foreground">Comprehensive insights and performance metrics across all disaster response operations</p>
+            <div>
+              <h1 className="text-2xl font-black">Analytics Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Platform-wide performance metrics and insights</p>
+            </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9" data-testid="button-export">
-                <Download className="w-4 h-4 mr-2" />Export Report
+              <Button variant="outline" size="sm" className="h-8 text-xs" data-testid="button-export">
+                <Download className="w-3.5 h-3.5 mr-1.5" />Export
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExportCSV} data-testid="menu-item-export-csv">
-                <FileSpreadsheet className="w-4 h-4 mr-2" />Download as CSV
+              <DropdownMenuItem onClick={handleExportJSON} data-testid="button-export-json">
+                <FileJson className="h-4 w-4 mr-2" />Export as JSON
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportJSON} data-testid="menu-item-export-json">
-                <FileJson className="w-4 h-4 mr-2" />Download as JSON
+              <DropdownMenuItem onClick={handleExportCSV} data-testid="button-export-csv">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />Export as CSV
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        {/* KPI cards */}
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          {[
-            { id: "card-total-reports",   label: "Total Reports",       value: summary?.reportSubmitted || 0,          sub: "Last 30 days",          icon: AlertTriangle, color: "text-red-500",    bg: "bg-red-500/10",    testVal: "text-total-reports" },
-            { id: "card-verified-reports",label: "Verified Reports",    value: summary?.reportVerified || 0,           sub: summary?.reportSubmitted ? `${Math.round((summary.reportVerified / summary.reportSubmitted) * 100)}% rate` : "No data", icon: CheckCircle, color: "text-green-500", bg: "bg-green-500/10", testVal: "text-verified-reports" },
-            { id: "card-resolved-reports",label: "Resolved Cases",      value: summary?.reportResolved || 0,           sub: "Cases closed",           icon: TrendingUp,   color: "text-blue-500",   bg: "bg-blue-500/10",   testVal: "text-resolved-reports" },
-            { id: "card-avg-response-time",label: "Avg Response Time",  value: `${responseTime}m`,                     sub: "Minutes to first action",icon: Clock,        color: "text-purple-500", bg: "bg-purple-500/10", testVal: "text-response-time" },
-          ].map(({ id, label, value, sub, icon: Icon, color, bg, testVal }) => (
-            <div key={id} className="rounded-xl border bg-background p-4 shadow-sm" data-testid={id}>
-              <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center mb-3`}>
-                <Icon className={`w-4 h-4 ${color}`} />
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {STAT_CARDS.map(({ label, value, icon: Icon, color, bg }) => (
+            <div key={label} className="rounded-2xl border bg-background p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center", bg)}>
+                  <Icon className={cn("w-4 h-4", color)} />
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">{label}</p>
-              <p className={`text-2xl font-black mt-0.5 ${color}`} data-testid={testVal}>{value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
+              <p className="text-2xl font-black">{value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
             </div>
           ))}
         </div>
 
-        <Tabs defaultValue="disasters" className="w-full">
-          <TabsList>
-            <TabsTrigger value="disasters" data-testid="tab-disasters">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Disaster Analysis
-            </TabsTrigger>
-            <TabsTrigger value="geographic" data-testid="tab-geographic">
-              <MapPin className="mr-2 h-4 w-4" />
-              Geographic Impact
-            </TabsTrigger>
-            <TabsTrigger value="resources" data-testid="tab-resources">
-              <Package className="mr-2 h-4 w-4" />
-              Resource Metrics
-            </TabsTrigger>
+        {/* Charts */}
+        <Tabs defaultValue="frequency">
+          <TabsList className="h-8">
+            <TabsTrigger value="frequency" className="text-xs h-7">Disaster Frequency</TabsTrigger>
+            <TabsTrigger value="geographic" className="text-xs h-7">Geographic Impact</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="disasters" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card data-testid="card-disaster-frequency">
-                <CardHeader>
-                  <CardTitle>Disaster Frequency by Type</CardTitle>
-                  <CardDescription>Distribution of reported disasters</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={frequencyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="type" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="count" fill="#3b82f6" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card data-testid="card-severity-distribution">
-                <CardHeader>
-                  <CardTitle>Severity Distribution</CardTitle>
-                  <CardDescription>Reports categorized by severity level</CardDescription>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={severityChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={(entry) => entry.name}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {severityChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card data-testid="card-status-progression">
-              <CardHeader>
-                <CardTitle>Report Status Progression</CardTitle>
-                <CardDescription>Current state of all reports</CardDescription>
-              </CardHeader>
-              <CardContent>
+          <TabsContent value="frequency" className="mt-4">
+            <div className="rounded-2xl border bg-background p-5">
+              <h3 className="font-bold text-sm mb-4">Disaster Type Frequency</h3>
+              {frequencyData.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">No data available</div>
+              ) : (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={statusChartData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="status" type="category" />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" fill="#10b981" />
+                  <BarChart data={frequencyData} margin={{ top: 5, right: 20, left: 0, bottom: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-40" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Bar dataKey="count" name="Reports" fill="#ef4444" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="geographic" className="space-y-4">
-            <Card data-testid="card-geographic-heatmap">
-              <CardHeader>
-                <CardTitle>Geographic Impact Heatmap</CardTitle>
-                <CardDescription>Top disaster hotspots by location</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {topHotspots.map((hotspot, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                      data-testid={`hotspot-${index}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-medium">Coordinates: {hotspot.coordinates}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {hotspot.incidents} incident{hotspot.incidents !== 1 ? 's' : ''} reported
-                          </p>
-                        </div>
-                      </div>
-                      <div className={`h-2 ${
-                        hotspot.incidents > 5 ? 'w-32 bg-red-500' :
-                        hotspot.incidents > 3 ? 'w-24 bg-orange-500' :
-                        'w-16 bg-yellow-500'
-                      } rounded-full`} />
-                    </div>
-                  ))}
-                  {topHotspots.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No geographic data available
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card data-testid="card-incidents-by-severity">
-              <CardHeader>
-                <CardTitle>Geographic Incidents by Severity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-4">
-                  {['low', 'medium', 'high', 'critical'].map((severity) => {
-                    const count = geographicData?.filter(d => d.severity === severity).length || 0;
-                    return (
-                      <div key={severity} className="p-4 border rounded-lg" data-testid={`severity-card-${severity}`}>
-                        <p className="text-sm font-medium capitalize text-muted-foreground">{severity}</p>
-                        <p className="text-2xl font-bold">{count}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="resources" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card data-testid="card-resource-requests">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Resource Requests</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold" data-testid="text-resource-requests">
-                    {summary?.resourceRequested || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Total requests submitted</p>
-                </CardContent>
-              </Card>
-
-              <Card data-testid="card-resources-fulfilled">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Fulfilled</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600" data-testid="text-resources-fulfilled">
-                    {summary?.resourceFulfilled || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {summary?.resourceRequested 
-                      ? `${Math.round((summary.resourceFulfilled / summary.resourceRequested) * 100)}% fulfillment rate`
-                      : "No data"}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card data-testid="card-aid-delivered">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Aid Delivered</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-blue-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-600" data-testid="text-aid-delivered">
-                    {summary?.aidDelivered || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">From {summary?.aidOffered || 0} offers</p>
-                </CardContent>
-              </Card>
+              )}
             </div>
+          </TabsContent>
 
-            <Card data-testid="card-performance-metrics">
-              <CardHeader>
-                <CardTitle>Performance Metrics</CardTitle>
-                <CardDescription>System efficiency indicators</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between" data-testid="metric-verification-rate">
-                    <div>
-                      <p className="font-medium">Verification Rate</p>
-                      <p className="text-sm text-muted-foreground">Percentage of reports verified</p>
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {summary?.reportSubmitted 
-                        ? `${Math.round((summary.reportVerified / summary.reportSubmitted) * 100)}%`
-                        : "0%"}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between" data-testid="metric-resolution-rate">
-                    <div>
-                      <p className="font-medium">Resolution Rate</p>
-                      <p className="text-sm text-muted-foreground">Percentage of reports resolved</p>
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {summary?.reportSubmitted 
-                        ? `${Math.round((summary.reportResolved / summary.reportSubmitted) * 100)}%`
-                        : "0%"}
-                    </div>
+          <TabsContent value="geographic" className="mt-4">
+            <div className="rounded-2xl border bg-background p-5">
+              <h3 className="font-bold text-sm mb-4">Severity Distribution by Location</h3>
+              {!geographicData || geographicData.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">No geographic data available</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Severity pie */}
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Severity Breakdown</p>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <PieChart>
+                        <Pie
+                          data={(() => {
+                            const counts: Record<string, number> = {};
+                            geographicData.forEach(r => { counts[r.severity] = (counts[r.severity] || 0) + 1; });
+                            return Object.entries(counts).map(([name, value]) => ({ name, value }));
+                          })()}
+                          cx="50%" cy="50%" outerRadius={80}
+                          dataKey="value" nameKey="name"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          labelLine={false}
+                        >
+                          {["critical","high","medium","low"].map((_, i) => (
+                            <Cell key={i} fill={COLORS[i]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
 
-                  <div className="flex items-center justify-between" data-testid="metric-resource-fulfillment">
-                    <div>
-                      <p className="font-medium">Resource Fulfillment</p>
-                      <p className="text-sm text-muted-foreground">Percentage of requests fulfilled</p>
-                    </div>
-                    <div className="text-2xl font-bold">
-                      {summary?.resourceRequested 
-                        ? `${Math.round((summary.resourceFulfilled / summary.resourceRequested) * 100)}%`
-                        : "0%"}
+                  {/* Top locations */}
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Top Affected Locations</p>
+                    <div className="space-y-2">
+                      {(() => {
+                        const counts: Record<string, number> = {};
+                        geographicData.forEach(r => { counts[r.location] = (counts[r.location] || 0) + 1; });
+                        return Object.entries(counts)
+                          .sort((a, b) => b[1] - a[1])
+                          .slice(0, 6)
+                          .map(([loc, cnt]) => (
+                            <div key={loc} className="flex items-center gap-3 text-sm">
+                              <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-xs font-medium truncate">{loc}</span>
+                                  <span className="text-xs text-muted-foreground ml-2">{cnt}</span>
+                                </div>
+                                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-red-500 rounded-full"
+                                    style={{ width: `${(cnt / geographicData.length) * 100}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ));
+                      })()}
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -10,7 +10,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ResourceRequest } from "@shared/schema";
 import { formatDistanceToNow, format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useRealtimeMessage } from "@/providers/WebSocketProvider";
 import { Progress } from "@/components/ui/progress";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
@@ -178,25 +178,16 @@ export default function ResourceRequests() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  // WebSocket for real-time updates
-  useWebSocket({
-    onMessage: (message) => {
-      if (message.type === "new_resource_request") {
-        queryClient.invalidateQueries({ queryKey: ["/api/resource-requests"] });
-        toast({
-          title: "New Resource Request",
-          description: "A new resource request has been submitted.",
-        });
-      } else if (message.type === "resource_request_updated") {
-        queryClient.invalidateQueries({ queryKey: ["/api/resource-requests"] });
-      } else if (message.type === "resource_request_fulfilled") {
-        queryClient.invalidateQueries({ queryKey: ["/api/resource-requests"] });
-        toast({
-          title: "Request Fulfilled",
-          description: "A resource request has been fulfilled.",
-        });
-      }
-    },
+  useRealtimeMessage((message) => {
+    if (message.type === "new_resource_request") {
+      queryClient.invalidateQueries({ queryKey: ["/api/resource-requests"] });
+      toast({ title: "New Resource Request", description: "A new resource request has been submitted." });
+    } else if (message.type === "resource_request_updated") {
+      queryClient.invalidateQueries({ queryKey: ["/api/resource-requests"] });
+    } else if (message.type === "resource_request_fulfilled") {
+      queryClient.invalidateQueries({ queryKey: ["/api/resource-requests"] });
+      toast({ title: "Request Fulfilled", description: "A resource request has been fulfilled." });
+    }
   });
 
   const { data: allRequests = [], isLoading: isLoadingAll } = useQuery<ResourceRequest[]>({

@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { formatDistanceToNow } from "date-fns";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useRealtimeMessage } from "@/providers/WebSocketProvider";
 
 interface MatchingAnalytics {
   supply: {
@@ -81,19 +81,15 @@ export default function MatchingEngine() {
     queryKey: ["/api/matching/analytics"],
   });
 
-  // Listen for batch matching completion via WebSocket
-  useWebSocket({
-    onMessage: (message) => {
-      if (message.type === "batch_matching_complete") {
-        setLastRunTime(new Date(message.data.timestamp));
-        refetchAnalytics();
-        
-        toast({
-          title: "Batch Matching Complete",
-          description: `Found ${message.data.totalMatches} potential matches. Analytics updated.`,
-        });
-      }
-    },
+  useRealtimeMessage((message) => {
+    if (message.type === "batch_matching_complete") {
+      setLastRunTime(new Date(message.data.timestamp));
+      refetchAnalytics();
+      toast({
+        title: "Batch Matching Complete",
+        description: `Found ${message.data.totalMatches} potential matches. Analytics updated.`,
+      });
+    }
   });
 
   const batchMatchMutation = useMutation({

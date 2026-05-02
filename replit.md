@@ -12,9 +12,9 @@ Preferred communication style: Simple, everyday language.
 **Framework**: React with TypeScript, using Vite.
 **UI/UX**: shadcn/ui (Radix UI + Tailwind CSS) following an Emergency Services Design Pattern and Material Design principles, prioritizing clarity, speed, and mobile-first accessibility.
 **Design System**: Inter font, JetBrains Mono, HSL-based color system with light/dark themes.
-**State Management**: TanStack Query.
-**Routing**: Wouter for client-side routing.
-**Real-time Updates**: Custom `useWebSocket` hook.
+**State Management**: TanStack Query (server state) + Zustand (client state via `client/src/store/`).
+**Routing**: Wouter for client-side routing with `React.lazy` + `Suspense` for all 40+ pages (code splitting).
+**Real-time Updates**: Singleton `WebSocketProvider` at `client/src/providers/WebSocketProvider.tsx` — ONE WS connection per session, subscribed to via `useRealtimeMessage(handler)` hook. Exponential back-off reconnect (2s → 30s).
 
 **Key Features**:
 -   **Dashboards**: Includes a main dashboard, Volunteer Hub (demand-supply, resource management, report verification, AI insights), and Admin Dashboard (user management, report moderation, analytics export).
