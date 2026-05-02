@@ -65,168 +65,129 @@ export default function TrustDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6 max-w-5xl mx-auto">
+      <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
+        {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Shield className="w-7 h-7 text-blue-600" />
-            Trust & Fraud Prevention
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Behavioral analysis · Anomaly detection · Trust badge system
-          </p>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-blue-500" />
+            </div>
+            <h1 className="text-2xl font-black">Trust & Fraud Prevention</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">Behavioral analysis · Anomaly detection · Trust badge system</p>
         </div>
 
-        {/* Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-2xl font-bold text-red-600">
-                {anomalies?.anomalies.length ?? 0}
-              </p>
-              <p className="text-xs text-muted-foreground">Active Anomalies</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-2xl font-bold text-orange-600">
-                {highRisk?.total ?? 0}
-              </p>
-              <p className="text-xs text-muted-foreground">High-Risk Users</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-2xl font-bold text-blue-600">
-                {(highRisk?.highRiskUsers ?? []).filter(u => u.riskLevel === "critical").length}
-              </p>
-              <p className="text-xs text-muted-foreground">Critical Users</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-2xl font-bold text-green-600">
-                {anomalies?.checkedAt ? formatDistanceToNow(new Date(anomalies.checkedAt), { addSuffix: true }) : "—"}
-              </p>
-              <p className="text-xs text-muted-foreground">Last Check</p>
-            </CardContent>
-          </Card>
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Active Anomalies", value: anomalies?.anomalies.length ?? 0, color: "text-red-500",    bg: "bg-red-500/10",    icon: AlertTriangle },
+            { label: "High-Risk Users",  value: highRisk?.total ?? 0,             color: "text-orange-500", bg: "bg-orange-500/10", icon: TrendingDown   },
+            { label: "Critical Users",   value: (highRisk?.highRiskUsers ?? []).filter(u => u.riskLevel === "critical").length, color: "text-purple-500", bg: "bg-purple-500/10", icon: Eye },
+            { label: "Last Check",       value: anomalies?.checkedAt ? formatDistanceToNow(new Date(anomalies.checkedAt), { addSuffix: true }) : "—", color: "text-green-500", bg: "bg-green-500/10", icon: Shield },
+          ].map(({ label, value, color, bg, icon: Icon }) => (
+            <div key={label} className="rounded-xl border bg-background p-4 shadow-sm">
+              <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center mb-2.5`}>
+                <Icon className={`w-4 h-4 ${color}`} />
+              </div>
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className={`font-black mt-0.5 ${typeof value === "number" ? "text-2xl" : "text-sm"} ${color}`}>{value}</p>
+            </div>
+          ))}
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
-            <TabsTrigger value="anomalies">System Anomalies</TabsTrigger>
-            <TabsTrigger value="users">High-Risk Users</TabsTrigger>
+          <TabsList className="h-9">
+            <TabsTrigger value="anomalies" className="text-xs">
+              System Anomalies
+              {anomalies?.anomalies && anomalies.anomalies.length > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-yellow-500 text-white text-xs font-bold">{anomalies.anomalies.length}</span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="users" className="text-xs">
+              High-Risk Users
+              {highRisk && highRisk.total > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-orange-500 text-white text-xs font-bold">{highRisk.total}</span>
+              )}
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="anomalies" className="space-y-3">
+          <TabsContent value="anomalies" className="mt-4 space-y-3">
             {(!anomalies?.anomalies || anomalies.anomalies.length === 0) ? (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <Shield className="w-12 h-12 text-green-500 mx-auto mb-3 opacity-50" />
-                  <p className="font-medium text-green-600">No anomalies detected</p>
-                  <p className="text-sm text-muted-foreground">System is operating normally</p>
-                </CardContent>
-              </Card>
-            ) : (
-              anomalies.anomalies.map((a, i) => (
-                <Alert key={i} className="border-yellow-400 bg-yellow-50 dark:bg-yellow-950">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  <AlertDescription>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-bold">{a.type.replace(/_/g, " ").toUpperCase()}</p>
-                        <p className="text-sm">{a.description}</p>
-                        {a.affectedArea && (
-                          <p className="text-xs text-muted-foreground">Area: {a.affectedArea}</p>
-                        )}
-                      </div>
-                      <div className="text-right text-xs">
-                        <p className="font-bold">{a.reportCount} reports</p>
-                        <p className="text-muted-foreground">in {a.timeWindowMinutes}min</p>
-                      </div>
+              <div className="rounded-2xl border bg-background p-12 text-center">
+                <Shield className="w-12 h-12 text-green-500 mx-auto mb-3 opacity-50" />
+                <p className="font-semibold text-green-600">No anomalies detected</p>
+                <p className="text-sm text-muted-foreground mt-1">System is operating normally</p>
+              </div>
+            ) : anomalies.anomalies.map((a, i) => (
+              <div key={i} className="relative overflow-hidden rounded-xl border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-700 p-4">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-yellow-500" />
+                <div className="flex justify-between items-start pl-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                      <p className="font-bold text-sm text-yellow-700 dark:text-yellow-400">{a.type.replace(/_/g, " ").toUpperCase()}</p>
                     </div>
-                  </AlertDescription>
-                </Alert>
-              ))
-            )}
+                    <p className="text-sm">{a.description}</p>
+                    {a.affectedArea && <p className="text-xs text-muted-foreground mt-1">Area: {a.affectedArea}</p>}
+                  </div>
+                  <div className="text-right text-xs flex-shrink-0 ml-4">
+                    <p className="font-bold">{a.reportCount} reports</p>
+                    <p className="text-muted-foreground">in {a.timeWindowMinutes}min</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </TabsContent>
 
-          <TabsContent value="users" className="space-y-3">
+          <TabsContent value="users" className="mt-4 space-y-3">
             {(!highRisk?.highRiskUsers || highRisk.highRiskUsers.length === 0) ? (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <UserCheck className="w-12 h-12 text-green-500 mx-auto mb-3 opacity-50" />
-                  <p className="font-medium text-green-600">No high-risk users detected</p>
-                  <p className="text-sm text-muted-foreground">All users within normal behavioral patterns</p>
-                </CardContent>
-              </Card>
-            ) : (
-              highRisk.highRiskUsers.map((user, i) => {
-                const badge = TRUST_BADGE_STYLES[user.trustBadge];
-                return (
-                  <Card key={i} className={user.riskLevel === "critical" ? "border-red-300" : ""}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono text-xs text-muted-foreground">
-                              {user.userId.slice(0, 8)}...
-                            </span>
-                            <Badge className={badge.color}>{badge.label}</Badge>
-                            <Badge className={user.riskLevel === "critical" ? "bg-red-100 text-red-700" :
-                              user.riskLevel === "high" ? "bg-orange-100 text-orange-700" : ""}>
-                              {user.riskLevel} risk
-                            </Badge>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-sm">
-                              <span>Anomaly Score</span>
-                              <span className={`font-bold ${RISK_COLORS[user.riskLevel]}`}>
-                                {user.anomalyScore}/100
-                              </span>
-                            </div>
-                            <Progress
-                              value={user.anomalyScore}
-                              className={user.anomalyScore > 70 ? "[&>div]:bg-red-500" :
-                                user.anomalyScore > 40 ? "[&>div]:bg-yellow-500" : "[&>div]:bg-green-500"}
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                            <div>
-                              <span className="text-muted-foreground">Submissions/24h</span>
-                              <p className="font-bold">{user.submissionRate}</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">False Rate</span>
-                              <p className="font-bold">
-                                {Math.round(user.falseReportRate * 100)}%
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Location Consistency</span>
-                              <p className="font-bold">{user.locationConsistency}%</p>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Avg time between</span>
-                              <p className="font-bold">{user.avgTimeBetweenReports}min</p>
-                            </div>
-                          </div>
-                          {user.anomalyFlags.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {user.anomalyFlags.map((flag, j) => (
-                                <Badge key={j} variant="outline" className="text-xs text-red-600 border-red-300">
-                                  {flag.replace(/_/g, " ")}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+              <div className="rounded-2xl border bg-background p-12 text-center">
+                <UserCheck className="w-12 h-12 text-green-500 mx-auto mb-3 opacity-50" />
+                <p className="font-semibold text-green-600">No high-risk users detected</p>
+                <p className="text-sm text-muted-foreground mt-1">All users within normal behavioral patterns</p>
+              </div>
+            ) : highRisk.highRiskUsers.map((user, i) => {
+              const badge = TRUST_BADGE_STYLES[user.trustBadge];
+              return (
+                <div key={i} className={`rounded-2xl border bg-background p-4 shadow-sm ${user.riskLevel === "critical" ? "border-red-300 dark:border-red-700" : ""}`}>
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    <span className="font-mono text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{user.userId.slice(0, 8)}…</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${badge.color}`}>{badge.label}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize ${
+                      user.riskLevel === "critical" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" :
+                      user.riskLevel === "high" ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300" : "bg-muted text-muted-foreground"
+                    }`}>{user.riskLevel} risk</span>
+                  </div>
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs mb-1.5">
+                      <span className="text-muted-foreground">Anomaly Score</span>
+                      <span className={`font-black ${RISK_COLORS[user.riskLevel]}`}>{user.anomalyScore}/100</span>
+                    </div>
+                    <Progress value={user.anomalyScore} className={user.anomalyScore > 70 ? "[&>div]:bg-red-500" : user.anomalyScore > 40 ? "[&>div]:bg-yellow-500" : "[&>div]:bg-green-500"} />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-3">
+                    {[
+                      { label: "Submissions/24h", value: user.submissionRate },
+                      { label: "False Rate",       value: `${Math.round(user.falseReportRate * 100)}%` },
+                      { label: "Location Consistency", value: `${user.locationConsistency}%` },
+                      { label: "Avg time between", value: `${user.avgTimeBetweenReports}min` },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="bg-muted/50 rounded-lg p-2">
+                        <p className="text-muted-foreground text-xs">{label}</p>
+                        <p className="font-bold">{value}</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
+                    ))}
+                  </div>
+                  {user.anomalyFlags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {user.anomalyFlags.map((flag, j) => (
+                        <span key={j} className="text-xs px-2 py-0.5 rounded-full border border-red-300 text-red-600 dark:text-red-400">{flag.replace(/_/g, " ")}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </TabsContent>
         </Tabs>
       </div>

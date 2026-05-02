@@ -54,13 +54,11 @@ export default function Login() {
           <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-950/90 to-red-950/50" />
         </div>
         <div className="relative z-10">
-          <Link href="/">
-            <a className="flex items-center gap-2 w-fit">
-              <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-black text-white text-lg">CrisisConnect</span>
-            </a>
+          <Link href="/" className="flex items-center gap-2 w-fit">
+            <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-black text-white text-lg">CrisisConnect</span>
           </Link>
         </div>
         <div className="relative z-10">
@@ -139,9 +137,7 @@ export default function Login() {
 
           <p className="text-sm text-center text-muted-foreground mt-6">
             No account?{" "}
-            <Link href="/register">
-              <a className="text-red-600 font-semibold hover:underline" data-testid="link-register">Create one</a>
-            </Link>
+            <Link href="/register" className="text-red-600 font-semibold hover:underline" data-testid="link-register">Create one</Link>
           </p>
         </div>
       </div>

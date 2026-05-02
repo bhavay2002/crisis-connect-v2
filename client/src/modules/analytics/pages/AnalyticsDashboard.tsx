@@ -236,88 +236,52 @@ export default function AnalyticsDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex justify-between items-start">
+      <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold" data-testid="text-page-title">Analytics Dashboard</h1>
-            <p className="text-muted-foreground">Comprehensive insights and performance metrics</p>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+                <BarChart3 className="w-4 h-4 text-indigo-500" />
+              </div>
+              <h1 className="text-2xl font-black" data-testid="text-page-title">Analytics Dashboard</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">Comprehensive insights and performance metrics across all disaster response operations</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" data-testid="button-export">
-                <Download className="w-4 h-4 mr-2" />
-                Export Report
+              <Button variant="outline" size="sm" className="h-9" data-testid="button-export">
+                <Download className="w-4 h-4 mr-2" />Export Report
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleExportCSV} data-testid="menu-item-export-csv">
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Download as CSV
+                <FileSpreadsheet className="w-4 h-4 mr-2" />Download as CSV
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportJSON} data-testid="menu-item-export-json">
-                <FileJson className="w-4 h-4 mr-2" />
-                Download as JSON
+                <FileJson className="w-4 h-4 mr-2" />Download as JSON
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card data-testid="card-total-reports">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-total-reports">
-                {summary?.reportSubmitted || 0}
+        {/* KPI cards */}
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            { id: "card-total-reports",   label: "Total Reports",       value: summary?.reportSubmitted || 0,          sub: "Last 30 days",          icon: AlertTriangle, color: "text-red-500",    bg: "bg-red-500/10",    testVal: "text-total-reports" },
+            { id: "card-verified-reports",label: "Verified Reports",    value: summary?.reportVerified || 0,           sub: summary?.reportSubmitted ? `${Math.round((summary.reportVerified / summary.reportSubmitted) * 100)}% rate` : "No data", icon: CheckCircle, color: "text-green-500", bg: "bg-green-500/10", testVal: "text-verified-reports" },
+            { id: "card-resolved-reports",label: "Resolved Cases",      value: summary?.reportResolved || 0,           sub: "Cases closed",           icon: TrendingUp,   color: "text-blue-500",   bg: "bg-blue-500/10",   testVal: "text-resolved-reports" },
+            { id: "card-avg-response-time",label: "Avg Response Time",  value: `${responseTime}m`,                     sub: "Minutes to first action",icon: Clock,        color: "text-purple-500", bg: "bg-purple-500/10", testVal: "text-response-time" },
+          ].map(({ id, label, value, sub, icon: Icon, color, bg, testVal }) => (
+            <div key={id} className="rounded-xl border bg-background p-4 shadow-sm" data-testid={id}>
+              <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center mb-3`}>
+                <Icon className={`w-4 h-4 ${color}`} />
               </div>
-              <p className="text-xs text-muted-foreground">Last 30 days</p>
-            </CardContent>
-          </Card>
-
-          <Card data-testid="card-verified-reports">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Verified Reports</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600" data-testid="text-verified-reports">
-                {summary?.reportVerified || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {summary?.reportSubmitted 
-                  ? `${Math.round((summary.reportVerified / summary.reportSubmitted) * 100)}% verification rate`
-                  : "No data"}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card data-testid="card-resolved-reports">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Resolved</CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600" data-testid="text-resolved-reports">
-                {summary?.reportResolved || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">Cases closed</p>
-            </CardContent>
-          </Card>
-
-          <Card data-testid="card-avg-response-time">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-response-time">
-                {responseTime}m
-              </div>
-              <p className="text-xs text-muted-foreground">Minutes to first response</p>
-            </CardContent>
-          </Card>
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className={`text-2xl font-black mt-0.5 ${color}`} data-testid={testVal}>{value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
+            </div>
+          ))}
         </div>
 
         <Tabs defaultValue="disasters" className="w-full">

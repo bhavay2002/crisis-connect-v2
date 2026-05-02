@@ -253,65 +253,62 @@ export default function SubmitReport() {
     <DashboardLayout>
       <div className="p-6">
         <div className="mb-6">
-          <h1 className="text-4xl font-bold mb-2">Submit Emergency Report</h1>
-          <p className="text-muted-foreground">
-            Provide detailed information about the emergency situation
-          </p>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4 text-red-500" />
+            </div>
+            <h1 className="text-2xl font-black">Submit Emergency Report</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">Provide accurate details — AI will validate and classify your report automatically</p>
         </div>
 
         <div className="max-w-3xl mx-auto">
           {/* Step Indicator */}
           <div className="mb-8">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center">
               {steps.map((s, index) => (
                 <div key={s.number} className="flex items-center flex-1">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                        step >= s.number
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                        step > s.number ? "bg-green-600 text-white" :
+                        step === s.number ? "bg-red-600 text-white ring-4 ring-red-600/20" :
+                        "bg-muted text-muted-foreground"
                       }`}
                       data-testid={`step-indicator-${s.number}`}
                     >
-                      {step > s.number ? (
-                        <CheckCircle className="w-5 h-5" />
-                      ) : (
-                        <s.icon className="w-5 h-5" />
-                      )}
+                      {step > s.number ? <CheckCircle className="w-5 h-5" /> : <s.icon className="w-4 h-4" />}
                     </div>
-                    <span className="text-xs mt-2 font-medium">{s.title}</span>
+                    <span className={`text-xs mt-2 font-semibold ${step >= s.number ? "text-foreground" : "text-muted-foreground"}`}>{s.title}</span>
                   </div>
                   {index < steps.length - 1 && (
-                    <div
-                      className={`flex-1 h-1 mx-2 ${
-                        step > s.number ? "bg-primary" : "bg-muted"
-                      }`}
-                    />
+                    <div className={`flex-1 h-1 mx-2 rounded-full transition-all ${step > s.number ? "bg-green-500" : "bg-muted"}`} />
                   )}
                 </div>
               ))}
             </div>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {step === 1 && "Select Emergency Type"}
-                {step === 2 && "Provide Location"}
-                {step === 3 && "Describe the Situation"}
-                {step === 4 && "Review Your Report"}
-                {step === 5 && "Report Submitted"}
-              </CardTitle>
-              <CardDescription>
-                {step === 1 && "Choose the type of emergency you're reporting"}
-                {step === 2 && "Where is the emergency happening?"}
-                {step === 3 && "Provide detailed information about the emergency"}
-                {step === 4 && "Review and submit your report"}
-                {step === 5 && "Your report has been successfully submitted"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="rounded-2xl border bg-background shadow-sm overflow-hidden">
+            <div className={`h-1 w-full transition-all ${step === 5 ? "bg-green-500" : "bg-red-600"}`}
+              style={{ width: step === 5 ? "100%" : `${((step - 1) / 4) * 100}%` }} />
+            <div className="p-6">
+              <div className="mb-5">
+                <h2 className="font-black text-lg">
+                  {step === 1 && "Select Emergency Type"}
+                  {step === 2 && "Provide Location"}
+                  {step === 3 && "Describe the Situation"}
+                  {step === 4 && "Review Your Report"}
+                  {step === 5 && "Report Submitted"}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {step === 1 && "Choose the type and severity of emergency you're reporting"}
+                  {step === 2 && "Where is the emergency happening?"}
+                  {step === 3 && "Provide detailed information — add photos and voice notes"}
+                  {step === 4 && "Review your report carefully before submitting"}
+                  {step === 5 && "Your report has been successfully submitted to emergency services"}
+                </p>
+              </div>
               <form onSubmit={handleSubmit}>
                 {step === 1 && (
                   <div className="space-y-4">
@@ -590,8 +587,8 @@ export default function SubmitReport() {
                   </div>
                 )}
               </form>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>

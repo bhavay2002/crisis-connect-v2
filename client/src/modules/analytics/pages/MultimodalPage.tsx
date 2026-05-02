@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -18,32 +17,25 @@ interface MultimodalResult {
 }
 
 const SEV_CFG: Record<string, string> = {
-  low: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300",
-  medium: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300",
-  high: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300",
+  low:      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300",
+  medium:   "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300",
+  high:     "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300",
   critical: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300",
 };
 
-function ScoreBar({ label, value, colorClass }: { label: string; value: number; colorClass: string }) {
-  const pct = Math.round(value * 100);
+function ScoreRow({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div>
       <div className="flex justify-between text-xs mb-1.5">
         <span className="text-muted-foreground font-medium">{label}</span>
-        <span className="font-bold">{pct}%</span>
+        <span className="font-bold">{(value * 100).toFixed(0)}%</span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${colorClass}`} style={{ width: `${pct}%` }} />
+        <div className={`h-full rounded-full ${color} transition-all duration-500`} style={{ width: `${value * 100}%` }} />
       </div>
     </div>
   );
 }
-
-const DEMOS = [
-  { label: "🌊 Flood", text: "Streets completely flooded, cars submerged", voice: "Help, water is rising fast, I am on the roof" },
-  { label: "🔥 Fire",  text: "Massive fire engulfing factory near highway", voice: "Fire everywhere, employees trapped inside"  },
-  { label: "🏚 Quake", text: "Multiple buildings collapsed after tremors",  voice: "Ground shaking, walls falling, get out now" },
-];
 
 export default function MultimodalPage() {
   const { toast } = useToast();
@@ -62,39 +54,43 @@ export default function MultimodalPage() {
   });
 
   const hasInput = text.trim() || voiceTranscript.trim() || imageUrl.trim();
+  const DEMOS = [
+    { label: "🌊 Flood",      text: "Streets completely flooded, cars submerged, water level rising fast", voice: "Help, water is chest deep, I am on roof, please send boats" },
+    { label: "🔥 Fire",       text: "Massive fire engulfing industrial factory near highway overpass",     voice: "Fire everywhere, employees trapped inside, black smoke visible" },
+    { label: "🏚 Earthquake", text: "Multiple buildings collapsed after strong tremors, rubble everywhere", voice: "Ground shaking violently, walls collapsing, get everyone out now" },
+  ];
 
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-9 h-9 rounded-xl bg-purple-500/15 flex items-center justify-center">
-                <Brain className="w-5 h-5 text-purple-600" />
-              </div>
-              <h1 className="text-2xl font-black">Multimodal AI Analysis</h1>
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center">
+              <Brain className="w-4 h-4 text-purple-500" />
             </div>
-            <p className="text-sm text-muted-foreground">Fuse text, voice transcripts, and images into a single weighted crisis intelligence score</p>
+            <h1 className="text-2xl font-black">Multimodal AI Fusion</h1>
           </div>
-          <Badge variant="outline" className="border-purple-300 text-purple-600 bg-purple-50 dark:bg-purple-950">§17.1</Badge>
+          <p className="text-sm text-muted-foreground">
+            Text + Voice + Image signals fused via GPT-4o vision — 40/30/30 weighted scoring with explainable output
+          </p>
         </div>
 
-        {/* Fusion weight cards */}
+        {/* Signal weight cards */}
         {info && (
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Text Signal",  weight: info.fusionWeights?.text,  icon: FileText, color: "text-blue-600",   bg: "bg-blue-500/10"    },
-              { label: "Voice Signal", weight: info.fusionWeights?.voice, icon: Mic,      color: "text-green-600",  bg: "bg-green-500/10"   },
-              { label: "Image Signal", weight: info.fusionWeights?.image, icon: Image,    color: "text-purple-600", bg: "bg-purple-500/10"  },
+              { label: "Text Signal",  weight: info.fusionWeights?.text,  icon: FileText, color: "text-blue-500",   bg: "bg-blue-500/10"   },
+              { label: "Voice Signal", weight: info.fusionWeights?.voice, icon: Mic,      color: "text-green-500",  bg: "bg-green-500/10"  },
+              { label: "Image Signal", weight: info.fusionWeights?.image, icon: Image,    color: "text-purple-500", bg: "bg-purple-500/10" },
             ].map(({ label, weight, icon: Icon, color, bg }) => (
-              <div key={label} className="rounded-xl border bg-background p-4 flex items-center gap-3">
+              <div key={label} className="rounded-xl border bg-background p-4 shadow-sm flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}>
                   <Icon className={`w-5 h-5 ${color}`} />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className="text-2xl font-black">{Math.round(weight * 100)}%</p>
+                  <p className={`text-2xl font-black ${color}`}>{Math.round(weight * 100)}%</p>
                 </div>
               </div>
             ))}
@@ -103,92 +99,99 @@ export default function MultimodalPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Input panel */}
-          <div className="rounded-2xl border bg-background p-6 space-y-5">
-            <div className="flex items-center justify-between">
-              <h2 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Input Signals</h2>
-              <p className="text-xs text-muted-foreground">More signals = higher accuracy</p>
+          <div className="rounded-2xl border bg-background p-5 shadow-sm space-y-4">
+            <h2 className="font-bold text-sm">Input Signals</h2>
+
+            <div>
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1.5 block">
+                <FileText className="w-3 h-3" />Text Report <span className="text-blue-500">40%</span>
+              </Label>
+              <Textarea value={text} onChange={e => setText(e.target.value)} rows={3} className="text-sm resize-none"
+                placeholder="Describe what you see: 'Building on fire near main road, people trapped on 3rd floor...'" />
             </div>
 
             <div>
-              <Label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><FileText className="w-3.5 h-3.5 text-blue-500" />Text Report</Label>
-              <Textarea value={text} onChange={e => setText(e.target.value)} rows={3}
-                placeholder="Describe what you see: 'Building on fire near main road, people trapped on 3rd floor…'" className="resize-none" />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Mic className="w-3.5 h-3.5 text-green-500" />Voice Transcript</Label>
-              <Textarea value={voiceTranscript} onChange={e => setVoiceTranscript(e.target.value)} rows={2}
-                placeholder="Paste voice-to-text transcript: 'There is heavy flooding, water is chest deep…'" className="resize-none" />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Image className="w-3.5 h-3.5 text-purple-500" />Image URL</Label>
-              <Input value={imageUrl} onChange={e => setImageUrl(e.target.value)} placeholder="https://example.com/crisis-photo.jpg" />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Location (optional)</Label>
-              <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Mumbai, Zone 4" />
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1.5 block">
+                <Mic className="w-3 h-3" />Voice Transcript <span className="text-green-500">30%</span>
+              </Label>
+              <Textarea value={voiceTranscript} onChange={e => setVoiceTranscript(e.target.value)} rows={2} className="text-sm resize-none"
+                placeholder="Paste voice-to-text transcript: 'There is heavy flooding, water is chest deep...'" />
             </div>
 
-            {/* Quick demos */}
-            <div className="pt-1 border-t">
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Quick demo scenarios:</p>
-              <div className="flex flex-wrap gap-2">
+            <div>
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1.5 block">
+                <Image className="w-3 h-3" />Image URL <span className="text-purple-500">30%</span>
+              </Label>
+              <Input value={imageUrl} onChange={e => setImageUrl(e.target.value)} className="text-sm h-9"
+                placeholder="https://example.com/crisis-photo.jpg" />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 block">Location (optional)</Label>
+              <Input value={location} onChange={e => setLocation(e.target.value)} className="text-sm h-9" placeholder="e.g. Mumbai, Zone 4" />
+            </div>
+
+            <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold" onClick={() => analyzeMutation.mutate()} disabled={!hasInput || analyzeMutation.isPending}>
+              {analyzeMutation.isPending ? (
+                <><Zap className="w-4 h-4 mr-2 animate-pulse" />Analyzing all signals…</>
+              ) : (
+                <><Brain className="w-4 h-4 mr-2" />Run Multimodal Analysis</>
+              )}
+            </Button>
+
+            {/* Quick demo scenarios */}
+            <div className="pt-3 border-t">
+              <p className="text-xs text-muted-foreground font-medium mb-2">Quick test scenarios</p>
+              <div className="flex flex-wrap gap-1.5">
                 {DEMOS.map(s => (
-                  <Button key={s.label} size="sm" variant="outline" className="h-7 text-xs rounded-lg"
+                  <Button key={s.label} size="sm" variant="outline" className="text-xs h-7"
                     onClick={() => { setText(s.text); setVoiceTranscript(s.voice); }}>
                     {s.label}
                   </Button>
                 ))}
               </div>
             </div>
-
-            <Button className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white font-semibold" onClick={() => analyzeMutation.mutate()} disabled={!hasInput || analyzeMutation.isPending}>
-              {analyzeMutation.isPending
-                ? <><Zap className="w-4 h-4 mr-2 animate-pulse" />Analyzing all signals…</>
-                : <><Brain className="w-4 h-4 mr-2" />Run Multimodal Analysis</>}
-            </Button>
           </div>
 
           {/* Result panel */}
-          <div className="rounded-2xl border bg-background p-6">
-            <h2 className="font-bold text-sm uppercase tracking-wide text-muted-foreground mb-4">Analysis Result</h2>
+          <div className="rounded-2xl border bg-background p-5 shadow-sm">
+            <h2 className="font-bold text-sm mb-4">Analysis Result</h2>
             {!result ? (
-              <div className="flex flex-col items-center justify-center h-full min-h-48 text-muted-foreground">
-                <Brain className="w-14 h-14 mb-3 opacity-15" />
+              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                <Brain className="w-14 h-14 mb-4 opacity-15" />
                 <p className="font-semibold">Awaiting analysis</p>
-                <p className="text-xs mt-1">Provide input signals and click Analyze</p>
+                <p className="text-xs mt-1.5">Provide input signals and click Analyze</p>
               </div>
             ) : (
               <div className="space-y-5">
-                {/* Primary */}
-                <div className="flex items-start justify-between gap-4">
+                {/* Primary result */}
+                <div className="flex items-start justify-between gap-4 pb-4 border-b">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Crisis Type</p>
-                    <p className="text-2xl font-black capitalize">{result.crisisType.replace(/_/g, " ")}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Crisis Type</p>
+                    <p className="text-xl font-black capitalize">{result.crisisType.replace(/_/g, " ")}</p>
                   </div>
-                  <span className={`text-sm font-bold px-3 py-1.5 rounded-full border uppercase ${SEV_CFG[result.severity]}`}>
-                    {result.severity}
-                  </span>
+                  <span className={`text-sm px-3 py-1 rounded-full font-bold border uppercase ${SEV_CFG[result.severity]}`}>{result.severity}</span>
                 </div>
 
                 {/* Score bars */}
                 <div className="space-y-3">
-                  <ScoreBar label="Urgency"       value={result.urgency}     colorClass="bg-red-500"    />
-                  <ScoreBar label="AI Confidence" value={result.confidence}  colorClass="bg-blue-500"   />
-                  <ScoreBar label="Fused Score"   value={result.fusedScore}  colorClass="bg-purple-500" />
+                  <ScoreRow label="Urgency"        value={result.urgency}     color="bg-red-500"    />
+                  <ScoreRow label="AI Confidence"  value={result.confidence}  color="bg-blue-500"   />
+                  <ScoreRow label="Fused Score"    value={result.fusedScore}  color="bg-purple-500" />
                 </div>
 
                 {/* Signal breakdown */}
-                <div className="p-4 rounded-xl bg-muted/40 border">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Signal Breakdown</p>
+                <div className="bg-muted/40 rounded-xl p-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Signal Breakdown (Weighted)</p>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     {[
-                      { label: "Text (40%)",  value: result.fusionScores.text  },
-                      { label: "Voice (30%)", value: result.fusionScores.voice },
-                      { label: "Image (30%)", value: result.fusionScores.image },
-                    ].map(({ label, value }) => (
+                      { label: "Text (40%)",  value: result.fusionScores.text,  color: "text-blue-500"   },
+                      { label: "Voice (30%)", value: result.fusionScores.voice, color: "text-green-500"  },
+                      { label: "Image (30%)", value: result.fusionScores.image, color: "text-purple-500" },
+                    ].map(({ label, value, color }) => (
                       <div key={label}>
-                        <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                        <p className="text-lg font-black">{(value * 100).toFixed(0)}%</p>
+                        <p className="text-xs text-muted-foreground">{label}</p>
+                        <p className={`font-black text-lg ${color}`}>{(value * 100).toFixed(0)}%</p>
                       </div>
                     ))}
                   </div>
@@ -196,41 +199,48 @@ export default function MultimodalPage() {
 
                 {/* Explanation */}
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">AI Explanation</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">AI Explanation</p>
                   <p className="text-sm leading-relaxed">{result.explanation}</p>
                 </div>
 
-                {/* Review flag */}
+                {/* Human review flag */}
                 {result.requiresHumanReview ? (
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">Human review required — low confidence or critical severity</p>
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl border border-orange-300 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-700">
+                    <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-bold text-orange-700 dark:text-orange-400">Human review required</p>
+                      <p className="text-xs text-orange-600 dark:text-orange-500">Low confidence or critical severity — queued for admin review</p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                    <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-green-700 dark:text-green-400 font-medium">Auto-approved — confidence threshold met</p>
+                  <div className="flex items-center gap-2.5 p-3 rounded-xl border border-green-300 bg-green-50 dark:bg-green-950/30 dark:border-green-700">
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <p className="text-xs font-semibold text-green-700 dark:text-green-400">Auto-approved — confidence threshold met</p>
                   </div>
                 )}
 
-                <p className="text-xs text-muted-foreground">Source: {result.source === "ai" ? "GPT-4o Vision + Text" : "Heuristic fallback"}</p>
+                <p className="text-xs text-muted-foreground">
+                  Source: <span className="font-mono">{result.source === "ai" ? "GPT-4o Vision + Text" : "Heuristic fallback"}</span>
+                </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Trigger rules */}
+        {/* Human review triggers */}
         {info && (
-          <div className="rounded-2xl border bg-background p-6">
-            <h2 className="font-bold text-sm uppercase tracking-wide text-muted-foreground mb-3">Human Review Trigger Rules</h2>
+          <div className="rounded-2xl border bg-background p-5 shadow-sm">
+            <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-orange-500" />Human Review Triggers
+            </h3>
             <div className="flex flex-wrap gap-2">
               {info.humanReviewTriggers?.map((t: string, i: number) => (
-                <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700 text-sm text-amber-700 dark:text-amber-400">
-                  <AlertTriangle className="w-3 h-3 flex-shrink-0" />{t}
-                </div>
+                <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-300 font-medium">
+                  {t}
+                </span>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground mt-3">Model: {info.model}</p>
+            <p className="text-xs text-muted-foreground mt-3">Model: <span className="font-mono">{info.model}</span></p>
           </div>
         )}
       </div>

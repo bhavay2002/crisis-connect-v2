@@ -107,13 +107,16 @@ export default function DeveloperPlatformPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
+        {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Code className="w-8 h-8 text-indigo-600" />
-            Developer Platform
-          </h1>
-          <p className="text-muted-foreground mt-1">API keys, webhooks, and public v1 API for third-party integrations</p>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+              <Code className="w-4 h-4 text-indigo-500" />
+            </div>
+            <h1 className="text-2xl font-black">Developer Platform</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">API keys, webhooks, and public v1 API for third-party integrations</p>
         </div>
 
         {createdKey && (
@@ -132,28 +135,28 @@ export default function DeveloperPlatformPage() {
         )}
 
         <Tabs defaultValue="keys">
-          <TabsList className="grid grid-cols-3 w-full max-w-lg">
-            <TabsTrigger value="keys">API Keys</TabsTrigger>
-            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-            <TabsTrigger value="docs">API Docs</TabsTrigger>
+          <TabsList className="h-9">
+            <TabsTrigger value="keys" className="text-xs"><Key className="w-3.5 h-3.5 mr-1.5" />API Keys <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-muted font-bold">{keys.length}</span></TabsTrigger>
+            <TabsTrigger value="webhooks" className="text-xs"><Webhook className="w-3.5 h-3.5 mr-1.5" />Webhooks <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-muted font-bold">{webhooks.length}</span></TabsTrigger>
+            <TabsTrigger value="docs" className="text-xs"><Globe className="w-3.5 h-3.5 mr-1.5" />API Docs</TabsTrigger>
           </TabsList>
 
           {/* API KEYS */}
-          <TabsContent value="keys" className="space-y-4">
+          <TabsContent value="keys" className="mt-4 space-y-3">
             <div className="flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">{keys.length}/10 keys used</p>
+              <p className="text-xs text-muted-foreground">{keys.length}/10 keys used</p>
               <Dialog open={isKeyOpen} onOpenChange={setIsKeyOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm"><PlusCircle className="w-4 h-4 mr-2" />New API Key</Button>
+                  <Button size="sm" className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"><PlusCircle className="w-3.5 h-3.5 mr-1.5" />New API Key</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>Create API Key</DialogTitle></DialogHeader>
                   <div className="space-y-4">
-                    <div><Label>Key Name</Label><Input value={newKeyName} onChange={e => setNewKeyName(e.target.value)} placeholder="My Integration" /></div>
+                    <div><Label>Key Name</Label><Input value={newKeyName} onChange={e => setNewKeyName(e.target.value)} placeholder="My Integration" className="mt-1" /></div>
                     <div>
                       <Label>Tier</Label>
                       <Select value={newKeyTier} onValueChange={setNewKeyTier}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="free">Free — 100 req/day</SelectItem>
                           <SelectItem value="paid">Paid — 10,000 req/day</SelectItem>
@@ -162,7 +165,7 @@ export default function DeveloperPlatformPage() {
                       </Select>
                     </div>
                     <Button className="w-full" onClick={() => createKeyMutation.mutate()} disabled={!newKeyName || createKeyMutation.isPending}>
-                      {createKeyMutation.isPending ? "Creating..." : "Create Key"}
+                      {createKeyMutation.isPending ? "Creating…" : "Create Key"}
                     </Button>
                   </div>
                 </DialogContent>
@@ -170,49 +173,51 @@ export default function DeveloperPlatformPage() {
             </div>
 
             {keys.length === 0 ? (
-              <Card><CardContent className="text-center py-10 text-muted-foreground"><Key className="w-10 h-10 mx-auto mb-2 opacity-40" />No API keys yet</CardContent></Card>
+              <div className="rounded-2xl border bg-background p-10 text-center">
+                <Key className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                <p className="font-semibold text-sm">No API keys yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Create your first key to start integrating</p>
+              </div>
             ) : keys.map(k => (
-              <Card key={k.id}>
-                <CardContent className="pt-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold">{k.name}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${tierColors[k.tier]}`}>{k.tier}</span>
-                        {!k.isActive && <Badge variant="destructive" className="text-xs">Revoked</Badge>}
-                      </div>
-                      <code className="text-xs text-muted-foreground">{k.keyPrefix}••••••••••••••••••••••••••••••••••••••</code>
-                      <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>{k.requestCount}/{k.dailyLimit} req today</span>
-                        {k.lastUsedAt && <span>Last used {new Date(k.lastUsedAt).toLocaleDateString()}</span>}
-                        <span>Created {new Date(k.createdAt).toLocaleDateString()}</span>
-                      </div>
+              <div key={k.id} className="rounded-2xl border bg-background p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className="font-bold text-sm">{k.name}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${tierColors[k.tier]}`}>{k.tier}</span>
+                      {!k.isActive && <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold">Revoked</span>}
                     </div>
-                    {k.isActive && (
-                      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => revokeKeyMutation.mutate(k.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
+                    <code className="text-xs text-muted-foreground font-mono">{k.keyPrefix}{'•'.repeat(36)}</code>
+                    <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-muted-foreground">
+                      <span>{k.requestCount}/{k.dailyLimit} req today</span>
+                      {k.lastUsedAt && <span>Last used {new Date(k.lastUsedAt).toLocaleDateString()}</span>}
+                      <span>Created {new Date(k.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div className="mt-2.5 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${Math.min((k.requestCount / k.dailyLimit) * 100, 100)}%` }} />
+                    </div>
                   </div>
-                  <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min((k.requestCount / k.dailyLimit) * 100, 100)}%` }} />
-                  </div>
-                </CardContent>
-              </Card>
+                  {k.isActive && (
+                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 h-8 w-8 p-0" onClick={() => revokeKeyMutation.mutate(k.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             ))}
           </TabsContent>
 
           {/* WEBHOOKS */}
-          <TabsContent value="webhooks" className="space-y-4">
+          <TabsContent value="webhooks" className="mt-4 space-y-3">
             <div className="flex justify-end">
               <Dialog open={isWebhookOpen} onOpenChange={setIsWebhookOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm"><PlusCircle className="w-4 h-4 mr-2" />Register Webhook</Button>
+                  <Button size="sm" className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"><PlusCircle className="w-3.5 h-3.5 mr-1.5" />Register Webhook</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader><DialogTitle>Register Webhook Endpoint</DialogTitle></DialogHeader>
                   <div className="space-y-4">
-                    <div><Label>Endpoint URL</Label><Input value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} placeholder="https://your-app.com/webhook" /></div>
+                    <div><Label>Endpoint URL</Label><Input value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} placeholder="https://your-app.com/webhook" className="mt-1" /></div>
                     <div>
                       <Label>Events (select multiple)</Label>
                       <div className="grid grid-cols-2 gap-2 mt-2">
@@ -227,7 +232,7 @@ export default function DeveloperPlatformPage() {
                     </div>
                     <Button className="w-full" onClick={() => createWebhookMutation.mutate()}
                       disabled={!webhookUrl || webhookEvents.length === 0 || createWebhookMutation.isPending}>
-                      {createWebhookMutation.isPending ? "Registering..." : "Register Webhook"}
+                      {createWebhookMutation.isPending ? "Registering…" : "Register Webhook"}
                     </Button>
                   </div>
                 </DialogContent>
@@ -235,74 +240,82 @@ export default function DeveloperPlatformPage() {
             </div>
 
             {webhooks.length === 0 ? (
-              <Card><CardContent className="text-center py-10 text-muted-foreground"><Webhook className="w-10 h-10 mx-auto mb-2 opacity-40" />No webhooks yet</CardContent></Card>
+              <div className="rounded-2xl border bg-background p-10 text-center">
+                <Webhook className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                <p className="font-semibold text-sm">No webhooks yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Register an endpoint to start receiving events</p>
+              </div>
             ) : webhooks.map(wh => (
-              <Card key={wh.id}>
-                <CardContent className="pt-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Globe className="w-4 h-4 text-muted-foreground" />
-                        <code className="text-sm font-medium">{wh.url}</code>
-                        {!wh.isActive && <Badge variant="destructive" className="text-xs">Disabled</Badge>}
-                        {wh.failureCount > 0 && <Badge variant="secondary" className="text-xs text-orange-600">{wh.failureCount} failures</Badge>}
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {wh.events.map(ev => <Badge key={ev} variant="outline" className="text-xs">{ev}</Badge>)}
-                      </div>
-                      {wh.lastDeliveredAt && <p className="text-xs text-muted-foreground mt-1">Last delivered {new Date(wh.lastDeliveredAt).toLocaleString()}</p>}
+              <div key={wh.id} className="rounded-2xl border bg-background p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                      <code className="text-sm font-medium">{wh.url}</code>
+                      {!wh.isActive && <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold">Disabled</span>}
+                      {wh.failureCount > 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-semibold">{wh.failureCount} failures</span>}
                     </div>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="outline" onClick={() => testWebhookMutation.mutate(wh.id)}>Test</Button>
-                      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteWebhookMutation.mutate(wh.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    <div className="flex flex-wrap gap-1 mb-1.5">
+                      {wh.events.map(ev => <span key={ev} className="text-xs px-2 py-0.5 rounded-full border font-mono">{ev}</span>)}
                     </div>
+                    {wh.lastDeliveredAt && <p className="text-xs text-muted-foreground">Last delivered {new Date(wh.lastDeliveredAt).toLocaleString()}</p>}
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex gap-1.5">
+                    <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => testWebhookMutation.mutate(wh.id)}>Test</Button>
+                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 h-8 w-8 p-0" onClick={() => deleteWebhookMutation.mutate(wh.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             ))}
           </TabsContent>
 
           {/* API DOCS */}
-          <TabsContent value="docs" className="space-y-4">
-            <Card>
-              <CardHeader><CardTitle>Public v1 API Reference</CardTitle><CardDescription>Base URL: your-domain.com</CardDescription></CardHeader>
-              <CardContent className="space-y-4">
+          <TabsContent value="docs" className="mt-4">
+            <div className="rounded-2xl border bg-background shadow-sm overflow-hidden">
+              <div className="h-1 bg-indigo-600" />
+              <div className="p-5 space-y-4">
+                <div className="mb-1">
+                  <h2 className="font-black text-sm">Public v1 API Reference</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Base URL: your-domain.com · Auth: <code className="bg-muted px-1 rounded">Authorization: Bearer &lt;API_KEY&gt;</code></p>
+                </div>
                 {[
-                  { method: "POST", path: "/v1/crisis/report", desc: "Submit a crisis report", auth: "API Key", body: `{"message":"Accident on highway","location":"NH-44 km 120","type":"road_accident","severity":"high"}` },
-                  { method: "GET",  path: "/v1/crisis/alerts?limit=20", desc: "Fetch recent crisis alerts", auth: "API Key", body: null },
-                  { method: "GET",  path: "/v1/crisis/:id", desc: "Get incident details by ID", auth: "API Key", body: null },
+                  { method: "POST", path: "/v1/crisis/report", desc: "Submit a crisis report", body: `{"message":"Accident on highway","location":"NH-44 km 120","type":"road_accident","severity":"high"}` },
+                  { method: "GET",  path: "/v1/crisis/alerts?limit=20", desc: "Fetch recent crisis alerts", body: null },
+                  { method: "GET",  path: "/v1/crisis/:id", desc: "Get incident details by ID", body: null },
                 ].map(ep => (
-                  <div key={ep.path} className="border rounded-lg p-3 space-y-2">
+                  <div key={ep.path} className="rounded-xl border p-3 space-y-2">
                     <div className="flex items-center gap-2">
-                      <Badge className={ep.method === "POST" ? "bg-green-600" : "bg-blue-600"}>{ep.method}</Badge>
+                      <span className={`text-xs px-2 py-0.5 rounded font-bold text-white ${ep.method === "POST" ? "bg-green-600" : "bg-blue-600"}`}>{ep.method}</span>
                       <code className="text-sm font-mono">{ep.path}</code>
                     </div>
                     <p className="text-sm text-muted-foreground">{ep.desc}</p>
-                    <p className="text-xs text-muted-foreground">Auth: <code className="bg-muted px-1 rounded">Authorization: Bearer {"<"}API_KEY{">"}</code></p>
-                    {ep.body && <pre className="bg-muted rounded p-2 text-xs overflow-x-auto">{ep.body}</pre>}
+                    {ep.body && <pre className="bg-muted rounded-lg p-2 text-xs overflow-x-auto">{ep.body}</pre>}
                   </div>
                 ))}
-                <div className="border rounded-lg p-3 space-y-2 bg-muted/30">
-                  <p className="text-sm font-semibold">Rate Limits</p>
-                  <div className="grid grid-cols-3 gap-2 text-sm">
-                    <div className="text-center"><p className="font-medium">Free</p><p className="text-muted-foreground">100 req/day</p></div>
-                    <div className="text-center"><p className="font-medium">Paid</p><p className="text-muted-foreground">10,000 req/day</p></div>
-                    <div className="text-center"><p className="font-medium">Enterprise</p><p className="text-muted-foreground">1M req/day</p></div>
+                <div className="rounded-xl border bg-muted/30 p-3">
+                  <p className="text-xs font-bold mb-2">Rate Limits</p>
+                  <div className="grid grid-cols-3 gap-2 text-xs text-center">
+                    {[["Free", "100 req/day"], ["Paid", "10,000 req/day"], ["Enterprise", "1M req/day"]].map(([tier, limit]) => (
+                      <div key={tier} className="rounded-lg bg-background border p-2">
+                        <p className="font-bold">{tier}</p>
+                        <p className="text-muted-foreground">{limit}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="border rounded-lg p-3 space-y-2 bg-muted/30">
-                  <p className="text-sm font-semibold">Webhook Signature Verification</p>
-                  <pre className="text-xs bg-muted rounded p-2">{`// Verify X-CrisisConnect-Signature header
+                <div className="rounded-xl border bg-muted/30 p-3">
+                  <p className="text-xs font-bold mb-2">Webhook Signature Verification</p>
+                  <pre className="text-xs bg-muted rounded-lg p-2 overflow-x-auto">{`// Verify X-CrisisConnect-Signature header
 const sig = crypto
   .createHmac('sha256', webhookSecret)
   .update(rawBody)
   .digest('hex');
 if ('sha256=' + sig !== header) throw new Error('Invalid signature');`}</pre>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

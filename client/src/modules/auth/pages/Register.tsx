@@ -67,13 +67,11 @@ export default function Register() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/">
-            <a className="inline-flex items-center gap-2 mb-6">
-              <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-black text-xl">CrisisConnect</span>
-            </a>
+          <Link href="/" className="inline-flex items-center gap-2 mb-6">
+            <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-black text-xl">CrisisConnect</span>
           </Link>
           <h1 className="text-2xl font-black">Create your account</h1>
           <p className="text-muted-foreground text-sm mt-1">Join the emergency response community</p>
