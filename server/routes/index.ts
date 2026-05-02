@@ -50,7 +50,11 @@ import { registerAdvancedAnalyticsRoutes } from "./analytics-advanced.routes";
 import { registerAdminCommandRoutes } from "./admin-command.routes";
 import { registerIoTRoutes, setBroadcastFunction as setIoTBroadcast } from "./iot.routes";
 import { registerDeviceSecurityRoutes } from "./device-security.routes";
+import { registerOrganizationRoutes } from "./organizations.routes";
+import { registerSMSRoutes } from "./sms.routes";
+import { registerComplianceRoutes } from "./compliance.routes";
 import { deviceFingerprintService } from "../modules/security/device-fingerprint.service";
+import { eventBus } from "../modules/events/event-bus";
 import { wsRateLimiter } from "../middleware/wsRateLimiting";
 import { config } from "../config";
 import { encryptWebSocketMessage, shouldEncryptMessage, type SecureWebSocketMessage } from "../shared/websocket/ws-encryption";
@@ -334,6 +338,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerAdminCommandRoutes(app);
   registerIoTRoutes(app);
   registerDeviceSecurityRoutes(app);
+  registerOrganizationRoutes(app);
+  registerSMSRoutes(app);
+  registerComplianceRoutes(app);
+
+  // Event bus: wire cross-service listeners
+  eventBus.subscribe("CRISIS_CREATED", (payload) => {
+    broadcastToAll({ type: "NEW_CRISIS", ...payload });
+  });
+  eventBus.subscribe("CRISIS_UPDATED", (payload) => {
+    broadcastToAll({ type: "CRISIS_UPDATED", ...payload });
+  });
+  eventBus.subscribe("SOS_ACTIVATED", (payload) => {
+    broadcastToAll({ type: "SOS_ACTIVATED", ...payload });
+  });
+  eventBus.subscribe("ALERT_BROADCAST", (payload) => {
+    broadcastToAll({ type: "ALERT_BROADCAST", ...payload });
+  });
+
+  // EventBus health endpoint
+  app.get("/api/events/stats", (req, res) => {
+    res.json({ listeners: eventBus.getStats(), timestamp: new Date().toISOString() });
+  });
 
   // Register tasks routes
   app.use("/api/tasks", tasksRouter);

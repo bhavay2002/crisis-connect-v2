@@ -32,6 +32,8 @@ export const userRoleEnum = pgEnum("user_role", [
   "ngo",
   "admin",
   "government",
+  "authority",
+  "super_admin",
 ]);
 
 // Users table
@@ -442,11 +444,9 @@ export const sosStatusEnum = pgEnum("sos_status", [
 
 export const sosAlerts = pgTable("sos_alerts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id")
-    .notNull()
-    .references(() => users.id),
-  emergencyType: disasterTypeEnum("emergency_type").notNull(),
-  severity: severityEnum("severity").notNull(),
+  userId: varchar("user_id").references(() => users.id),
+  emergencyType: disasterTypeEnum("emergency_type").notNull().default("other"),
+  severity: severityEnum("severity").notNull().default("high"),
   status: sosStatusEnum("status").notNull().default("active"),
   location: text("location").notNull(),
   latitude: text("latitude"),
@@ -748,6 +748,75 @@ export const deviceFingerprints = pgTable("device_fingerprints", {
 ]);
 
 export type DeviceFingerprint = typeof deviceFingerprints.$inferSelect;
+
+// ─── §9: Organizations & Multi-Tenancy ───────────────────────────────────────
+
+export const orgTypeEnum = pgEnum("org_type", ["ngo", "government", "private", "military", "un_agency"]);
+
+export const organizations = pgTable("organizations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  type: orgTypeEnum("type").notNull().default("ngo"),
+  description: text("description"),
+  contactEmail: varchar("contact_email"),
+  contactPhone: varchar("contact_phone"),
+  website: varchar("website"),
+  region: varchar("region"),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_orgs_type").on(table.type),
+  index("idx_orgs_region").on(table.region),
+]);
+
+export const orgMemberRoleEnum = pgEnum("org_member_role", ["owner", "admin", "member", "observer"]);
+
+export const organizationMembers = pgTable("organization_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orgId: varchar("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: orgMemberRoleEnum("role").default("member").notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_org_member_unique").on(table.orgId, table.userId),
+  index("idx_org_member_org").on(table.orgId),
+  index("idx_org_member_user").on(table.userId),
+]);
+
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = typeof organizations.$inferInsert;
+export type OrganizationMember = typeof organizationMembers.$inferSelect;
+
+// ─── §12: GDPR / Compliance ───────────────────────────────────────────────────
+
+export const consentTypeEnum = pgEnum("consent_type", [
+  "data_processing",
+  "location_tracking",
+  "analytics",
+  "marketing",
+  "third_party_sharing",
+]);
+
+export const userConsents = pgTable("user_consents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  consentType: consentTypeEnum("consent_type").notNull(),
+  granted: boolean("granted").notNull(),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  grantedAt: timestamp("granted_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at"),
+  version: varchar("version").default("1.0").notNull(),
+}, (table) => [
+  index("idx_consents_user").on(table.userId),
+  index("idx_consents_type").on(table.consentType),
+]);
+
+export type UserConsent = typeof userConsents.$inferSelect;
+export type InsertUserConsent = typeof userConsents.$inferInsert;
 
 // ─── Production Elite: State Transition Audit Log ────────────────────────────
 

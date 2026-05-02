@@ -50,8 +50,12 @@ import {
   Wifi,
   WifiOff,
   Brain,
+  Building2,
+  ShieldCheck,
+  WifiOff as OfflineIcon,
 } from "lucide-react";
 import { useLowBandwidth } from "@/context/LowBandwidthContext";
+import { useOfflineSync } from "@/context/OfflineSyncContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -78,8 +82,10 @@ const menuItems = [
   { title: "Reputation", url: "/reputation", icon: Award, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
   { title: "My Reports", url: "/my-reports", icon: FileText, roles: ["citizen", "volunteer", "ngo", "admin"] },
   { title: "Response Teams", url: "/teams", icon: Users, roles: ["volunteer", "ngo", "admin"] },
-  { title: "Messages", url: "/chat", icon: MessageSquare, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
-  { title: "AI Audit", url: "/explainability", icon: Brain, roles: ["admin", "government"] },
+  { title: "Messages", url: "/chat", icon: MessageSquare, roles: ["citizen", "volunteer", "ngo", "admin", "government", "authority", "super_admin"] },
+  { title: "AI Audit", url: "/explainability", icon: Brain, roles: ["admin", "government", "authority", "super_admin"] },
+  { title: "Organizations", url: "/organizations", icon: Building2, roles: ["ngo", "admin", "government", "authority", "super_admin"] },
+  { title: "Privacy & Data", url: "/compliance", icon: ShieldCheck, roles: ["citizen", "volunteer", "ngo", "admin", "government", "authority", "super_admin"] },
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -88,6 +94,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [notifications] = useState(3);
   const { user } = useAuth();
   const { isLowBandwidth, toggle: toggleBandwidth } = useLowBandwidth();
+  const { isOnline, queueLength } = useOfflineSync();
 
   const { data: reputation } = useQuery<{ trustScore: number }>({
     queryKey: ["/api/reputation/me"],
@@ -97,6 +104,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const filteredMenuItems = menuItems.filter((item) =>
     item.roles.includes(user?.role || "citizen")
   );
+
+  const allRoles = ["citizen", "volunteer", "ngo", "admin", "government", "authority", "super_admin"] as const;
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -147,6 +156,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              {!isOnline && (
+                <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-1">
+                  <OfflineIcon className="w-3 h-3" />
+                  <span>Offline{queueLength > 0 ? ` (${queueLength} queued)` : ""}</span>
+                </div>
+              )}
+
               <Button
                 variant="ghost"
                 size="icon"

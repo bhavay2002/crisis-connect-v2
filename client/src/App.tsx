@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary";
 import { LowBandwidthProvider } from "@/context/LowBandwidthContext";
+import { OfflineSyncProvider } from "@/context/OfflineSyncContext";
 
 // Pages - Organized by feature modules
 import Landing from "@/modules/auth/pages/Landing";
@@ -46,6 +47,8 @@ import NotificationPreferences from "@/modules/user/pages/NotificationPreference
 import NotFound from "@/pages/not-found";
 import ChatPage from "@/modules/chat/pages/ChatPage";
 import ExplainabilityPage from "@/modules/analytics/pages/ExplainabilityPage";
+import OrganizationsPage from "@/modules/admin/pages/OrganizationsPage";
+import CompliancePage from "@/modules/user/pages/CompliancePage";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -109,6 +112,8 @@ function Router() {
           <Route path="/teams" component={ResponseTeams} />
           <Route path="/chat" component={ChatPage} />
           <Route path="/explainability" component={ExplainabilityPage} />
+          <Route path="/organizations" component={OrganizationsPage} />
+          <Route path="/compliance" component={CompliancePage} />
         </>
       )}
     </Switch>
@@ -120,10 +125,12 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <LowBandwidthProvider>
-          <TooltipProvider>
-            <Router />
-            <Toaster />
-          </TooltipProvider>
+          <OfflineSyncProvider>
+            <TooltipProvider>
+              <Router />
+              <Toaster />
+            </TooltipProvider>
+          </OfflineSyncProvider>
         </LowBandwidthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

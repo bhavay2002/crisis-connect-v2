@@ -240,6 +240,64 @@ Preferred communication style: Simple, everyday language.
   - Funnel tab: color-coded horizontal bars + recharts BarChart layout="vertical"
   - Cohort tab: PieChart for cohort distribution, BarChart for reports-by-role, role grid
 
+## Spec §9-12 Features (v5.0 — Enterprise Backbone Layer)
+
+### §9 — Multi-Role Enterprise System
+- **Extended roles**: `user_role` enum now includes `authority` and `super_admin` in addition to `citizen`, `volunteer`, `ngo`, `admin`, `government`
+- **Policy-Based RBAC**: `server/config/permissions.ts` — 35 fine-grained actions (incident:*, sos:*, report:*, resource:*, aid:*, user:*, org:*, analytics:*, broadcast:*, trust:*, ai:*, chat:*, system:manage, data:*)
+  - `server/middleware/authorize.ts` — `authorize(action)` middleware uses permissions map, returns 403 with action+role in body
+  - All new routes use `authorize()` instead of hardcoded role arrays
+- **Organizations**: `organizations` + `organization_members` tables (Drizzle schema + migrated)
+  - `GET /api/organizations` — list all active orgs (requires `org:view`)
+  - `POST /api/organizations` — create org, auto-adds creator as `owner` member, fires `ORG_CREATED` event
+  - `GET /api/organizations/:id` — org detail with member list (inner join users)
+  - `PATCH /api/organizations/:id` — update name, verification, active status (requires `org:manage`)
+  - `POST /api/organizations/:id/members` — add member with role (requires `org:manage`)
+  - `DELETE /api/organizations/:id/members/:userId` — remove member
+  - `GET /api/organizations/me/memberships` — current user's org memberships
+  - `GET /api/organizations/:id/analytics` — tenant-scoped analytics (member count, role breakdown)
+- **Frontend**: `OrganizationsPage.tsx` at `/organizations` — org cards with type badges, verification icons, create dialog, my memberships panel, 4-stat header
+- **roleAuth.ts**: `requireAdmin` now includes `authority` + `super_admin`; added `requireSuperAdmin`, `requireAuthority`
+
+### §10 — Event-Driven Architecture (Internal Event Bus)
+- **Typed Event Bus**: `server/modules/events/event-bus.ts` — singleton `CrisisEventBus` extends EventEmitter
+  - 9 event types: `CRISIS_CREATED`, `CRISIS_UPDATED`, `SOS_ACTIVATED`, `SOS_RESOLVED`, `INCIDENT_MERGED`, `ALERT_BROADCAST`, `USER_REGISTERED`, `ORG_CREATED`, `IOT_EVENT`
+  - Interface mirrors Kafka producer/consumer API (`publish()` / `subscribe()`)
+  - Cross-service wiring: 4 active bus → WebSocket broadcast bridges registered at startup
+  - `GET /api/events/stats` — returns listener counts per event type
+- **Wired events**: `ORG_CREATED` emitted on org creation; `SOS_ACTIVATED` fired from SMS webhook
+
+### §11 — Offline-First & Resilience
+- **SMS Webhook (Twilio-compatible)**: `POST /api/sms/webhook` (form-encoded, Twilio format)
+  - Parses SMS commands: HELP, SOS, FIRE, FLOOD, MEDICAL, ACCIDENT, EARTHQUAKE, STORM, GAS, LANDSLIDE
+  - Maps each to `emergencyType` + `severity` → creates SOS alert as anonymous user
+  - Responds with TwiML `<Message>` confirmation + short SOS ID
+  - `POST /api/sms/status` — Twilio delivery status callback (dev logging)
+  - `POST /api/sms/simulate` — dev-only endpoint to test SMS flow
+- **Schema fix**: `sos_alerts.user_id` made nullable to support anonymous (SMS/offline) SOS
+- **Frontend Offline Queue**: `client/src/context/OfflineSyncContext.tsx`
+  - Wraps entire app (inside `OfflineSyncProvider`)
+  - Detects `navigator.onLine` + window `online`/`offline` events
+  - `queueSOS(data)` — persists to `localStorage` when offline with UUID + timestamp
+  - `flushQueue()` — on reconnect, sends all pending SOS with auth token; retries up to 5 times
+  - `useOfflineSync()` — exposes `{ isOnline, queueLength, isSyncing, lastSyncAt, queueSOS, flushQueue }`
+  - Dashboard header shows amber "Offline (N queued)" pill when offline
+
+### §12 — Security & Compliance (GDPR)
+- **user_consents table**: `userId`, `consentType` (enum: data_processing, location_tracking, analytics, marketing, third_party_sharing), `granted`, `ipAddress`, `userAgent`, `grantedAt`, `revokedAt`, `version`
+- **GDPR Endpoints**:
+  - `GET /api/compliance/me/export` — full data export: profile, reports, SOS, resource requests, consents (JSON download)
+  - `DELETE /api/compliance/me/account` — anonymizes reports/SOS (nulls userId), hard-deletes user; requires `confirm: "DELETE_MY_ACCOUNT"` in body
+  - `POST /api/compliance/me/consent` — records consent with IP + UA + version
+  - `GET /api/compliance/me/consents` — consent history ordered by timestamp
+  - `GET /api/compliance/data-retention` — full retention policy (7 rules, 6 user rights, legal basis per data type)
+  - `GET /api/compliance/audit-trail` — paginated `incident_logs` with optional `userId` filter
+- **Frontend**: `CompliancePage.tsx` at `/compliance` — "Privacy & Data" nav item visible to all roles
+  - **Consents tab**: 5 consent toggles with grant/revoke, consent history list
+  - **Data Export tab**: 5 data categories listed, JSON download button
+  - **Retention tab**: sortable retention rules table, user rights badges
+  - **Delete tab**: double-confirmation with typed `DELETE_MY_ACCOUNT` string
+
 ## External Dependencies
 -   **Database**: PostgreSQL via Neon serverless.
 -   **AI Service**: Replit AI Integrations (GPT-4o-mini) with rule-based fallback.
