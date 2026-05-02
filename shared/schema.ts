@@ -834,3 +834,91 @@ export const incidentLogs = pgTable("incident_logs", {
   index("idx_incident_logs_entity_id").on(table.entityId),
   index("idx_incident_logs_timestamp").on(table.timestamp),
 ]);
+
+// ─── §13: Integration Ecosystem ───────────────────────────────────────────────
+
+export const weatherAlertLevelEnum = pgEnum("weather_alert_level", ["none", "watch", "warning", "emergency"]);
+
+export const weatherData = pgTable("weather_data", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  region: varchar("region").notNull(),
+  latitude: text("latitude").notNull(),
+  longitude: text("longitude").notNull(),
+  temperature: text("temperature"),
+  rainfall: text("rainfall"),
+  windSpeed: text("wind_speed"),
+  humidity: text("humidity"),
+  weatherCode: integer("weather_code"),
+  alertLevel: weatherAlertLevelEnum("alert_level").default("none").notNull(),
+  riskScore: integer("risk_score").default(0).notNull(),
+  rawData: jsonb("raw_data"),
+  fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_weather_region").on(table.region),
+  index("idx_weather_fetched").on(table.fetchedAt),
+]);
+
+export type WeatherData = typeof weatherData.$inferSelect;
+export type InsertWeatherData = typeof weatherData.$inferInsert;
+
+// ─── §14: Developer Platform ──────────────────────────────────────────────────
+
+export const apiKeyTierEnum = pgEnum("api_key_tier", ["free", "paid", "enterprise"]);
+
+export const apiKeys = pgTable("api_keys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  keyHash: varchar("key_hash").notNull(),
+  keyPrefix: varchar("key_prefix", { length: 12 }).notNull(),
+  tier: apiKeyTierEnum("tier").default("free").notNull(),
+  dailyLimit: integer("daily_limit").default(100).notNull(),
+  requestCount: integer("request_count").default(0).notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+}, (table) => [
+  uniqueIndex("idx_api_keys_hash").on(table.keyHash),
+  index("idx_api_keys_user").on(table.userId),
+]);
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type InsertApiKey = typeof apiKeys.$inferInsert;
+
+export const webhookEventEnum = pgEnum("webhook_event", [
+  "crisis.created", "crisis.updated", "crisis.resolved",
+  "sos.created", "sos.resolved", "alert.broadcast",
+]);
+
+export const webhookSubscriptions = pgTable("webhook_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  events: text("events").array().notNull(),
+  secret: varchar("secret").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  failureCount: integer("failure_count").default(0).notNull(),
+  lastDeliveredAt: timestamp("last_delivered_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_webhooks_user").on(table.userId),
+]);
+
+export const webhookDeliveries = pgTable("webhook_deliveries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  subscriptionId: varchar("subscription_id").notNull().references(() => webhookSubscriptions.id, { onDelete: "cascade" }),
+  event: varchar("event").notNull(),
+  payload: jsonb("payload").notNull(),
+  statusCode: integer("status_code"),
+  attempts: integer("attempts").default(1).notNull(),
+  success: boolean("success").default(false).notNull(),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  deliveredAt: timestamp("delivered_at"),
+}, (table) => [
+  index("idx_webhook_deliveries_sub").on(table.subscriptionId),
+]);
+
+export type WebhookSubscription = typeof webhookSubscriptions.$inferSelect;
+export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;

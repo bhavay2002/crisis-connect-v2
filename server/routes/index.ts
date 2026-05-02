@@ -53,6 +53,10 @@ import { registerDeviceSecurityRoutes } from "./device-security.routes";
 import { registerOrganizationRoutes } from "./organizations.routes";
 import { registerSMSRoutes } from "./sms.routes";
 import { registerComplianceRoutes } from "./compliance.routes";
+import { registerIntegrationRoutes } from "./integration.routes";
+import { registerDeveloperPlatformRoutes } from "./developer-platform.routes";
+import { registerMonitoringRoutes } from "./monitoring.routes";
+import { registerChaosRoutes } from "./chaos.routes";
 import { deviceFingerprintService } from "../modules/security/device-fingerprint.service";
 import { eventBus } from "../modules/events/event-bus";
 import { wsRateLimiter } from "../middleware/wsRateLimiting";
@@ -341,6 +345,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerOrganizationRoutes(app);
   registerSMSRoutes(app);
   registerComplianceRoutes(app);
+  registerIntegrationRoutes(app);
+  registerDeveloperPlatformRoutes(app);
+  registerMonitoringRoutes(app);
+  registerChaosRoutes(app);
 
   // Event bus: wire cross-service listeners
   eventBus.subscribe("CRISIS_CREATED", (payload) => {

@@ -53,6 +53,8 @@ import {
   Building2,
   ShieldCheck,
   WifiOff as OfflineIcon,
+  Code,
+  Activity,
 } from "lucide-react";
 import { useLowBandwidth } from "@/context/LowBandwidthContext";
 import { useOfflineSync } from "@/context/OfflineSyncContext";
@@ -86,6 +88,8 @@ const menuItems = [
   { title: "AI Audit", url: "/explainability", icon: Brain, roles: ["admin", "government", "authority", "super_admin"] },
   { title: "Organizations", url: "/organizations", icon: Building2, roles: ["ngo", "admin", "government", "authority", "super_admin"] },
   { title: "Privacy & Data", url: "/compliance", icon: ShieldCheck, roles: ["citizen", "volunteer", "ngo", "admin", "government", "authority", "super_admin"] },
+  { title: "Developer Platform", url: "/developer", icon: Code, roles: ["admin", "government", "authority", "super_admin"] },
+  { title: "Monitoring", url: "/monitoring", icon: Activity, roles: ["admin", "government", "authority", "super_admin"] },
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {

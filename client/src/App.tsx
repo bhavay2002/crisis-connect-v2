@@ -49,6 +49,8 @@ import ChatPage from "@/modules/chat/pages/ChatPage";
 import ExplainabilityPage from "@/modules/analytics/pages/ExplainabilityPage";
 import OrganizationsPage from "@/modules/admin/pages/OrganizationsPage";
 import CompliancePage from "@/modules/user/pages/CompliancePage";
+import DeveloperPlatformPage from "@/modules/admin/pages/DeveloperPlatformPage";
+import MonitoringPage from "@/modules/admin/pages/MonitoringPage";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -114,6 +116,8 @@ function Router() {
           <Route path="/explainability" component={ExplainabilityPage} />
           <Route path="/organizations" component={OrganizationsPage} />
           <Route path="/compliance" component={CompliancePage} />
+          <Route path="/developer" component={DeveloperPlatformPage} />
+          <Route path="/monitoring" component={MonitoringPage} />
         </>
       )}
     </Switch>

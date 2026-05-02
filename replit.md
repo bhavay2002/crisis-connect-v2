@@ -298,6 +298,78 @@ Preferred communication style: Simple, everyday language.
   - **Retention tab**: sortable retention rules table, user rights badges
   - **Delete tab**: double-confirmation with typed `DELETE_MY_ACCOUNT` string
 
+## Spec §13-16 Features (v6.0 — Platform Ecosystem Maturity Layer)
+
+### §13 — Integration Ecosystem
+- **Integration Gateway pattern**: all external API calls go through `server/modules/integration/` service layer with circuit breakers, retries, and fallbacks. Core services never call external APIs directly.
+- **Maps API (Nominatim — free, no key)**:
+  - `GET /api/integration/maps/reverse-geocode?lat&lng` — reverse geocodes coordinates via Nominatim (OSM). Results cached 24h in-memory; falls back to "lat, lng" string on error.
+  - `GET /api/integration/maps/distance?lat1&lng1&lat2&lng2` — Haversine distance + estimated road travel time
+  - `GET /api/integration/maps/cache` — geocode cache stats + circuit breaker status
+  - Circuit breaker: `maps-nominatim` (threshold=3, timeout=60s)
+- **Weather API (Open-Meteo — free, no key)**:
+  - `GET /api/integration/weather?lat&lng&region` — fetches current conditions, stores to `weather_data` table. Returns temp, rainfall, wind_speed, humidity, WMO weather code, computed `alertLevel` (none/watch/warning/emergency), `riskScore` (0–100)
+  - `GET /api/integration/weather/latest?region` — latest stored row for a region
+  - `GET /api/integration/weather/regions` — all stored weather snapshots
+  - WMO code map: 25 codes classified to 4 alert levels; risk score factors in precipitation and wind speed
+  - Circuit breaker: `weather-openmeteo`
+- **Hospital DB (Overpass API/OSM — free, no key)**:
+  - `GET /api/integration/hospitals/nearby?lat&lng&radius` — finds hospitals within radius km via Overpass API, returns sorted by distance with name, address, phone, website, emergency flag, availability (deterministic from OSM node ID)
+  - Falls back to a single static "District General Hospital" entry on error
+  - Circuit breaker: `hospitals-overpass`
+- **Circuit Breaker status**: `GET /api/integration/status` — all circuit breaker states
+- **Resilience modules** (used by all integration services):
+  - `server/modules/resilience/circuit-breaker.ts` — `CircuitBreaker` class with CLOSED/OPEN/HALF_OPEN states, configurable failure threshold, timeout, success threshold. `getCircuitBreaker(name)` singleton factory.
+  - `server/modules/resilience/retry.ts` — `withRetry(fn, opts)` with exponential backoff + jitter, max delay cap, `onRetry` callback
+
+### §14 — Developer Platform
+- **API Keys** (`api_keys` table — migrated):
+  - `POST /api/developer/keys` — generates `cc_` prefixed 48-char key, stores SHA-256 hash only (plain key shown once). Supports `free` (100/day), `paid` (10k/day), `enterprise` (1M/day) tiers. Max 10 keys per account.
+  - `GET /api/developer/keys` — lists keys (prefix only, no hash)
+  - `DELETE /api/developer/keys/:id` — revokes key (sets `isActive=false`)
+  - `POST /api/developer/keys/:id/reset` — resets daily request count
+  - Rate limit headers on every v1 response: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Tier`
+- **`server/middleware/apiKeyAuth.ts`** — extracts key from `Authorization: Bearer` or `X-Api-Key`, hashes and looks up, checks `isActive` + expiry + daily limit, increments `requestCount`, sets rate limit headers
+- **Public v1 API** (API key authenticated):
+  - `POST /v1/crisis/report` — submit crisis report via API key; validates enum types, inserts to `disaster_reports`, fires `crisis.created` webhook event
+  - `GET /v1/crisis/alerts?limit` — paginated recent alerts (max 100)
+  - `GET /v1/crisis/:id` — incident detail
+- **Webhooks** (`webhook_subscriptions` + `webhook_deliveries` tables — migrated):
+  - `POST /api/developer/webhooks` — register endpoint URL + event list, generates `whsec_` HMAC secret
+  - `GET /api/developer/webhooks` — list subscriptions
+  - `DELETE /api/developer/webhooks/:id` — delete
+  - `GET /api/developer/webhooks/:id/deliveries` — delivery history (attempts, status codes, errors)
+  - `POST /api/developer/webhooks/:id/test` — dispatch a test `crisis.created` event
+  - `server/modules/webhooks/webhook-dispatcher.ts` — `dispatchWebhookEvent(event, data)` fan-out with HMAC-SHA256 signature (`X-CrisisConnect-Signature`), fire-and-forget retries (4 attempts, 1s base delay), delivery log, auto-disables subscription after 10+ failures
+- **Frontend**: `DeveloperPlatformPage.tsx` at `/developer` — 3 tabs: API Keys (key creation dialog, usage bar), Webhooks (event multi-select, test button), API Docs (code samples, signature verification snippet, rate limit table)
+
+### §15 — Monitoring & Observability
+- **Prometheus-format metrics**: `GET /api/metrics` — returns `text/plain` with `http_requests_total{method,route,status}`, `http_errors_total`, `http_response_time_ms` (histogram with buckets 50/100/250/500/1000/+Inf), `process_uptime_seconds`, `active_connections`, `requests_per_minute`
+- **`server/middleware/metricsMiddleware.ts`** — records every request into `MetricsStore` singleton on `res.finish`; wired globally in `server/index.ts`
+- **`server/modules/monitoring/metrics-store.ts`** — `MetricsStore` singleton: counters, histograms, P95 calculation, recent-window request rate
+- **`GET /api/health/detailed`** — enhanced health check: DB ping, memory usage %, circuit breaker states → returns `ok`/`degraded`/`down` per service + overall status
+- **`GET /api/monitoring/stats`** — platform stats (totalReports, totalSOS, totalUsers) + runtime metrics + circuit breaker list
+- **`GET /api/monitoring/alerts`** — threshold-based alert list: error rate >5%/10%, avg response >1000ms/2000ms, open circuit breakers
+- **Frontend**: `MonitoringPage.tsx` at `/monitoring` — 8-card KPI grid, 4-tab layout (Health checks with per-service status badges, Circuit Breakers, Chaos Engineering, Raw Prometheus metrics viewer)
+
+### §16 — Testing & Reliability (Chaos Engineering)
+- **`GET /api/dev/chaos/experiments`** — lists 4 available experiments with descriptions
+- **`POST /api/dev/chaos/start`** — starts an experiment for up to 2 minutes: `latency` (2–5s delay), `error_rate` (20% → 500), `memory` (~50MB allocation), `db_slow` (log events)
+- **`POST /api/dev/chaos/stop`** — stops all or a specific experiment
+- **`GET /api/dev/chaos/test`** — endpoint that respects active experiments (delays, random 500s)
+- All chaos routes are **dev-only** (`NODE_ENV !== production` gate)
+- Chaos experiments shown in Monitoring page with real-time active status + "Run 30s" / "Stop All" buttons
+
+### New Tables (all migrated via `npm run db:push`)
+- `weather_data` — region, lat/lng, temp, rainfall, wind_speed, humidity, weather_code, alert_level enum, risk_score, raw_data JSONB, fetched_at
+- `api_keys` — user_id FK, name, key_hash (unique), key_prefix, tier enum, daily_limit, request_count, last_used_at, is_active, expires_at
+- `webhook_subscriptions` — user_id FK, url, events TEXT[], secret, is_active, failure_count, last_delivered_at
+- `webhook_deliveries` — subscription_id FK, event, payload JSONB, status_code, attempts, success, error, delivered_at
+
+### Nav additions (admin/authority/super_admin roles)
+- "Developer Platform" at `/developer` — Code icon
+- "Monitoring" at `/monitoring` — Activity icon
+
 ## External Dependencies
 -   **Database**: PostgreSQL via Neon serverless.
 -   **AI Service**: Replit AI Integrations (GPT-4o-mini) with rule-based fallback.
