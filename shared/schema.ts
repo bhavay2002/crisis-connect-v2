@@ -922,3 +922,90 @@ export const webhookDeliveries = pgTable("webhook_deliveries", {
 
 export type WebhookSubscription = typeof webhookSubscriptions.$inferSelect;
 export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
+
+// ─── §17: Advanced Differentiators ────────────────────────────────────────────
+
+// §17.2 Simulation Engine
+export const simulationStatusEnum = pgEnum("simulation_status", ["pending", "running", "completed", "failed"]);
+export const simulationScenarioEnum = pgEnum("simulation_scenario", ["flood", "earthquake", "storm", "mass_accident", "epidemic", "coordinated_attack", "infrastructure_failure"]);
+
+export const simulationRuns = pgTable("simulation_runs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  scenario: simulationScenarioEnum("scenario").notNull(),
+  location: varchar("location").notNull(),
+  intensity: varchar("intensity").notNull().default("medium"),
+  eventCount: integer("event_count").notNull().default(0),
+  status: simulationStatusEnum("status").default("pending").notNull(),
+  metricsData: jsonb("metrics_data"),
+  injectedEventIds: text("injected_event_ids").array().default(sql`ARRAY[]::text[]`),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  initiatedBy: varchar("initiated_by").references(() => users.id),
+}, (table) => [
+  index("idx_simulation_runs_status").on(table.status),
+]);
+
+export type SimulationRun = typeof simulationRuns.$inferSelect;
+
+// §17.3 Digital Twin
+export const cityNodeTypeEnum = pgEnum("city_node_type", ["hospital", "fire_station", "police", "shelter", "road_junction", "bridge", "zone", "landmark"]);
+
+export const cityNodes = pgTable("city_nodes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cityId: varchar("city_id").notNull().default("default"),
+  name: varchar("name").notNull(),
+  type: cityNodeTypeEnum("type").notNull(),
+  latitude: text("latitude").notNull(),
+  longitude: text("longitude").notNull(),
+  riskScore: integer("risk_score").default(0).notNull(),
+  capacity: integer("capacity"),
+  metadata: jsonb("metadata"),
+  isActive: boolean("is_active").default(true).notNull(),
+}, (table) => [
+  index("idx_city_nodes_city").on(table.cityId),
+  index("idx_city_nodes_type").on(table.type),
+]);
+
+export const cityEdges = pgTable("city_edges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cityId: varchar("city_id").notNull().default("default"),
+  fromNodeId: varchar("from_node_id").notNull().references(() => cityNodes.id, { onDelete: "cascade" }),
+  toNodeId: varchar("to_node_id").notNull().references(() => cityNodes.id, { onDelete: "cascade" }),
+  distanceKm: text("distance_km").notNull(),
+  travelTimeMinutes: integer("travel_time_minutes").notNull(),
+  roadType: varchar("road_type").default("primary"),
+  congestionFactor: text("congestion_factor").default("1.0"),
+}, (table) => [
+  index("idx_city_edges_from").on(table.fromNodeId),
+  index("idx_city_edges_to").on(table.toNodeId),
+]);
+
+export type CityNode = typeof cityNodes.$inferSelect;
+export type CityEdge = typeof cityEdges.$inferSelect;
+
+// §17.4 AI Decision Override
+export const overrideStatusEnum = pgEnum("override_status", ["pending_review", "approved", "overridden", "auto_approved"]);
+
+export const aiOverrides = pgTable("ai_overrides", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentId: varchar("incident_id").notNull(),
+  incidentType: varchar("incident_type").notNull().default("disaster_report"),
+  originalDecision: jsonb("original_decision").notNull(),
+  overriddenDecision: jsonb("overridden_decision"),
+  aiConfidence: text("ai_confidence").notNull(),
+  aiUrgency: text("ai_urgency"),
+  requiresHumanReview: boolean("requires_human_review").default(false).notNull(),
+  status: overrideStatusEnum("status").default("pending_review").notNull(),
+  overriddenBy: varchar("overridden_by").references(() => users.id),
+  reason: text("reason"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at"),
+}, (table) => [
+  index("idx_ai_overrides_incident").on(table.incidentId),
+  index("idx_ai_overrides_status").on(table.status),
+  index("idx_ai_overrides_created").on(table.createdAt),
+]);
+
+export type AiOverride = typeof aiOverrides.$inferSelect;
+export type InsertAiOverride = typeof aiOverrides.$inferInsert;

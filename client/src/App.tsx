@@ -51,6 +51,10 @@ import OrganizationsPage from "@/modules/admin/pages/OrganizationsPage";
 import CompliancePage from "@/modules/user/pages/CompliancePage";
 import DeveloperPlatformPage from "@/modules/admin/pages/DeveloperPlatformPage";
 import MonitoringPage from "@/modules/admin/pages/MonitoringPage";
+import MultimodalPage from "@/modules/analytics/pages/MultimodalPage";
+import SimulationPage from "@/modules/admin/pages/SimulationPage";
+import DigitalTwinPage from "@/modules/admin/pages/DigitalTwinPage";
+import AIOverridePage from "@/modules/admin/pages/AIOverridePage";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -118,6 +122,10 @@ function Router() {
           <Route path="/compliance" component={CompliancePage} />
           <Route path="/developer" component={DeveloperPlatformPage} />
           <Route path="/monitoring" component={MonitoringPage} />
+          <Route path="/multimodal-ai" component={MultimodalPage} />
+          <Route path="/simulation" component={SimulationPage} />
+          <Route path="/digital-twin" component={DigitalTwinPage} />
+          <Route path="/ai-override" component={AIOverridePage} />
         </>
       )}
     </Switch>

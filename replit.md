@@ -370,6 +370,76 @@ Preferred communication style: Simple, everyday language.
 - "Developer Platform" at `/developer` — Code icon
 - "Monitoring" at `/monitoring` — Activity icon
 
+## Spec §17-18 Features (v7.0 — Top 1% Research + Industry Grade Layer)
+
+### §17.1 — Multimodal AI (Text + Voice + Image Fusion)
+- **Architecture**: Three-signal weighted fusion — Text (40%), Voice transcript (30%), Image URL (30%) → single crisis score
+- **`server/modules/ai/multimodal.service.ts`** — `analyzeMultimodal(input)` with GPT-4o vision + text. Falls back to keyword-based heuristic if OpenAI not configured. Returns: `crisisType`, `urgency` (0–1), `confidence` (0–1), `severity`, `explanation`, `fusionScores`, `fusedScore`, `requiresHumanReview`, `source`
+- **Human review triggers**: confidence < 0.7, urgency ≥ 0.85, or severity = critical
+- **Endpoints**:
+  - `POST /api/ai/multimodal-analyze` — analyze single report (text + voice + imageUrl + location)
+  - `POST /api/ai/multimodal-batch` — analyze up to 5 reports in one call
+  - `GET /api/ai/multimodal-info` — fusion weights + review triggers + model info
+- **Frontend**: `MultimodalPage.tsx` at `/multimodal-ai` (admin/authority/super_admin) — 3 signal input panels, fusion weight info cards, result display with score bars, signal breakdown grid, human review alert
+
+### §17.2 — Crisis Simulation Engine
+- **Architecture**: Synthetic event generator that injects real `disaster_reports` + `sos_alerts` rows tagged `[SIM]` into the live database. Fires `CRISIS_CREATED` EventBus events. Returns detailed performance metrics.
+- **`server/modules/simulation/simulation-engine.ts`** — `runSimulation(config)` supports 7 scenarios × 4 intensities (low/medium/high/extreme). Intensity multiplier scales event count (1×/2×/4×/8×). Events are jitter-distributed around a base coordinate.
+- **7 scenarios**: flood, earthquake, storm, mass_accident, epidemic, coordinated_attack, infrastructure_failure — each with distinct reportTypes array, defaultSeverity, estimatedAffected, and SOS injection ratio
+- **Metrics returned**: totalEventsInjected, reportsCreated, sosAlertsCreated, peakSeverity, estimatedAffected, responseTimeSimMs, queueBacklog, failureRate, scenarioScore (0–100)
+- **New table**: `simulation_runs` — scenario, location, intensity, eventCount, status enum, metricsData JSONB, injectedEventIds[], initiatedBy FK
+- **Endpoints**:
+  - `GET /api/simulation/scenarios` — all 7 scenarios with metadata
+  - `POST /api/simulation/run` — run simulation (admin/authority/super_admin, max 20 events)
+  - `GET /api/simulation/runs` — history (last 20)
+  - `GET /api/simulation/runs/:id` — single run detail
+- **Frontend**: `SimulationPage.tsx` at `/simulation` — scenario grid picker, location select, intensity selector, event count slider, metrics dashboard, run history list
+
+### §17.3 — Digital Twin (City-Level Graph Model)
+- **Architecture**: Bidirectional weighted graph of city nodes with Dijkstra-style BFS propagation. Crisis at node A → propagate across edges up to N hops (N = severity level). Finds nearest responders via Haversine distance + graph travel time.
+- **`server/modules/digital-twin/digital-twin.service.ts`** — `simulateCrisisPropagation(impact, cityId)` + `seedDefaultCityModel(cityId)` 
+- **Mumbai-inspired seed model**: 15 nodes — 2 hospitals, 2 fire stations, 2 police stations, 2 shelters, 2 road junctions, 2 bridges, 3 zones — + 15 edges with realistic travel times and congestion factors
+- **Propagation output**: affectedNodes (with hop count, travel time, risk increase), nearestResponders (sorted by travel time, with availability = available/limited/overwhelmed), predictedResponseTime, riskSpread (contained/moderate/severe/catastrophic), bottlenecks (nodes with riskScore ≥ 60 in propagation path), estimatedAffectedPopulation, confidenceScore
+- **New tables**: `city_nodes` (cityId, name, type enum, lat, lng, riskScore, capacity, metadata), `city_edges` (fromNodeId FK, toNodeId FK, distanceKm, travelTimeMinutes, roadType, congestionFactor)
+- **Endpoints**:
+  - `POST /api/digital-twin/seed` — seed default city model (idempotent)
+  - `GET /api/digital-twin/model?cityId` — full city graph (nodes + edges)
+  - `POST /api/digital-twin/simulate` — propagation from a specific node
+  - `POST /api/digital-twin/simulate-location` — auto-find nearest node to lat/lng and propagate
+  - `PATCH /api/digital-twin/nodes/:id/risk` — update node risk score
+- **Frontend**: `DigitalTwinPage.tsx` at `/digital-twin` — node grid with type-color badges, simulation panel, propagation result with responder list, bottleneck badges
+
+### §17.4 — AI Decision Override (Human-in-the-Loop)
+- **Architecture**: Every AI classification can be flagged for human review. Admins see a queue of pending decisions, can approve or override with new severity/type. Override writes back to the actual `disaster_reports` row.
+- **Review trigger logic**: `confidence < 0.7 || urgency >= 0.85 || severity === "critical"` → `requiresHumanReview = true`, status = `pending_review`
+- **New table**: `ai_overrides` — incidentId, incidentType, originalDecision JSONB, overriddenDecision JSONB, aiConfidence, aiUrgency, requiresHumanReview, status enum (pending_review/approved/overridden/auto_approved), overriddenBy FK, reason, notes, createdAt, reviewedAt
+- **Endpoints**:
+  - `POST /api/ai-overrides` — create override record for any AI decision
+  - `GET /api/ai-overrides?status=` — list (filter by status)
+  - `GET /api/ai-overrides/:id` — single record
+  - `PATCH /api/ai-overrides/:id/review` — approve or override (writes back to disaster_reports if override)
+  - `GET /api/ai-overrides/stats/summary` — total/pending/approved/overridden/autoApproved/overrideRate
+- **Frontend**: `AIOverridePage.tsx` at `/ai-override` — 5-card stats bar, pending count alert, Pending Review / All Decisions tabs, review dialog with approve/override action, new severity/type selectors, reason textarea, full audit history
+
+### §18 — Product Differentiation (Implemented)
+CrisisConnect is no longer a reporting app. It is an **AI Intelligence Platform + Real-Time Infrastructure + Predictive Analytics + Human Control Layer**:
+1. **AI-Powered Crisis Intelligence**: multimodal detection (text+voice+image), explainable AI decisions, human-in-the-loop governance
+2. **Real-Time Coordination**: WebSocket dispatch, broadcast alerts, responder matching, live map
+3. **Predictive Risk Engine**: weather risk scoring, digital twin propagation, simulation stress testing
+4. **Platform Ecosystem**: developer API keys + webhooks, Prometheus metrics, circuit breakers, chaos engineering
+
+### New Tables in §17 (migrated via `npm run db:push`)
+- `simulation_runs` — scenario enum, location, intensity, status enum, metricsData JSONB, injectedEventIds text[]
+- `city_nodes` — cityId, name, type enum (8 values), lat, lng, riskScore, capacity, metadata JSONB, isActive
+- `city_edges` — cityId, fromNodeId FK, toNodeId FK, distanceKm, travelTimeMinutes, roadType, congestionFactor
+- `ai_overrides` — incidentId, incidentType, originalDecision JSONB, overriddenDecision JSONB, status enum (4 values), overriddenBy FK, reason, notes, reviewedAt
+
+### New Nav Items (admin/authority/super_admin roles)
+- "Multimodal AI" at `/multimodal-ai` — Brain icon
+- "Simulation Engine" at `/simulation` — Zap icon
+- "Digital Twin" at `/digital-twin` — Globe icon
+- "AI Override" at `/ai-override` — ShieldAlert icon
+
 ## External Dependencies
 -   **Database**: PostgreSQL via Neon serverless.
 -   **AI Service**: Replit AI Integrations (GPT-4o-mini) with rule-based fallback.

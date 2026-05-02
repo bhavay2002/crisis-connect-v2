@@ -55,6 +55,9 @@ import {
   WifiOff as OfflineIcon,
   Code,
   Activity,
+  Globe,
+  Zap as SimZap,
+  ShieldAlert,
 } from "lucide-react";
 import { useLowBandwidth } from "@/context/LowBandwidthContext";
 import { useOfflineSync } from "@/context/OfflineSyncContext";
@@ -90,6 +93,10 @@ const menuItems = [
   { title: "Privacy & Data", url: "/compliance", icon: ShieldCheck, roles: ["citizen", "volunteer", "ngo", "admin", "government", "authority", "super_admin"] },
   { title: "Developer Platform", url: "/developer", icon: Code, roles: ["admin", "government", "authority", "super_admin"] },
   { title: "Monitoring", url: "/monitoring", icon: Activity, roles: ["admin", "government", "authority", "super_admin"] },
+  { title: "Multimodal AI", url: "/multimodal-ai", icon: Brain, roles: ["admin", "authority", "super_admin"] },
+  { title: "Simulation Engine", url: "/simulation", icon: SimZap, roles: ["admin", "authority", "super_admin"] },
+  { title: "Digital Twin", url: "/digital-twin", icon: Globe, roles: ["admin", "authority", "super_admin"] },
+  { title: "AI Override", url: "/ai-override", icon: ShieldAlert, roles: ["admin", "authority", "super_admin"] },
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {

@@ -57,6 +57,10 @@ import { registerIntegrationRoutes } from "./integration.routes";
 import { registerDeveloperPlatformRoutes } from "./developer-platform.routes";
 import { registerMonitoringRoutes } from "./monitoring.routes";
 import { registerChaosRoutes } from "./chaos.routes";
+import { registerMultimodalRoutes } from "./multimodal.routes";
+import { registerSimulationRoutes } from "./simulation.routes";
+import { registerDigitalTwinRoutes } from "./digital-twin.routes";
+import { registerAIOverrideRoutes } from "./ai-override.routes";
 import { deviceFingerprintService } from "../modules/security/device-fingerprint.service";
 import { eventBus } from "../modules/events/event-bus";
 import { wsRateLimiter } from "../middleware/wsRateLimiting";
@@ -349,6 +353,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerDeveloperPlatformRoutes(app);
   registerMonitoringRoutes(app);
   registerChaosRoutes(app);
+  registerMultimodalRoutes(app);
+  registerSimulationRoutes(app);
+  registerDigitalTwinRoutes(app);
+  registerAIOverrideRoutes(app);
 
   // Event bus: wire cross-service listeners
   eventBus.subscribe("CRISIS_CREATED", (payload) => {
