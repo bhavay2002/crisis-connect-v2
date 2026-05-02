@@ -195,15 +195,13 @@ export default function Dashboard() {
             <div className="rounded-xl border bg-background p-4">
               <h3 className="font-bold text-sm mb-3">Quick Actions</h3>
               <div className="grid grid-cols-2 gap-2">
-                {QUICK_ACTIONS.map(({ label, url, icon: Icon, color, bg, desc }) => (
-                  <Link key={url} href={url}>
-                    <a className="group flex flex-col items-center gap-1.5 p-3 rounded-lg border hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all text-center cursor-pointer">
-                      <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                        <Icon className={`w-4 h-4 ${color}`} />
-                      </div>
-                      <span className="text-xs font-semibold leading-tight">{label}</span>
-                      <span className="text-xs text-muted-foreground leading-tight hidden">{desc}</span>
-                    </a>
+                {QUICK_ACTIONS.map(({ label, url, icon: Icon, color, bg }) => (
+                  <Link key={url} href={url}
+                    className="group flex flex-col items-center gap-1.5 p-3 rounded-lg border hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all text-center cursor-pointer">
+                    <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                      <Icon className={`w-4 h-4 ${color}`} />
+                    </div>
+                    <span className="text-xs font-semibold leading-tight">{label}</span>
                   </Link>
                 ))}
               </div>

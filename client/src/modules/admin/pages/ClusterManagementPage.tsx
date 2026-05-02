@@ -99,62 +99,45 @@ export default function ClusterManagementPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2" data-testid="text-page-title">Report Clustering & Duplicate Detection</h1>
-        <p className="text-muted-foreground">
-          Automatically detect and group similar disaster reports to identify duplicates and related incidents.
-        </p>
+    <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
+      <div>
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center">
+            <LinkIcon className="w-4 h-4 text-orange-500" />
+          </div>
+          <h1 className="text-2xl font-black" data-testid="text-page-title">Report Clustering & Duplicate Detection</h1>
+        </div>
+        <p className="text-sm text-muted-foreground">Automatically detect and group similar disaster reports to identify duplicates and related incidents.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Clusters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold" data-testid="text-total-clusters">
-              {clustersData?.totalClusters || 0}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {[
+          { label: "Total Clusters", value: clustersData?.totalClusters || 0, testId: "text-total-clusters", bg: "bg-orange-500/10", color: "text-orange-500", icon: LinkIcon },
+          { label: "Reports in Clusters", value: clustersData?.totalReportsInClusters || 0, testId: "text-reports-in-clusters", bg: "bg-blue-500/10", color: "text-blue-500", icon: AlertTriangle },
+        ].map(({ label, value, testId, bg, color, icon: Icon }) => (
+          <div key={label} className="rounded-xl border bg-background p-4 shadow-sm">
+            <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center mb-2`}>
+              <Icon className={`w-4 h-4 ${color}`} />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Reports in Clusters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold" data-testid="text-reports-in-clusters">
-              {clustersData?.totalReportsInClusters || 0}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => runClusteringMutation.mutate(100)}
-              disabled={runClusteringMutation.isPending}
-              className="w-full"
-              data-testid="button-run-clustering"
-            >
-              {runClusteringMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Running...
-                </>
-              ) : (
-                <>
-                  <Play className="mr-2 h-4 w-4" />
-                  Run Clustering
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+            <p className="text-3xl font-black" data-testid={testId}>{value}</p>
+            <p className="text-xs text-muted-foreground">{label}</p>
+          </div>
+        ))}
+        <div className="rounded-xl border bg-background p-4 shadow-sm flex flex-col justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Actions</p>
+          <Button
+            onClick={() => runClusteringMutation.mutate(100)}
+            disabled={runClusteringMutation.isPending}
+            className="w-full"
+            data-testid="button-run-clustering"
+          >
+            {runClusteringMutation.isPending ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Running...</>
+            ) : (
+              <><Play className="mr-2 h-4 w-4" />Run Clustering</>
+            )}
+          </Button>
+        </div>
       </div>
 
       {clustersData && clustersData.clusters.length === 0 && (
@@ -197,63 +180,43 @@ export default function ClusterManagementPage() {
                 <AccordionContent>
                   <div className="space-y-4 pt-4">
                     <div>
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-green-600" />
                         Primary Report
                       </h4>
-                      <Card>
-                        <CardContent className="pt-4">
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h5 className="font-medium">{cluster.primaryReport.title}</h5>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {cluster.primaryReport.description}
-                                </p>
-                              </div>
-                              <div className={`w-3 h-3 rounded-full ${getStatusColor(cluster.primaryReport.status)}`} />
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {cluster.primaryReport.location} • {new Date(cluster.primaryReport.createdAt).toLocaleString()}
-                            </div>
+                      <div className="rounded-xl border bg-background p-3">
+                        <div className="flex justify-between items-start gap-2">
+                          <div>
+                            <h5 className="font-semibold text-sm">{cluster.primaryReport.title}</h5>
+                            <p className="text-xs text-muted-foreground mt-1">{cluster.primaryReport.description}</p>
                           </div>
-                        </CardContent>
-                      </Card>
+                          <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getStatusColor(cluster.primaryReport.status)}`} />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">{cluster.primaryReport.location} · {new Date(cluster.primaryReport.createdAt).toLocaleString()}</p>
+                      </div>
                     </div>
 
                     <div>
-                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
                         <LinkIcon className="h-4 w-4" />
                         Related Reports ({cluster.relatedReports.length})
                       </h4>
                       <div className="space-y-2">
                         {cluster.relatedReports.map((report) => (
-                          <Card key={report.id} className="border-l-4 border-l-orange-500" data-testid={`related-report-${report.id}`}>
-                            <CardContent className="pt-4">
-                              <div className="space-y-2">
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <h5 className="font-medium">{report.title}</h5>
-                                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                      {report.description}
-                                    </p>
-                                  </div>
-                                  <div className={`w-3 h-3 rounded-full ${getStatusColor(report.status)}`} />
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {report.type}
-                                  </Badge>
-                                  <Badge variant={getSeverityColor(report.severity)} className="text-xs">
-                                    {report.severity}
-                                  </Badge>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {report.location} • {new Date(report.createdAt).toLocaleString()}
-                                </div>
+                          <div key={report.id} className="rounded-xl border bg-background p-3 border-l-4 border-l-orange-500" data-testid={`related-report-${report.id}`}>
+                            <div className="flex justify-between items-start gap-2">
+                              <div>
+                                <h5 className="font-semibold text-sm">{report.title}</h5>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{report.description}</p>
                               </div>
-                            </CardContent>
-                          </Card>
+                              <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getStatusColor(report.status)}`} />
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              <span className="text-xs px-2 py-0.5 rounded-full border font-medium">{report.type}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full border font-medium capitalize">{report.severity}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{report.location} · {new Date(report.createdAt).toLocaleString()}</p>
+                          </div>
                         ))}
                       </div>
                     </div>

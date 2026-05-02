@@ -162,19 +162,13 @@ export default function ReportDetails() {
   if (!report) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto p-4 md:p-6 max-w-4xl">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">Report not found</p>
-              <p className="text-muted-foreground text-center mb-4">
-                This report may have been deleted or you don't have permission to view it
-              </p>
-              <Button onClick={() => navigate("/reports")} data-testid="button-back-to-reports">
-                Back to Reports
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="p-6 max-w-4xl mx-auto">
+          <div className="rounded-2xl border-2 border-dashed py-16 text-center">
+            <AlertTriangle className="h-12 w-12 text-muted-foreground mb-3 mx-auto opacity-40" />
+            <p className="font-bold mb-1">Report not found</p>
+            <p className="text-sm text-muted-foreground mb-4">This report may have been deleted or you don't have permission to view it</p>
+            <Button onClick={() => navigate("/reports")} data-testid="button-back-to-reports">Back to Reports</Button>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -183,111 +177,79 @@ export default function ReportDetails() {
   const TypeIcon = typeIcons[report.type];
   const isConfirmed = !!report.confirmedBy;
   const canConfirm = currentUser && ["volunteer", "ngo", "admin"].includes(currentUser.role);
+  const severityBorderColors = { critical: "border-l-red-500", high: "border-l-orange-500", medium: "border-l-yellow-500", low: "border-l-blue-500" };
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-4 md:p-6 max-w-4xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/reports")}
-          className="mb-4"
-          data-testid="button-back"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Reports
+      <div className="p-6 max-w-4xl mx-auto space-y-4">
+        <Button variant="ghost" onClick={() => navigate("/reports")} className="h-8 text-xs" data-testid="button-back">
+          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />Back to Reports
         </Button>
 
-        <Card className={`border-l-4 ${report.severity === "critical" ? "border-l-destructive" : report.severity === "high" ? "border-l-orange-500" : report.severity === "medium" ? "border-l-yellow-500" : "border-l-blue-500"}`}>
-          <CardHeader>
-            <div className="flex items-start gap-3">
-              <div className={`p-3 rounded-md ${severityColors[report.severity]}`}>
+        <div className={`rounded-2xl border-l-4 bg-background shadow-sm overflow-hidden ${severityBorderColors[report.severity]}`}>
+          <div className="p-6">
+            <div className="flex items-start gap-4 mb-5">
+              <div className={`p-3 rounded-xl ${severityColors[report.severity]} flex-shrink-0`}>
                 <TypeIcon className="w-6 h-6" />
               </div>
               <div className="flex-1">
-                <CardTitle className="text-2xl mb-2" data-testid="text-report-title">
-                  {report.title}
-                </CardTitle>
+                <h1 className="text-2xl font-black mb-2" data-testid="text-report-title">{report.title}</h1>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary" className={statusColors[report.status]} data-testid="badge-status">
-                    {report.status.toUpperCase()}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs uppercase font-semibold">
-                    {report.severity}
-                  </Badge>
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-semibold uppercase ${statusColors[report.status]}`} data-testid="badge-status">
+                    {report.status}
+                  </span>
+                  <span className="text-xs px-2.5 py-1 rounded-full border font-semibold uppercase">{report.severity}</span>
                   {isConfirmed && (
-                    <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-xs" data-testid="badge-confirmed">
-                      <ShieldCheck className="w-3 h-3 mr-1" />
-                      CONFIRMED
-                    </Badge>
+                    <span className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-800 font-semibold dark:bg-green-950 dark:text-green-300" data-testid="badge-confirmed">
+                      <ShieldCheck className="w-3 h-3" />CONFIRMED
+                    </span>
                   )}
-                  <FakeDetectionBadge
-                    score={report.fakeDetectionScore}
-                    flags={report.fakeDetectionFlags}
-                  />
+                  <FakeDetectionBadge score={report.fakeDetectionScore} flags={report.fakeDetectionFlags} />
                 </div>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h3 className="font-semibold mb-2">Description</h3>
-              <p className="text-muted-foreground" data-testid="text-description">
-                {report.description}
-              </p>
+
+            <div className="mb-5">
+              <h3 className="font-bold text-sm mb-2">Description</h3>
+              <p className="text-sm text-muted-foreground" data-testid="text-description">{report.description}</p>
             </div>
 
-            <Separator />
+            <Separator className="mb-5" />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Location</p>
-                    <p className="font-medium" data-testid="text-location">{report.location}</p>
+                {[
+                  { icon: MapPin, label: "Location", content: <span className="font-semibold text-sm" data-testid="text-location">{report.location}</span> },
+                  { icon: Clock, label: "Reported", content: <>
+                    <span className="font-semibold text-sm" data-testid="text-created-at">{formatDistanceToNow(new Date(report.createdAt), { addSuffix: true })}</span>
+                    <p className="text-xs text-muted-foreground">{format(new Date(report.createdAt), "PPpp")}</p>
+                  </> },
+                  { icon: ThumbsUp, label: "Upvotes", content: <span className="font-semibold text-sm" data-testid="text-verification-count">{report.verificationCount} upvotes</span> },
+                ].map(({ icon: Icon, label, content }) => (
+                  <div key={label} className="flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                      {content}
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Reported</p>
-                    <p className="font-medium" data-testid="text-created-at">
-                      {formatDistanceToNow(new Date(report.createdAt), { addSuffix: true })}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(report.createdAt), "PPpp")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <ThumbsUp className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Upvotes</p>
-                    <p className="font-medium" data-testid="text-verification-count">
-                      {report.verificationCount} upvotes
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
 
               <div className="space-y-3">
                 {report.mediaUrls && report.mediaUrls.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Media</p>
+                      <p className="text-xs text-muted-foreground mb-1">Media</p>
                       <div className="flex flex-col gap-1">
                         {report.mediaUrls.map((url, index) => (
-                          <a
-                            key={index}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline text-sm"
-                            data-testid={`link-media-${index}`}
-                          >
+                          <a key={index} href={url} target="_blank" rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm" data-testid={`link-media-${index}`}>
                             View media {index + 1}
                           </a>
                         ))}
@@ -299,63 +261,38 @@ export default function ReportDetails() {
             </div>
 
             {isConfirmed && report.confirmedAt && (
-              <>
-                <Separator />
-                <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ShieldCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
-                    <h3 className="font-semibold text-green-900 dark:text-green-100">
-                      Officially Confirmed
-                    </h3>
-                  </div>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    Confirmed {formatDistanceToNow(new Date(report.confirmedAt), { addSuffix: true })}
-                  </p>
+              <div className="p-4 bg-green-50 dark:bg-green-950 rounded-xl border border-green-200 dark:border-green-800 mb-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <ShieldCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <h3 className="font-bold text-sm text-green-900 dark:text-green-100">Officially Confirmed</h3>
                 </div>
-              </>
+                <p className="text-xs text-green-700 dark:text-green-300">
+                  Confirmed {formatDistanceToNow(new Date(report.confirmedAt), { addSuffix: true })}
+                </p>
+              </div>
             )}
 
-            <Separator />
+            <Separator className="mb-5" />
 
             <div className="flex gap-2 flex-wrap">
-              <Button
-                variant={hasVerified ? "default" : "outline"}
-                onClick={() => verifyMutation.mutate()}
-                disabled={hasVerified || verifyMutation.isPending}
-                data-testid="button-upvote"
-              >
+              <Button variant={hasVerified ? "default" : "outline"} onClick={() => verifyMutation.mutate()}
+                disabled={hasVerified || verifyMutation.isPending} data-testid="button-upvote">
                 <ThumbsUp className="w-4 h-4 mr-2" />
                 {hasVerified ? "Upvoted" : verifyMutation.isPending ? "Upvoting..." : "Upvote"}
               </Button>
-
               {canConfirm && (
-                <Button
-                  variant={isConfirmed ? "default" : "outline"}
-                  onClick={() => confirmMutation.mutate()}
-                  disabled={confirmMutation.isPending}
-                  className={isConfirmed ? "bg-green-600 hover:bg-green-700" : ""}
-                  data-testid="button-confirm"
-                >
+                <Button variant={isConfirmed ? "default" : "outline"} onClick={() => confirmMutation.mutate()}
+                  disabled={confirmMutation.isPending} className={isConfirmed ? "bg-green-600 hover:bg-green-700" : ""} data-testid="button-confirm">
                   <ShieldCheck className="w-4 h-4 mr-2" />
-                  {confirmMutation.isPending
-                    ? "Processing..."
-                    : isConfirmed
-                      ? "Confirmed"
-                      : "Confirm"}
+                  {confirmMutation.isPending ? "Processing..." : isConfirmed ? "Confirmed" : "Confirm"}
                 </Button>
               )}
-
-              <Button
-                variant="outline"
-                onClick={() => navigate("/map")}
-                data-testid="button-view-on-map"
-              >
-                <MapPin className="w-4 h-4 mr-2" />
-                View on Map
+              <Button variant="outline" onClick={() => navigate("/map")} data-testid="button-view-on-map">
+                <MapPin className="w-4 h-4 mr-2" />View on Map
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

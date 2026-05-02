@@ -35,33 +35,29 @@ export default function ReputationDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-4 max-w-6xl">
+      <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {!user ? (
-          <Card className="w-full max-w-md mx-auto">
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">Please sign in to view your reputation</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl border-2 border-dashed py-16 text-center max-w-md mx-auto">
+            <p className="text-sm text-muted-foreground">Please sign in to view your reputation</p>
+          </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center min-h-[400px]">
             <Clock className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : !reputation ? (
-          <Card className="w-full max-w-md mx-auto">
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">No reputation data available</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl border-2 border-dashed py-16 text-center max-w-md mx-auto">
+            <p className="text-sm text-muted-foreground">No reputation data available</p>
+          </div>
         ) : (
           <>
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <Award className="h-8 w-8" />
-                Reputation Dashboard
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Track your contributions and build trust in the community
-              </p>
+            <div>
+              <div className="flex items-center gap-2.5 mb-1">
+                <div className="w-8 h-8 rounded-xl bg-yellow-500/10 flex items-center justify-center">
+                  <Award className="w-4 h-4 text-yellow-500" />
+                </div>
+                <h1 className="text-2xl font-black">Reputation Dashboard</h1>
+              </div>
+              <p className="text-sm text-muted-foreground">Track your contributions and build trust in the community</p>
             </div>
 
             <ReputationContent user={user} reputation={reputation} getTrustLevel={getTrustLevel} />
@@ -128,218 +124,115 @@ function ReputationContent({ user, reputation, getTrustLevel }: { user: any, rep
       <div className="mb-6" style={{ display: 'none' }}>
       </div>
 
-      {/* Trust Score Card */}
-      <Card className="mb-6" data-testid="card-trust-score">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Trust Score
-          </CardTitle>
-          <CardDescription>Your reputation in the Crisis Connect community</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="text-5xl font-bold" data-testid="text-trust-score-value">
-                {reputation.trustScore}
-              </div>
-              <Badge variant={trustLevel.variant} className="mt-2" data-testid="badge-trust-level">
-                {trustLevel.label}
-              </Badge>
-            </div>
-            <div className="text-right">
-              <div className="text-muted-foreground text-sm">Trust Level</div>
-              <div className={`text-2xl font-semibold ${trustLevel.color}`}>
-                {trustLevel.label}
-              </div>
-            </div>
+      {/* Trust Score */}
+      <div className="rounded-2xl border bg-background p-5 shadow-sm" data-testid="card-trust-score">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-7 h-7 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+            <TrendingUp className="w-3.5 h-3.5 text-yellow-500" />
           </div>
-          <Progress value={reputation.trustScore} className="h-3" data-testid="progress-trust-score" />
-          <p className="text-sm text-muted-foreground mt-2">
-            Complete verifications and contribute to increase your trust score
-          </p>
-        </CardContent>
-      </Card>
+          <h3 className="font-bold text-sm">Trust Score</h3>
+        </div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-5xl font-black" data-testid="text-trust-score-value">{reputation.trustScore}</p>
+            <span className={`inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-semibold border ${trustLevel.color}`} data-testid="badge-trust-level">
+              {trustLevel.label}
+            </span>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">Trust Level</p>
+            <p className={`text-xl font-bold ${trustLevel.color}`}>{trustLevel.label}</p>
+          </div>
+        </div>
+        <Progress value={reputation.trustScore} className="h-2.5" data-testid="progress-trust-score" />
+        <p className="text-xs text-muted-foreground mt-2">Complete verifications and contribute to increase your trust score</p>
+      </div>
 
       {/* Contribution Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
-        <Card data-testid="card-stat-reports">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-stat-total-reports">{reputation.totalReports}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {reputation.verifiedReports} verified
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-stat-verifications">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Verifications Given</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-stat-verifications">{reputation.verificationsGiven}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Helping validate reports
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-stat-upvotes">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upvotes Received</CardTitle>
-            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-stat-upvotes">{reputation.upvotesReceived}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Community trust in reports
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-stat-resources">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resources Provided</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-stat-resources">{reputation.resourcesProvided}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {reputation.resourcesFulfilled} fulfilled
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-stat-false-reports">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Accuracy</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-stat-accuracy">
-              {reputation.totalReports > 0 
-                ? Math.round(((reputation.totalReports - reputation.falseReports) / reputation.totalReports) * 100)
-                : 100}%
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {[
+          { label: "Total Reports", value: reputation.totalReports, sub: `${reputation.verifiedReports} verified`, icon: Target, testId: "card-stat-reports", valTestId: "text-stat-total-reports", bg: "bg-blue-500/10", color: "text-blue-500" },
+          { label: "Verifications Given", value: reputation.verificationsGiven, sub: "Helping validate reports", icon: CheckCircle2, testId: "card-stat-verifications", valTestId: "text-stat-verifications", bg: "bg-green-500/10", color: "text-green-500" },
+          { label: "Upvotes Received", value: reputation.upvotesReceived, sub: "Community trust in reports", icon: ThumbsUp, testId: "card-stat-upvotes", valTestId: "text-stat-upvotes", bg: "bg-purple-500/10", color: "text-purple-500" },
+          { label: "Resources Provided", value: reputation.resourcesProvided, sub: `${reputation.resourcesFulfilled} fulfilled`, icon: Package, testId: "card-stat-resources", valTestId: "text-stat-resources", bg: "bg-orange-500/10", color: "text-orange-500" },
+          { label: "Accuracy", value: `${reputation.totalReports > 0 ? Math.round(((reputation.totalReports - reputation.falseReports) / reputation.totalReports) * 100) : 100}%`, sub: `${reputation.falseReports} false reports`, icon: Shield, testId: "card-stat-false-reports", valTestId: "text-stat-accuracy", bg: "bg-teal-500/10", color: "text-teal-500" },
+          { label: "Avg Response Time", value: reputation.responseTimeAvg ? `${Math.round(reputation.responseTimeAvg / 60)}m` : "N/A", sub: "For aid delivery", icon: Clock, testId: "card-stat-response-time", valTestId: "text-stat-response-time", bg: "bg-indigo-500/10", color: "text-indigo-500" },
+        ].map(({ label, value, sub, icon: Icon, testId, valTestId, bg, color }) => (
+          <div key={label} className="rounded-xl border bg-background p-4 shadow-sm" data-testid={testId}>
+            <div className={`w-7 h-7 rounded-lg ${bg} flex items-center justify-center mb-2`}>
+              <Icon className={`w-3.5 h-3.5 ${color}`} />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {reputation.falseReports} false reports
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-stat-response-time">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-stat-response-time">
-              {reputation.responseTimeAvg ? `${Math.round(reputation.responseTimeAvg / 60)}m` : "N/A"}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              For aid delivery
-            </p>
-          </CardContent>
-        </Card>
+            <p className="text-2xl font-black" data-testid={valTestId}>{value}</p>
+            <p className="text-xs font-semibold">{label}</p>
+            <p className="text-xs text-muted-foreground">{sub}</p>
+          </div>
+        ))}
       </div>
 
       {/* Achievements */}
-      <Card data-testid="card-achievements">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Achievements
-          </CardTitle>
-          <CardDescription>Unlock badges by contributing to the community</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            {achievements.map((achievement) => {
-              const Icon = achievement.icon;
-              const progressPercentage = Math.min((achievement.progress / achievement.total) * 100, 100);
-
-              return (
-                <div
-                  key={achievement.id}
-                  className={`p-4 rounded-lg border-2 ${
-                    achievement.unlocked 
-                      ? "border-primary bg-primary/5" 
-                      : "border-muted bg-muted/30"
-                  }`}
-                  data-testid={`achievement-${achievement.id}`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-full ${
-                      achievement.unlocked 
-                        ? "bg-primary text-primary-foreground" 
-                        : "bg-muted text-muted-foreground"
-                    }`}>
-                      <Icon className="h-5 w-5" />
+      <div className="rounded-2xl border bg-background p-5 shadow-sm" data-testid="card-achievements">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-7 h-7 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+            <Trophy className="w-3.5 h-3.5 text-yellow-500" />
+          </div>
+          <h3 className="font-bold text-sm">Achievements</h3>
+          <p className="text-xs text-muted-foreground">Unlock badges by contributing to the community</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {achievements.map((achievement) => {
+            const Icon = achievement.icon;
+            const progressPercentage = Math.min((achievement.progress / achievement.total) * 100, 100);
+            return (
+              <div key={achievement.id}
+                className={`p-4 rounded-xl border-2 ${achievement.unlocked ? "border-primary bg-primary/5" : "border-border bg-muted/30"}`}
+                data-testid={`achievement-${achievement.id}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-full flex-shrink-0 ${achievement.unlocked ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <h4 className="font-bold text-sm">{achievement.title}</h4>
+                      {achievement.unlocked && <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">{achievement.title}</h4>
-                        {achievement.unlocked && (
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        )}
+                    <p className="text-xs text-muted-foreground">{achievement.description}</p>
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                        <span>Progress</span><span>{achievement.progress}/{achievement.total}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {achievement.description}
-                      </p>
-                      <div className="mt-3">
-                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                          <span>Progress</span>
-                          <span>{achievement.progress}/{achievement.total}</span>
-                        </div>
-                        <Progress value={progressPercentage} className="h-2" />
-                      </div>
+                      <Progress value={progressPercentage} className="h-1.5" />
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* How to Improve */}
-      <Card className="mt-6" data-testid="card-improvement-tips">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Heart className="h-5 w-5" />
-            Ways to Improve Your Reputation
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-2 text-sm">
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5" />
-              <span>Complete identity verification (email, phone, Aadhaar) for +10 trust score bonus</span>
+      <div className="rounded-2xl border bg-background p-5 shadow-sm" data-testid="card-improvement-tips">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-7 h-7 rounded-lg bg-pink-500/10 flex items-center justify-center">
+            <Heart className="w-3.5 h-3.5 text-pink-500" />
+          </div>
+          <h3 className="font-bold text-sm">Ways to Improve Your Reputation</h3>
+        </div>
+        <ul className="space-y-2">
+          {[
+            "Complete identity verification (email, phone, Aadhaar) for +10 trust score bonus",
+            "Submit accurate disaster reports that get verified by the community",
+            "Help verify other reports to build community trust",
+            "Provide and deliver resources to those in need",
+            "Respond quickly to aid requests to improve your response time",
+          ].map((tip, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm">
+              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <span>{tip}</span>
             </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5" />
-              <span>Submit accurate disaster reports that get verified by the community</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5" />
-              <span>Help verify other reports to build community trust</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5" />
-              <span>Provide and deliver resources to those in need</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-primary mt-0.5" />
-              <span>Respond quickly to aid requests to improve your response time</span>
-            </li>
-          </ul>
-        </CardContent>
-      </Card>
+          ))}
+        </ul>
+      </div>
     </>
   );
 }

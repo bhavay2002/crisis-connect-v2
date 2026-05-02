@@ -121,26 +121,29 @@ export default function PredictiveModeling() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-4 max-w-7xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-2">
-            <Brain className="w-8 h-8" />
-            Predictive Modeling
-          </h1>
-          <p className="text-muted-foreground">
-            AI-powered disaster forecasting using historical data, weather patterns, and seismic activity
-          </p>
+      <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
+        {/* Header */}
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <Brain className="w-4 h-4 text-blue-500" />
+            </div>
+            <h1 className="text-2xl font-black">Predictive Modeling</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">AI-powered disaster forecasting using historical data, weather patterns, and seismic activity</p>
         </div>
 
         {canGeneratePredictions ? (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Generate New Predictions</CardTitle>
-              <CardDescription>
-                Analyze an area to forecast potential disasters based on multiple data sources
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="rounded-2xl border bg-background shadow-sm overflow-hidden">
+            <div className="h-1 bg-blue-600" />
+            <div className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Brain className="w-3.5 h-3.5 text-blue-500" />
+                </div>
+                <h2 className="font-black text-sm">Generate New Predictions</h2>
+                <span className="text-xs text-muted-foreground">Analyze an area to forecast potential disasters</span>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="md:col-span-2">
                   <Label htmlFor="area">Area Name</Label>
@@ -204,8 +207,8 @@ export default function PredictiveModeling() {
                   Use Current Location
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ) : null}
 
         <Tabs defaultValue="map" className="space-y-4">
@@ -214,160 +217,131 @@ export default function PredictiveModeling() {
             <TabsTrigger value="list" data-testid="tab-list">List View</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="map" className="space-y-4">
-            <Card>
-              <CardContent className="p-0">
-                {isLoading ? (
-                  <div className="h-[600px] flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 animate-spin" />
-                  </div>
-                ) : predictions && Array.isArray(predictions) && predictions.length > 0 ? (
-                  <div className="h-[600px] rounded-lg overflow-hidden">
-                    <MapContainer
-                      center={defaultCenter}
-                      zoom={defaultZoom}
-                      style={{ height: '100%', width: '100%' }}
-                    >
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      {predictions.map((prediction: any) => (
-                        <Circle
-                          key={prediction.id}
-                          center={[parseFloat(prediction.latitude), parseFloat(prediction.longitude)]}
-                          radius={prediction.radius}
-                          pathOptions={{
-                            color: RISK_LEVEL_COLORS[prediction.riskLevel],
-                            fillColor: RISK_LEVEL_COLORS[prediction.riskLevel],
-                            fillOpacity: 0.3,
-                          }}
-                        >
-                          <Popup>
-                            <div className="p-2">
-                              <h3 className="font-bold mb-2">{prediction.predictedArea}</h3>
-                              <div className="space-y-1 text-sm">
-                                <p><strong>Type:</strong> {DISASTER_TYPE_LABELS[prediction.disasterType]}</p>
-                                <p><strong>Risk Level:</strong> {RISK_LEVEL_LABELS[prediction.riskLevel]}</p>
-                                <p><strong>Confidence:</strong> {prediction.confidence}%</p>
-                                <p><strong>Valid Until:</strong> {new Date(prediction.validUntil).toLocaleDateString()}</p>
-                              </div>
+          <TabsContent value="map">
+            <div className="rounded-2xl border bg-background shadow-sm overflow-hidden">
+              {isLoading ? (
+                <div className="h-[600px] flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+              ) : predictions && Array.isArray(predictions) && predictions.length > 0 ? (
+                <div className="h-[600px] rounded-2xl overflow-hidden">
+                  <MapContainer center={defaultCenter} zoom={defaultZoom} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    {predictions.map((prediction: any) => (
+                      <Circle
+                        key={prediction.id}
+                        center={[parseFloat(prediction.latitude), parseFloat(prediction.longitude)]}
+                        radius={prediction.radius}
+                        pathOptions={{ color: RISK_LEVEL_COLORS[prediction.riskLevel], fillColor: RISK_LEVEL_COLORS[prediction.riskLevel], fillOpacity: 0.3 }}
+                      >
+                        <Popup>
+                          <div className="p-2">
+                            <h3 className="font-bold mb-2">{prediction.predictedArea}</h3>
+                            <div className="space-y-1 text-sm">
+                              <p><strong>Type:</strong> {DISASTER_TYPE_LABELS[prediction.disasterType]}</p>
+                              <p><strong>Risk Level:</strong> {RISK_LEVEL_LABELS[prediction.riskLevel]}</p>
+                              <p><strong>Confidence:</strong> {prediction.confidence}%</p>
+                              <p><strong>Valid Until:</strong> {new Date(prediction.validUntil).toLocaleDateString()}</p>
                             </div>
-                          </Popup>
-                        </Circle>
-                      ))}
-                    </MapContainer>
-                  </div>
-                ) : (
-                  <div className="h-[600px] flex flex-col items-center justify-center text-center p-8">
-                    <AlertTriangle className="w-16 h-16 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">No Predictions Available</h3>
-                    <p className="text-muted-foreground">
-                      {canGeneratePredictions
-                        ? 'Generate predictions for an area to see risk forecasts'
-                        : 'No predictions have been generated yet'}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                          </div>
+                        </Popup>
+                      </Circle>
+                    ))}
+                  </MapContainer>
+                </div>
+              ) : (
+                <div className="h-[600px] flex flex-col items-center justify-center text-center p-8">
+                  <AlertTriangle className="w-16 h-16 text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No Predictions Available</h3>
+                  <p className="text-muted-foreground">
+                    {canGeneratePredictions ? 'Generate predictions for an area to see risk forecasts' : 'No predictions have been generated yet'}
+                  </p>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
-          <TabsContent value="list" className="space-y-4">
+          <TabsContent value="list" className="space-y-3">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin" />
               </div>
             ) : predictions && Array.isArray(predictions) && predictions.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-3">
                 {predictions.map((prediction: any) => (
-                  <Card key={prediction.id} data-testid={`card-prediction-${prediction.id}`}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
+                  <div key={prediction.id} data-testid={`card-prediction-${prediction.id}`}
+                    className="rounded-2xl border bg-background shadow-sm overflow-hidden">
+                    <div className="h-1" style={{ backgroundColor: RISK_LEVEL_COLORS[prediction.riskLevel] }} />
+                    <div className="p-5">
+                      <div className="flex items-start justify-between mb-3">
                         <div>
-                          <CardTitle className="flex items-center gap-2">
-                            {DISASTER_TYPE_LABELS[prediction.disasterType]}
-                            <Badge
-                              style={{
-                                backgroundColor: RISK_LEVEL_COLORS[prediction.riskLevel],
-                                color: 'white',
-                              }}
-                              data-testid="badge-risk-level"
-                            >
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="font-bold text-sm">{DISASTER_TYPE_LABELS[prediction.disasterType]}</h3>
+                            <span className="text-xs px-2 py-0.5 rounded-full font-semibold text-white"
+                              style={{ backgroundColor: RISK_LEVEL_COLORS[prediction.riskLevel] }}
+                              data-testid="badge-risk-level">
                               {RISK_LEVEL_LABELS[prediction.riskLevel]}
-                            </Badge>
-                          </CardTitle>
-                          <CardDescription>{prediction.predictedArea}</CardDescription>
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{prediction.predictedArea}</p>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold" data-testid="text-confidence">
-                            {prediction.confidence}%
-                          </div>
-                          <div className="text-xs text-muted-foreground">Confidence</div>
+                          <p className="text-2xl font-black" data-testid="text-confidence">{prediction.confidence}%</p>
+                          <p className="text-xs text-muted-foreground">Confidence</p>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Radius:</span>
-                          <span className="ml-2 font-medium">{(prediction.radius / 1000).toFixed(1)} km</span>
+                      <div className="grid grid-cols-2 gap-3 text-xs mb-3">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Radius</span>
+                          <span className="font-semibold">{(prediction.radius / 1000).toFixed(1)} km</span>
                         </div>
-                        <div>
-                          <span className="text-muted-foreground">Valid Until:</span>
-                          <span className="ml-2 font-medium">
-                            {new Date(prediction.validUntil).toLocaleDateString()}
-                          </span>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Valid Until</span>
+                          <span className="font-semibold">{new Date(prediction.validUntil).toLocaleDateString()}</span>
                         </div>
                       </div>
-
                       {prediction.predictionFactors && prediction.predictionFactors.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2">Prediction Factors:</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {prediction.predictionFactors.map((factor: string, index: number) => (
-                              <Badge key={index} variant="outline" data-testid={`badge-factor-${index}`}>
-                                {factor === 'historical_pattern' && <Activity className="w-3 h-3 mr-1" />}
-                                {factor === 'weather_alert' && <CloudRain className="w-3 h-3 mr-1" />}
-                                {factor === 'seismic_activity' && <Activity className="w-3 h-3 mr-1" />}
-                                {factor.replace(/_/g, ' ')}
-                              </Badge>
-                            ))}
-                          </div>
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {prediction.predictionFactors.map((factor: string, index: number) => (
+                            <span key={index} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium"
+                              data-testid={`badge-factor-${index}`}>
+                              {factor === 'historical_pattern' && <Activity className="w-3 h-3" />}
+                              {factor === 'weather_alert' && <CloudRain className="w-3 h-3" />}
+                              {factor === 'seismic_activity' && <Activity className="w-3 h-3" />}
+                              {factor.replace(/_/g, ' ')}
+                            </span>
+                          ))}
                         </div>
                       )}
-
                       {prediction.weatherData && (
-                        <Alert>
+                        <Alert className="py-2">
                           <CloudRain className="h-4 w-4" />
-                          <AlertDescription>
-                            <strong>Weather Alert:</strong>{' '}
-                            {prediction.weatherData.alert || JSON.stringify(prediction.weatherData)}
+                          <AlertDescription className="text-xs">
+                            <strong>Weather Alert:</strong> {prediction.weatherData.alert || JSON.stringify(prediction.weatherData)}
                           </AlertDescription>
                         </Alert>
                       )}
-
                       {prediction.seismicData && (
-                        <Alert>
+                        <Alert className="py-2 mt-2">
                           <Activity className="h-4 w-4" />
-                          <AlertDescription>
-                            <strong>Seismic Activity:</strong> {prediction.seismicData.recentQuakes || 0} recent earthquakes,
-                            max magnitude {prediction.seismicData.maxMagnitude}
+                          <AlertDescription className="text-xs">
+                            <strong>Seismic Activity:</strong> {prediction.seismicData.recentQuakes || 0} recent earthquakes, max magnitude {prediction.seismicData.maxMagnitude}
                           </AlertDescription>
                         </Alert>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <AlertTriangle className="w-16 h-16 text-muted-foreground mb-4 mx-auto" />
-                <h3 className="text-xl font-semibold mb-2">No Predictions Available</h3>
-                <p className="text-muted-foreground">
-                  {canGeneratePredictions
-                    ? 'Generate predictions for an area to see risk forecasts'
-                    : 'No predictions have been generated yet'}
+              <div className="text-center py-16 rounded-2xl border-2 border-dashed">
+                <AlertTriangle className="w-14 h-14 text-muted-foreground mb-3 mx-auto opacity-50" />
+                <h3 className="text-lg font-bold mb-1">No Predictions Available</h3>
+                <p className="text-sm text-muted-foreground">
+                  {canGeneratePredictions ? 'Generate predictions for an area to see risk forecasts' : 'No predictions have been generated yet'}
                 </p>
               </div>
             )}

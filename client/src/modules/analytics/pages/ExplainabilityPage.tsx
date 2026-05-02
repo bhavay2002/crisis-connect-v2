@@ -100,20 +100,21 @@ export default function ExplainabilityPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Brain className="w-8 h-8 text-indigo-600" />
-              AI Explainability
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Audit trail for every AI decision — contributing factors, signal fusion weights, and decision reasoning
-            </p>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+                <Brain className="w-4 h-4 text-indigo-500" />
+              </div>
+              <h1 className="text-2xl font-black">AI Explainability</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">Audit trail for every AI decision — contributing factors, signal fusion weights, and decision reasoning</p>
           </div>
-          <Badge variant="outline" className="text-sm px-3 py-1">
+          <span className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full border font-semibold bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300">
             {decisionsData?.total ?? 0} decisions logged
-          </Badge>
+          </span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -197,88 +198,79 @@ export default function ExplainabilityPage() {
                   <TabsTrigger value="audit">Audit Trail</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="fusion" className="space-y-4 mt-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-indigo-500" />
-                        Signal Fusion Breakdown
-                      </CardTitle>
-                      <CardDescription>
-                        Final score: {Math.round((explain.fusedScore?.finalScore ?? 0) * 100)}% →
-                        Priority: <span className="font-semibold" style={{ color: PRIORITY_COLORS[explain.fusedScore?.priority] }}>
-                          {explain.fusedScore?.priority}
-                        </span>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-52">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={fusionComponents}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                            <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
-                            <Tooltip formatter={(v: number) => `${v}%`} />
-                            <Bar dataKey="value" name="Component Score" radius={[4, 4, 0, 0]}>
-                              {fusionComponents.map((_entry, i) => (
-                                <Cell key={i} fill={FUSION_COLORS[i % FUSION_COLORS.length]} />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
+                <TabsContent value="fusion" className="space-y-3 mt-4">
+                  <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                        <Zap className="w-3.5 h-3.5 text-indigo-500" />
                       </div>
+                      <h3 className="font-bold text-sm">Signal Fusion Breakdown</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-9 mb-4">
+                      Final score: {Math.round((explain.fusedScore?.finalScore ?? 0) * 100)}% → Priority:{" "}
+                      <span className="font-semibold" style={{ color: PRIORITY_COLORS[explain.fusedScore?.priority] }}>
+                        {explain.fusedScore?.priority}
+                      </span>
+                    </p>
+                    <div className="h-52">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={fusionComponents}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                          <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
+                          <Tooltip formatter={(v: number) => `${v}%`} />
+                          <Bar dataKey="value" name="Component Score" radius={[4, 4, 0, 0]}>
+                            {fusionComponents.map((_entry, i) => (
+                              <Cell key={i} fill={FUSION_COLORS[i % FUSION_COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      {fusionComponents.map((c, i) => (
+                        <div key={c.name} className="flex items-center gap-3">
+                          <div className="w-28 text-xs text-right text-muted-foreground shrink-0">{c.name}</div>
+                          <Progress value={c.value} className="flex-1 h-2" />
+                          <div className="w-12 text-xs text-muted-foreground shrink-0">{c.value}%</div>
+                          <div className="text-xs text-muted-foreground shrink-0">×{c.weight / 100}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {explain.fusedScore?.reasoning && (
+                      <Alert className="mt-4">
+                        <AlertDescription className="text-xs">{explain.fusedScore.reasoning}</AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
 
-                      <div className="mt-4 space-y-2">
-                        {fusionComponents.map((c, i) => (
-                          <div key={c.name} className="flex items-center gap-3">
-                            <div className="w-28 text-xs text-right text-muted-foreground shrink-0">{c.name}</div>
-                            <Progress value={c.value} className="flex-1 h-2" style={{ accentColor: FUSION_COLORS[i] }} />
-                            <div className="w-12 text-xs text-muted-foreground shrink-0">{c.value}%</div>
-                            <div className="text-xs text-muted-foreground shrink-0">×{c.weight / 100} weight</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {explain.fusedScore?.reasoning && (
-                        <Alert className="mt-4">
-                          <AlertDescription className="text-xs">{explain.fusedScore.reasoning}</AlertDescription>
-                        </Alert>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Radar Overview</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-48">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart data={fusionComponents}>
-                            <PolarGrid />
-                            <PolarAngleAxis dataKey="name" tick={{ fontSize: 11 }} />
-                            <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                            <Radar name="Score" dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} />
-                          </RadarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                    <h3 className="font-bold text-sm mb-3">Radar Overview</h3>
+                    <div className="h-48">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart data={fusionComponents}>
+                          <PolarGrid />
+                          <PolarAngleAxis dataKey="name" tick={{ fontSize: 11 }} />
+                          <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+                          <Radar name="Score" dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 </TabsContent>
 
-                <TabsContent value="factors" className="space-y-4 mt-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-indigo-500" />
-                        Contributing Factors
-                      </CardTitle>
-                      <CardDescription>
-                        Confidence: {Math.round((explain.explanation?.confidence ?? 0) * 100)}% ·
-                        Model: {explain.explanation?.modelVersion ?? "rule-based-v1"}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+                <TabsContent value="factors" className="space-y-3 mt-4">
+                  <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                        <BarChart3 className="w-3.5 h-3.5 text-indigo-500" />
+                      </div>
+                      <h3 className="font-bold text-sm">Contributing Factors</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-9 mb-4">
+                      Confidence: {Math.round((explain.explanation?.confidence ?? 0) * 100)}% · Model: {explain.explanation?.modelVersion ?? "rule-based-v1"}
+                    </p>
+                    <div className="space-y-3">
                       {(explain.explanation?.contributingFactors ?? []).length === 0 ? (
                         <p className="text-sm text-muted-foreground">No contributing factors recorded for this decision.</p>
                       ) : (
@@ -286,112 +278,88 @@ export default function ExplainabilityPage() {
                           <div key={i} className="space-y-1">
                             <div className="flex items-center justify-between">
                               <span className="text-sm font-medium">{f.factor}</span>
-                              <Badge variant="outline">{Math.round(f.weight * 100)}%</Badge>
+                              <span className="text-xs px-2 py-0.5 rounded-full border font-semibold">{Math.round(f.weight * 100)}%</span>
                             </div>
                             <Progress value={f.weight * 100} className="h-1.5" />
                             <p className="text-xs text-muted-foreground">{f.description}</p>
                           </div>
                         ))
                       )}
-
                       {explain.explanation?.reasoning && (
                         <Alert className="mt-4">
                           <Brain className="w-4 h-4" />
                           <AlertDescription className="text-xs ml-2">{explain.explanation.reasoning}</AlertDescription>
                         </Alert>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
 
                   {(explain.recommendations ?? []).length > 0 && (
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">AI Recommendations</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-2">
-                          {(explain.recommendations as string[]).map((r, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm">
-                              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                              {r}
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
+                    <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                      <h3 className="font-bold text-sm mb-3">AI Recommendations</h3>
+                      <ul className="space-y-2">
+                        {(explain.recommendations as string[]).map((r, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                            {r}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </TabsContent>
 
-                <TabsContent value="classification" className="space-y-4 mt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card>
-                      <CardContent className="pt-4 space-y-3">
+                <TabsContent value="classification" className="space-y-3 mt-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      {
+                        icon: <AlertTriangle className="w-4 h-4 text-yellow-500" />,
+                        label: "Urgency Level",
+                        value: <span className="font-bold capitalize">{explain.urgency?.level ?? "—"}</span>,
+                        progress: (explain.urgency?.score ?? 0) * 10,
+                        sub: `${explain.urgency?.score?.toFixed(1) ?? "0"}/10`,
+                      },
+                      {
+                        icon: <Shield className="w-4 h-4 text-blue-500" />,
+                        label: "Intent Analysis",
+                        value: <span className="font-bold text-sm">
+                          {explain.intent?.isGenuineEmergency ? "Genuine Emergency" :
+                           explain.intent?.isTestReport ? "Test Report" : "Casual Mention"}
+                        </span>,
+                        progress: null,
+                        sub: `Confidence: ${Math.round((explain.intent?.confidence ?? 0) * 100)}%`,
+                      },
+                      {
+                        icon: <Eye className="w-4 h-4 text-red-500" />,
+                        label: "Fake Detection",
+                        value: <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${explain.fakeDetection?.isSuspicious ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"}`}>
+                          {explain.fakeDetection?.isSuspicious ? "Suspicious" : "Authentic"}
+                        </span>,
+                        progress: explain.fakeDetection?.score ?? 0,
+                        sub: `Score: ${explain.fakeDetection?.score ?? 0}/100`,
+                      },
+                      {
+                        icon: <Zap className="w-4 h-4 text-indigo-500" />,
+                        label: "Fused Priority",
+                        value: <span className="font-bold" style={{ color: PRIORITY_COLORS[explain.fusedScore?.priority ?? "LOW"] }}>
+                          {explain.fusedScore?.priority ?? "—"}
+                        </span>,
+                        progress: Math.round((explain.fusedScore?.finalScore ?? 0) * 100),
+                        sub: `Score: ${Math.round((explain.fusedScore?.finalScore ?? 0) * 100)}%`,
+                      },
+                    ].map(({ icon, label, value, progress, sub }) => (
+                      <div key={label} className="rounded-xl border bg-background p-4 shadow-sm space-y-2">
                         <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                          {icon}
                           <div>
-                            <p className="text-xs text-muted-foreground">Urgency Level</p>
-                            <p className="font-bold capitalize">{explain.urgency?.level ?? "—"}</p>
+                            <p className="text-xs text-muted-foreground">{label}</p>
+                            {value}
                           </div>
                         </div>
-                        <Progress value={(explain.urgency?.score ?? 0) * 10} className="h-2" />
-                        <p className="text-xs text-muted-foreground">{explain.urgency?.score?.toFixed(1) ?? "0"}/10</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Shield className="w-5 h-5 text-blue-500" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Intent Analysis</p>
-                            <p className="font-bold text-sm">
-                              {explain.intent?.isGenuineEmergency ? "Genuine Emergency" :
-                               explain.intent?.isTestReport ? "Test Report" : "Casual Mention"}
-                            </p>
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Confidence: {Math.round((explain.intent?.confidence ?? 0) * 100)}%
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Eye className="w-5 h-5 text-red-500" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Fake Detection</p>
-                            <Badge
-                              variant={explain.fakeDetection?.isSuspicious ? "destructive" : "secondary"}
-                              className="mt-1"
-                            >
-                              {explain.fakeDetection?.isSuspicious ? "Suspicious" : "Authentic"}
-                            </Badge>
-                          </div>
-                        </div>
-                        <Progress value={explain.fakeDetection?.score ?? 0} className="h-1.5" />
-                        <p className="text-xs text-muted-foreground">Score: {explain.fakeDetection?.score ?? 0}/100</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="pt-4 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Zap className="w-5 h-5 text-indigo-500" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">Fused Priority</p>
-                            <p
-                              className="font-bold"
-                              style={{ color: PRIORITY_COLORS[explain.fusedScore?.priority ?? "LOW"] }}
-                            >
-                              {explain.fusedScore?.priority ?? "—"}
-                            </p>
-                          </div>
-                        </div>
-                        <Progress value={Math.round((explain.fusedScore?.finalScore ?? 0) * 100)} className="h-2" />
-                        <p className="text-xs text-muted-foreground">
-                          Score: {Math.round((explain.fusedScore?.finalScore ?? 0) * 100)}%
-                        </p>
-                      </CardContent>
-                    </Card>
+                        {progress !== null && <Progress value={progress} className="h-1.5" />}
+                        <p className="text-xs text-muted-foreground">{sub}</p>
+                      </div>
+                    ))}
                   </div>
 
                   {(explain.fakeDetection?.reasons ?? []).length > 0 && (
@@ -405,65 +373,44 @@ export default function ExplainabilityPage() {
                   )}
 
                   {(explain.urgency?.factors ?? []).length > 0 && (
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Urgency Factors</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-1">
-                          {(explain.urgency.factors as string[]).map((f: string, i: number) => (
-                            <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                              {f}
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
+                    <div className="rounded-2xl border bg-background p-4 shadow-sm">
+                      <h3 className="font-bold text-sm mb-2">Urgency Factors</h3>
+                      <ul className="space-y-1">
+                        {(explain.urgency.factors as string[]).map((f: string, i: number) => (
+                          <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </TabsContent>
 
                 <TabsContent value="audit" className="mt-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-indigo-500" />
-                        Audit Record
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <dl className="space-y-3 text-sm">
-                        <div className="flex gap-4">
-                          <dt className="w-32 text-muted-foreground shrink-0">Audit ID</dt>
-                          <dd className="font-mono text-xs break-all">{explain.explanation?.auditId}</dd>
+                  <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                        <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                      </div>
+                      <h3 className="font-bold text-sm">Audit Record</h3>
+                    </div>
+                    <dl className="space-y-3 text-sm">
+                      {[
+                        { label: "Audit ID",      value: <span className="font-mono text-xs break-all">{explain.explanation?.auditId}</span> },
+                        { label: "Timestamp",     value: explain.explanation?.timestamp ? new Date(explain.explanation.timestamp).toLocaleString() : "—" },
+                        { label: "Report ID",     value: <span className="font-mono text-xs">{explain.reportId}</span> },
+                        { label: "Model Version", value: explain.explanation?.modelVersion ?? "rule-based-v1" },
+                        { label: "Decision",      value: <Badge variant={explain.explanation?.triggered ? "default" : "secondary"}>{explain.explanation?.triggered ? "Triggered" : "Not triggered"}</Badge> },
+                        { label: "Confidence",    value: `${Math.round((explain.explanation?.confidence ?? 0) * 100)}%` },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="flex gap-4">
+                          <dt className="w-32 text-muted-foreground shrink-0">{label}</dt>
+                          <dd>{value}</dd>
                         </div>
-                        <div className="flex gap-4">
-                          <dt className="w-32 text-muted-foreground shrink-0">Timestamp</dt>
-                          <dd>{explain.explanation?.timestamp ? new Date(explain.explanation.timestamp).toLocaleString() : "—"}</dd>
-                        </div>
-                        <div className="flex gap-4">
-                          <dt className="w-32 text-muted-foreground shrink-0">Report ID</dt>
-                          <dd className="font-mono text-xs">{explain.reportId}</dd>
-                        </div>
-                        <div className="flex gap-4">
-                          <dt className="w-32 text-muted-foreground shrink-0">Model Version</dt>
-                          <dd>{explain.explanation?.modelVersion ?? "rule-based-v1"}</dd>
-                        </div>
-                        <div className="flex gap-4">
-                          <dt className="w-32 text-muted-foreground shrink-0">Decision</dt>
-                          <dd>
-                            <Badge variant={explain.explanation?.triggered ? "default" : "secondary"}>
-                              {explain.explanation?.triggered ? "Triggered" : "Not triggered"}
-                            </Badge>
-                          </dd>
-                        </div>
-                        <div className="flex gap-4">
-                          <dt className="w-32 text-muted-foreground shrink-0">Confidence</dt>
-                          <dd>{Math.round((explain.explanation?.confidence ?? 0) * 100)}%</dd>
-                        </div>
-                      </dl>
-                    </CardContent>
-                  </Card>
+                      ))}
+                    </dl>
+                  </div>
                 </TabsContent>
               </Tabs>
             ) : (

@@ -55,12 +55,10 @@ export default function MyReports() {
   if (!user) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto p-4">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">Please sign in to view your reports</p>
-            </CardContent>
-          </Card>
+        <div className="p-6">
+          <div className="rounded-2xl border-2 border-dashed py-16 text-center max-w-md mx-auto">
+            <p className="text-sm text-muted-foreground">Please sign in to view your reports</p>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -68,15 +66,17 @@ export default function MyReports() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-4 max-w-7xl">
-        <div className="mb-6">
+      <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
+        <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <FileText className="h-8 w-8" />
-                My Reports
-              </h1>
-              <p className="text-muted-foreground mt-2">
+              <div className="flex items-center gap-2.5 mb-1">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-blue-500" />
+                </div>
+                <h1 className="text-2xl font-black">My Reports</h1>
+              </div>
+              <p className="text-sm text-muted-foreground">
                 View and manage all your submitted disaster reports
               </p>
             </div>
@@ -100,31 +100,29 @@ export default function MyReports() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading your reports...</p>
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-sm text-muted-foreground">Loading your reports...</p>
             </div>
           </div>
         ) : filteredReports.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">
-                {reports.length === 0 ? "No Reports Yet" : "No Matching Reports"}
-              </p>
-              <p className="text-muted-foreground text-center mb-4 max-w-md">
-                {reports.length === 0
-                  ? "You haven't submitted any disaster reports yet. Help your community by reporting emergencies."
-                  : "No reports match your search criteria. Try different keywords."}
-              </p>
-              {reports.length === 0 && (
-                <Button onClick={() => setLocation("/submit")} data-testid="button-submit-first-report">
-                  Submit Your First Report
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl border-2 border-dashed flex flex-col items-center justify-center py-16">
+            <FileText className="h-12 w-12 text-muted-foreground mb-3 opacity-40" />
+            <p className="text-base font-bold mb-1">
+              {reports.length === 0 ? "No Reports Yet" : "No Matching Reports"}
+            </p>
+            <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+              {reports.length === 0
+                ? "You haven't submitted any disaster reports yet."
+                : "No reports match your search criteria."}
+            </p>
+            {reports.length === 0 && (
+              <Button onClick={() => setLocation("/submit")} data-testid="button-submit-first-report">
+                Submit Your First Report
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="grid gap-4">
             {filteredReports.map((report) => (

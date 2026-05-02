@@ -70,16 +70,16 @@ export default function OrganizationsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Building2 className="w-8 h-8 text-blue-600" />
-              Organizations
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Multi-tenant organization management — NGOs, government agencies, private networks
-            </p>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-blue-500" />
+              </div>
+              <h1 className="text-2xl font-black">Organizations</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">Multi-tenant organization management — NGOs, government agencies, private networks</p>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
@@ -148,43 +148,37 @@ export default function OrganizationsPage() {
 
         {/* My Memberships */}
         {memberships.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">My Memberships</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {memberships.map((m) => (
-                  <Badge key={m.orgId} variant="secondary" className="gap-1">
-                    <Building2 className="w-3 h-3" />
-                    {m.orgName}
-                    <span className="text-xs opacity-70">({m.memberRole})</span>
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl border bg-background p-4 shadow-sm">
+            <h3 className="font-bold text-sm mb-3">My Memberships</h3>
+            <div className="flex flex-wrap gap-2">
+              {memberships.map((m) => (
+                <span key={m.orgId} className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300 font-medium">
+                  <Building2 className="w-3 h-3" />
+                  {m.orgName}
+                  <span className="opacity-70">({m.memberRole})</span>
+                </span>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: "Total Organizations", value: orgs.length, icon: Building2, color: "text-blue-600" },
-            { label: "Verified", value: orgs.filter(o => o.isVerified).length, icon: CheckCircle, color: "text-green-600" },
-            { label: "Active", value: orgs.filter(o => o.isActive).length, icon: Globe, color: "text-purple-600" },
-            { label: "My Memberships", value: memberships.length, icon: Users, color: "text-orange-600" },
-          ].map(stat => (
-            <Card key={stat.label}>
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground">{stat.label}</p>
-                  </div>
-                  <stat.icon className={`w-8 h-8 ${stat.color} opacity-60`} />
+            { label: "Total Organizations", value: orgs.length, icon: Building2, bg: "bg-blue-500/10", color: "text-blue-500" },
+            { label: "Verified", value: orgs.filter(o => o.isVerified).length, icon: CheckCircle, bg: "bg-green-500/10", color: "text-green-500" },
+            { label: "Active", value: orgs.filter(o => o.isActive).length, icon: Globe, bg: "bg-purple-500/10", color: "text-purple-500" },
+            { label: "My Memberships", value: memberships.length, icon: Users, bg: "bg-orange-500/10", color: "text-orange-500" },
+          ].map(({ label, value, icon: Icon, bg, color }) => (
+            <div key={label} className="rounded-xl border bg-background p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center`}>
+                  <Icon className={`w-4 h-4 ${color}`} />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <p className="text-2xl font-black">{value}</p>
+              <p className="text-xs text-muted-foreground">{label}</p>
+            </div>
           ))}
         </div>
 
@@ -192,56 +186,42 @@ export default function OrganizationsPage() {
         {isLoading ? (
           <div className="text-center text-muted-foreground py-12">Loading organizations...</div>
         ) : orgs.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">No organizations yet. Create the first one.</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl border-2 border-dashed py-16 text-center">
+            <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
+            <p className="text-sm font-semibold">No organizations yet</p>
+            <p className="text-xs text-muted-foreground">Create the first one using the button above.</p>
+          </div>
         ) : (
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
             {orgs.map((org) => (
-              <Card key={org.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
+              <div key={org.id} className="rounded-2xl border bg-background shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                <div className="h-1 bg-blue-600" />
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-1">
                     <div className="flex-1">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        {org.name}
-                        {org.isVerified && <CheckCircle className="w-4 h-4 text-green-500" />}
-                      </CardTitle>
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <h3 className="font-bold text-sm">{org.name}</h3>
+                        {org.isVerified && <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${orgTypeColors[org.type] || "bg-gray-100 text-gray-700"}`}>
                           {org.type.replace("_", " ").toUpperCase()}
                         </span>
-                        {!org.isActive && <Badge variant="destructive" className="text-xs">Inactive</Badge>}
+                        {!org.isActive && <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-700">Inactive</span>}
                       </div>
                     </div>
                   </div>
                   {org.description && (
-                    <CardDescription className="text-xs mt-1 line-clamp-2">{org.description}</CardDescription>
+                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{org.description}</p>
                   )}
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground space-y-1">
-                  {org.region && (
-                    <div className="flex items-center gap-1">
-                      <Globe className="w-3 h-3" /> {org.region}
-                    </div>
-                  )}
-                  {org.contactEmail && (
-                    <div className="flex items-center gap-1">
-                      <Mail className="w-3 h-3" /> {org.contactEmail}
-                    </div>
-                  )}
-                  {org.contactPhone && (
-                    <div className="flex items-center gap-1">
-                      <Phone className="w-3 h-3" /> {org.contactPhone}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1 text-muted-foreground/60 pt-1">
-                    Created {new Date(org.createdAt).toLocaleDateString()}
+                  <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                    {org.region && <div className="flex items-center gap-1"><Globe className="w-3 h-3" /> {org.region}</div>}
+                    {org.contactEmail && <div className="flex items-center gap-1"><Mail className="w-3 h-3" /> {org.contactEmail}</div>}
+                    {org.contactPhone && <div className="flex items-center gap-1"><Phone className="w-3 h-3" /> {org.contactPhone}</div>}
+                    <div className="text-muted-foreground/50 pt-1">Created {new Date(org.createdAt).toLocaleDateString()}</div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         )}
