@@ -68,9 +68,81 @@ Preferred communication style: Simple, everyday language.
 -   **Background Task Queue**: In-memory queue for async processing with retry logic and graceful shutdown.
 -   **Shared Middleware**: Reusable authentication, validation, and authorization middleware.
 
+## Elite Architecture Features (v2.0)
+
+### T001 — AI Layer (Multi-Signal Crisis Intelligence)
+- **Service**: `server/modules/ai/crisis-intelligence.service.ts`
+- Multi-signal analysis combining text + severity + GPS + emotion + intent
+- Urgency scoring: continuous 0–10 scale with 5 levels (minimal → critical)
+- Explainable AI: every decision includes `auditId`, contributing factors, confidence, and reasoning
+- Fake detection: score 0–100 with specific reason flags
+- Early warning: auto-detects ≥3 same-type reports in 1 hour
+- Rule-based fallback when OpenAI is not configured
+- Endpoints: `POST /api/ai/analyze`, `GET /api/ai/early-warning`, `POST /api/ai/copilot`, `GET /api/ai/explain/:id`
+
+### T002 — SOS Lifecycle Engine (Smart Dispatch + SLA Escalation)
+- **Service**: `server/modules/sos/dispatch.service.ts`
+- SmartDispatchService: Haversine geo-routing + skill match (10 disaster types) + reputation weighting
+  - Score = 40% distance + 30% skill + 15% availability + 15% reputation
+- SLAEscalationService: 30s → expand radius, 60s → notify authorities, 120s → public broadcast
+- Endpoints: `POST /api/sos/:id/dispatch`, `GET /api/sos/:id/dispatch-status`
+
+### T003 — Geo-Intelligence (Risk Mapping + Route Optimization)
+- **Service**: `server/modules/geo/risk-mapping.service.ts`
+- Grid-based (0.1° cells) risk scoring with time decay, severity weights, nighttime bonus
+- 5 risk levels: very_low → very_high
+- Route optimizer: waypoint detour around high-risk zones with Haversine path analysis
+- Endpoints: `GET /api/geo/risk-map`, `POST /api/geo/route`, `GET /api/geo/safe-zones`
+- Frontend: `/risk-map` — Interactive Leaflet map with risk circles + route polylines
+
+### T004 — AI Crisis Copilot (RAG Knowledge + Multi-Language)
+- **Service**: `server/modules/ai/rag-knowledge.service.ts`
+- RAG knowledge base: 8+ disaster type protocols (NDRF guidelines, medical instructions, evacuation)
+- Multi-language: Hindi + English with local Indian emergency numbers
+- GPT-4o-mini augments base protocols when available
+- Endpoint: `POST /api/ai/copilot`
+- Frontend: `/copilot` — Full guidance UI with structured output
+
+### T005 — Real-Time Communication (Broadcast Alerts)
+- **Service**: `server/routes/broadcast.routes.ts`
+- Admin/NGO broadcast alerts (info/warning/critical) via WebSocket to all clients
+- Alert types: `broadcast_alert`, `sos_dispatch_notification`, `sos_sla_escalation`
+- Alert expiration support
+- Endpoints: `POST /api/alerts/broadcast`, `GET /api/alerts/broadcast`
+- Frontend: `/broadcast-alerts` — Alert composer + active alerts panel
+
+### T006 — Trust & Fraud Prevention
+- **Service**: `server/modules/trust/behavioral-analysis.service.ts`
+- Per-user behavioral profiling: submission rate, report frequency, location consistency
+- Anomaly flags: excessive_submissions_24h, reports_too_frequent, extreme_location_variance
+- Trust badge system: unverified → trusted → verified_responder → elite_responder
+- System-wide anomaly detection (submission spikes, disaster-type clustering)
+- Endpoints: `GET /api/trust/user/:id/profile`, `/score`, `GET /api/trust/anomalies`, `/high-risk-users`
+- Frontend: `/trust` — Admin anomaly + high-risk user dashboard
+
+### T007 — Analytics & Intelligence Dashboard
+- **Service**: `server/routes/analytics-advanced.routes.ts`
+- Peak crisis hours (24h heatmap with severity-weighted risk index)
+- SLA compliance tracking (response time distribution + compliance rate)
+- Resource efficiency scoring (fulfillment rate, aid match rate, inventory alerts)
+- Seasonal patterns (monthly incident distribution with top disaster type)
+- System health monitoring (normal/warning/critical status)
+- Predictive analytics (historical + seasonal → probability predictions with recommendations)
+- Endpoints: `/api/analytics/peak-hours`, `/sla-compliance`, `/resource-efficiency`, `/seasonal-patterns`, `/system-health`, `/predict`
+- Frontend: `/intelligence` — 5-tab intelligence dashboard (Overview, SLA, Peak Hours, Seasonal, Resources)
+
+### New Frontend Pages (Elite)
+| Route | Component | Access |
+|-------|-----------|--------|
+| `/intelligence` | IntelligenceDashboard | admin, government |
+| `/copilot` | CrisisCopilot | all roles |
+| `/risk-map` | RiskMap | volunteer, ngo, admin, government |
+| `/broadcast-alerts` | BroadcastAlerts | ngo, admin |
+| `/trust` | TrustDashboard | admin only |
+
 ## External Dependencies
 -   **Database**: PostgreSQL via Neon serverless.
--   **AI Service**: Replit AI Integrations (GPT-4o-mini).
+-   **AI Service**: Replit AI Integrations (GPT-4o-mini) with rule-based fallback.
 -   **Object Storage**: Replit App Storage for media uploads.
 -   **Fonts**: Google Fonts (Inter, JetBrains Mono).
 -   **Weather API**: OpenWeather API (for predictive modeling).

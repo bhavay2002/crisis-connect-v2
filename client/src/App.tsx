@@ -31,6 +31,11 @@ import ClusterManagementPage from "@/modules/admin/pages/ClusterManagementPage";
 import AnalyticsDashboard from "@/modules/analytics/pages/AnalyticsDashboard";
 import ImageClassification from "@/modules/analytics/pages/ImageClassification";
 import PredictiveModeling from "@/modules/analytics/pages/PredictiveModeling";
+import IntelligenceDashboard from "@/modules/analytics/pages/IntelligenceDashboard";
+import CrisisCopilot from "@/modules/analytics/pages/CrisisCopilot";
+import RiskMap from "@/modules/map/pages/RiskMap";
+import BroadcastAlerts from "@/modules/admin/pages/BroadcastAlerts";
+import TrustDashboard from "@/modules/admin/pages/TrustDashboard";
 import Map from "@/modules/map/pages/Map";
 import UserProfile from "@/modules/user/pages/UserProfile";
 import IdentityVerification from "@/modules/user/pages/IdentityVerification";
@@ -90,6 +95,11 @@ function Router() {
           <Route path="/clusters" component={ClusterManagementPage} />
           <Route path="/classify" component={ImageClassification} />
           <Route path="/predictions" component={PredictiveModeling} />
+          <Route path="/intelligence" component={IntelligenceDashboard} />
+          <Route path="/copilot" component={CrisisCopilot} />
+          <Route path="/risk-map" component={RiskMap} />
+          <Route path="/broadcast-alerts" component={BroadcastAlerts} />
+          <Route path="/trust" component={TrustDashboard} />
           <Route path="/select-role" component={RoleSelection} />
           <Route path="/role-selection" component={RoleSelection} />
           <Route path="/my-reports" component={MyReports} />

@@ -3,6 +3,7 @@ import { storage } from "../db/storage";
 import { isAuthenticated } from "../middleware/jwtAuth";
 import { insertSOSAlertSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { dispatchService, slaEscalationService } from "../modules/sos/dispatch.service";
 
 // Placeholder for broadcast function - will be injected via index.ts
 let broadcastToAll: (message: any) => void = () => {};
@@ -183,6 +184,57 @@ export function registerSOSRoutes(app: Express) {
     } catch (error) {
       console.error("Error resolving SOS alert:", error);
       res.status(500).json({ message: "Failed to resolve SOS alert" });
+    }
+  });
+
+  // Smart dispatch: find best responders for an SOS
+  app.post("/api/sos/:id/dispatch", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const alert = await storage.getSOSAlert(id);
+      if (!alert) return res.status(404).json({ message: "SOS alert not found" });
+
+      const user = await storage.getUser(req.user.userId);
+      if (!user || !["volunteer", "ngo", "admin"].includes(user.role || "")) {
+        return res.status(403).json({ message: "Only responders can trigger dispatch" });
+      }
+
+      const lat = alert.latitude ? parseFloat(alert.latitude) : 20.5937;
+      const lon = alert.longitude ? parseFloat(alert.longitude) : 78.9629;
+
+      const result = await dispatchService.findBestResponders(
+        id, alert.emergencyType, lat, lon,
+        req.body.radiusKm || 25, req.body.maxResults || 5
+      );
+
+      slaEscalationService.setupEscalation(id, new Date(alert.createdAt), broadcastToAll);
+
+      broadcastToAll({ type: "sos_dispatch_started", data: { sosId: id, respondersFound: result.recommended.length } });
+      res.json(result);
+    } catch (error) {
+      console.error("Error dispatching SOS:", error);
+      res.status(500).json({ message: "Dispatch failed" });
+    }
+  });
+
+  // Get dispatch status for an SOS
+  app.get("/api/sos/:id/dispatch-status", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const alert = await storage.getSOSAlert(id);
+      if (!alert) return res.status(404).json({ message: "SOS alert not found" });
+
+      res.json({
+        sosId: id,
+        status: alert.status,
+        respondedBy: alert.respondedBy,
+        respondedAt: alert.respondedAt,
+        resolvedAt: alert.resolvedAt,
+        createdAt: alert.createdAt,
+        secondsElapsed: Math.floor((Date.now() - new Date(alert.createdAt).getTime()) / 1000),
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get dispatch status" });
     }
   });
 

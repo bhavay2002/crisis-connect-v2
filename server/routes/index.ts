@@ -42,6 +42,11 @@ import { registerClusteringRoutes } from "./clustering.routes";
 import { tasksRouter } from "./tasks.routes";
 import { registerCacheRoutes } from "./cache.routes";
 import { registerExportRoutes } from "./export.routes";
+import { registerAIIntelligenceRoutes } from "./ai-intelligence.routes";
+import { registerGeoIntelligenceRoutes } from "./geo-intelligence.routes";
+import { registerTrustRoutes } from "./trust.routes";
+import { registerBroadcastRoutes, setBroadcastFunction as setBroadcastBroadcast } from "./broadcast.routes";
+import { registerAdvancedAnalyticsRoutes } from "./analytics-advanced.routes";
 import { wsRateLimiter } from "../middleware/wsRateLimiting";
 import { config } from "../config";
 import { encryptWebSocketMessage, shouldEncryptMessage, type SecureWebSocketMessage } from "../shared/websocket/ws-encryption";
@@ -254,6 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setSOSBroadcast(broadcastToAll);
   setChatBroadcast(broadcastToAll);
   setAIBroadcast(broadcastToAll);
+  setBroadcastBroadcast(broadcastToAll);
 
   // API Version Information Endpoint
   app.get("/api", (req, res) => {
@@ -315,7 +321,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerClusteringRoutes(app);
   registerCacheRoutes(app);
   registerExportRoutes(app);
-  
+  registerAIIntelligenceRoutes(app);
+  registerGeoIntelligenceRoutes(app);
+  registerTrustRoutes(app);
+  registerBroadcastRoutes(app);
+  registerAdvancedAnalyticsRoutes(app);
+
   // Register tasks routes
   app.use("/api/tasks", tasksRouter);
 
