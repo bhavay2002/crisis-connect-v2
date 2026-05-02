@@ -195,6 +195,51 @@ Preferred communication style: Simple, everyday language.
 - `POST /api/ai/copilot` returns `{ steps[], warnings[], resources[] }` per spec
 - 8 action steps, 2 safety warnings, 9 resource items for flood scenario (example)
 
+## Spec §5-8 Features (v4.0 — Real-Time Comms, Trust, Explainable AI, Analytics)
+
+### §5 — Real-Time Communication Infrastructure
+- **Chat rooms**: Group (named) and Direct (DM, auto-creates shared room) via `POST /api/chat/rooms` + `POST /api/chat/dm`
+- **Messages**: End-to-end AES-GCM encrypted, stored with `status` (sent/delivered/read), `isPinned`, `isPriority`
+- **Read Receipts**: `PATCH /api/chat/rooms/:roomId/messages/:msgId/read` → sets `status=read`, `readAt` timestamp; broadcasts `READ_RECEIPT` WS event
+- **Delivery Receipts**: `PATCH .../deliver` → `status=delivered`, `deliveredAt`; triggered by receiver on WS `RECEIVE_MESSAGE`
+- **Typing Indicators**: `POST /api/chat/rooms/:roomId/typing` → broadcasts `TYPING_START`/`TYPING_STOP` to all room members
+- **Pin/Unpin**: `PATCH .../messages/:id/pin` — `isPinned` toggle; `GET .../messages/pinned` returns pinned list
+- **Frontend**: `client/src/modules/chat/pages/ChatPage.tsx` — full-featured chat UI with real-time WS, typing display, receipt status icons, pinned messages panel, low-bandwidth mode awareness
+- **Low-Bandwidth Context**: `client/src/context/LowBandwidthContext.tsx` — localStorage-persisted Wifi toggle in dashboard nav bar
+
+### §6 — Trust & Fraud Prevention Enhancements
+- **Device Fingerprinting**: `server/modules/security/device-fingerprint.service.ts`
+  - IP+UA SHA-256 hash fingerprinting; tracks `requestCount`, `riskScore` (0-100), `isFlagged`
+  - Multi-account detection: riskScore +30 when same device used with different user ID; auto-flags at score ≥ 70
+  - **DB**: `device_fingerprints` table (id, userId, ipAddress, userAgent, fingerprintHash, riskScore, requestCount, isFlagged, flagReason, firstSeenAt, lastSeenAt)
+  - **Captured on login**: `POST /api/auth/login` upserts fingerprint record (non-blocking, fire-and-forget)
+  - **Admin endpoints**: `GET /api/security/devices/flagged`, `/high-risk?minRisk=N`, `/user/:userId`
+
+### §7 — Explainable AI
+- **AI Decision Audit Log**: `GET /api/ai/decisions?page=N&limit=N`
+  - Paginated list of AI decisions for every disaster report (auditId, fusedPriority, confidence, triggered, urgencyLevel, contributing factors, reasoning, recommendations)
+- **Per-Report Explainability**: `GET /api/ai/explain/:reportId` — full breakdown (contributing factors, signal fusion components, fakeDetection, urgency, intent)
+- **Frontend**: `client/src/modules/analytics/pages/ExplainabilityPage.tsx` at `/explainability`
+  - Decision list with priority color-coding and suspicious flags
+  - **Signal Fusion** tab: bar chart + radar of 4 components (AI Urgency 50%, Location Risk 20%, Repetition 20%, User Trust 10%)
+  - **Contributing Factors** tab: progress-bar breakdown with weight %, reasoning text
+  - **Classification** tab: urgency/intent/fakeDetection/fusedPriority cards
+  - **Audit Trail** tab: auditId, timestamp, modelVersion, confidence
+- Nav: "AI Audit" link added for admin/government roles
+
+### §8 — Analytics Enhancements
+- **Incident Conversion Funnel**: `GET /api/analytics/funnel`
+  - 5-stage incident funnel: Submitted → Verified → Resources Requested → Dispatched → Resolved
+  - SOS resolution funnel: Activated → Responding → Resolved
+  - Overall conversion rate %
+- **User Cohort Analysis**: `GET /api/analytics/cohort`
+  - 4 cohorts: New (<7d), Recent (7-30d), Regular (30-90d), Established (90d+)
+  - Role breakdown, engagement rate (% of users who have submitted reports), multi-reporters count
+  - Reports-per-user per role
+- **Frontend**: IntelligenceDashboard now has 7 tabs (+ Funnel, Cohort)
+  - Funnel tab: color-coded horizontal bars + recharts BarChart layout="vertical"
+  - Cohort tab: PieChart for cohort distribution, BarChart for reports-by-role, role grid
+
 ## External Dependencies
 -   **Database**: PostgreSQL via Neon serverless.
 -   **AI Service**: Replit AI Integrations (GPT-4o-mini) with rule-based fallback.

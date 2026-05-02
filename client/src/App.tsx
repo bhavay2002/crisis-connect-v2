@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary";
+import { LowBandwidthProvider } from "@/context/LowBandwidthContext";
 
 // Pages - Organized by feature modules
 import Landing from "@/modules/auth/pages/Landing";
@@ -43,6 +44,8 @@ import ReputationDashboard from "@/modules/user/pages/ReputationDashboard";
 import Notifications from "@/modules/user/pages/Notifications";
 import NotificationPreferences from "@/modules/user/pages/NotificationPreferences";
 import NotFound from "@/pages/not-found";
+import ChatPage from "@/modules/chat/pages/ChatPage";
+import ExplainabilityPage from "@/modules/analytics/pages/ExplainabilityPage";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -104,6 +107,8 @@ function Router() {
           <Route path="/role-selection" component={RoleSelection} />
           <Route path="/my-reports" component={MyReports} />
           <Route path="/teams" component={ResponseTeams} />
+          <Route path="/chat" component={ChatPage} />
+          <Route path="/explainability" component={ExplainabilityPage} />
         </>
       )}
     </Switch>
@@ -114,10 +119,12 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Router />
-          <Toaster />
-        </TooltipProvider>
+        <LowBandwidthProvider>
+          <TooltipProvider>
+            <Router />
+            <Toaster />
+          </TooltipProvider>
+        </LowBandwidthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

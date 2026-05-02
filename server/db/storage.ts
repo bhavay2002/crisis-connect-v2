@@ -35,6 +35,7 @@ import {
   chatRooms,
   chatRoomMembers,
   messages,
+  deviceFingerprints,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, sql } from "drizzle-orm";
@@ -181,6 +182,11 @@ export interface IStorage {
   getMessages(chatRoomId: string, limit?: number): Promise<Message[]>;
   getMessagesSince(chatRoomId: string, sinceDate: Date): Promise<Message[]>;
   deleteMessage(id: string): Promise<void>;
+  updateMessageStatus(messageId: string, status: "sent" | "delivered" | "read"): Promise<Message | undefined>;
+  pinMessage(messageId: string, isPinned: boolean): Promise<Message | undefined>;
+  getPinnedMessages(chatRoomId: string): Promise<Message[]>;
+  findOrCreateDMRoom(userA: string, userB: string, incidentId?: string): Promise<ChatRoom>;
+  upsertDeviceFingerprint(data: { userId?: string; ipAddress: string; userAgent?: string }): Promise<{ riskScore: number; isFlagged: boolean }>;
 
   // Clustering operations
   updateSimilarReports(reportId: string, similarReportIds: string[]): Promise<DisasterReport | undefined>;
@@ -1211,6 +1217,58 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(disasterReports.createdAt))
       .limit(limit);
     return reports;
+  }
+
+  async updateMessageStatus(messageId: string, status: "sent" | "delivered" | "read"): Promise<Message | undefined> {
+    const now = new Date();
+    const update: any = { status };
+    if (status === "delivered") update.deliveredAt = now;
+    if (status === "read") { update.deliveredAt = now; update.readAt = now; }
+    const [msg] = await db.update(messages).set(update).where(eq(messages.id, messageId)).returning();
+    return msg;
+  }
+
+  async pinMessage(messageId: string, isPinned: boolean): Promise<Message | undefined> {
+    const [msg] = await db.update(messages).set({ isPinned }).where(eq(messages.id, messageId)).returning();
+    return msg;
+  }
+
+  async getPinnedMessages(chatRoomId: string): Promise<Message[]> {
+    const msgs = await db.select().from(messages)
+      .where(and(eq(messages.chatRoomId, chatRoomId), eq(messages.isPinned, true)))
+      .orderBy(desc(messages.createdAt));
+    return msgs.map((msg) => {
+      if (msg.isEncrypted && msg.encryptionIv && msg.encryptionTag) {
+        try {
+          return { ...msg, content: decryptMessage({ encrypted: msg.content, iv: msg.encryptionIv, tag: msg.encryptionTag }) };
+        } catch { return { ...msg, content: "[Encrypted]" }; }
+      }
+      return msg;
+    });
+  }
+
+  async findOrCreateDMRoom(userA: string, userB: string, incidentId?: string): Promise<ChatRoom> {
+    const roomsA = await this.getUserChatRooms(userA);
+    for (const room of roomsA) {
+      if (room.type !== "direct") continue;
+      const isB = await this.isChatRoomMember(room.id, userB);
+      if (isB) return room;
+    }
+    const room = await this.createChatRoom({
+      name: null,
+      type: "direct",
+      relatedReportId: incidentId || null,
+      relatedSOSId: null,
+      createdBy: userA,
+    });
+    await this.addChatRoomMember({ chatRoomId: room.id, userId: userA, role: "admin" });
+    await this.addChatRoomMember({ chatRoomId: room.id, userId: userB, role: "member" });
+    return room;
+  }
+
+  async upsertDeviceFingerprint(data: { userId?: string; ipAddress: string; userAgent?: string }): Promise<{ riskScore: number; isFlagged: boolean }> {
+    const { deviceFingerprintService } = await import("../modules/security/device-fingerprint.service");
+    return deviceFingerprintService.upsert(data);
   }
 }
 

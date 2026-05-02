@@ -108,6 +108,9 @@ export function registerNewAuthRoutes(app: Express) {
 
         await AuditLogger.logSuccessfulLogin(user.id, req);
 
+        const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+        storage.upsertDeviceFingerprint({ userId: user.id, ipAddress: ip, userAgent: req.headers["user-agent"] }).catch(() => {});
+
         logger.info("User logged in successfully", { userId: user.id, email });
 
         const { password: _, refreshToken: __, ...userWithoutPassword } = user;

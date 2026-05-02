@@ -49,6 +49,8 @@ import { registerBroadcastRoutes, setBroadcastFunction as setBroadcastBroadcast 
 import { registerAdvancedAnalyticsRoutes } from "./analytics-advanced.routes";
 import { registerAdminCommandRoutes } from "./admin-command.routes";
 import { registerIoTRoutes, setBroadcastFunction as setIoTBroadcast } from "./iot.routes";
+import { registerDeviceSecurityRoutes } from "./device-security.routes";
+import { deviceFingerprintService } from "../modules/security/device-fingerprint.service";
 import { wsRateLimiter } from "../middleware/wsRateLimiting";
 import { config } from "../config";
 import { encryptWebSocketMessage, shouldEncryptMessage, type SecureWebSocketMessage } from "../shared/websocket/ws-encryption";
@@ -331,6 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerAdvancedAnalyticsRoutes(app);
   registerAdminCommandRoutes(app);
   registerIoTRoutes(app);
+  registerDeviceSecurityRoutes(app);
 
   // Register tasks routes
   app.use("/api/tasks", tasksRouter);

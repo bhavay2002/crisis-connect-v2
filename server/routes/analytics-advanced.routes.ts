@@ -208,6 +208,117 @@ export function registerAdvancedAnalyticsRoutes(app: Express) {
     }
   });
 
+  // §8 Analytics — Incident conversion funnel
+  app.get("/api/analytics/funnel", isAuthenticated, requireAdmin, async (req: any, res) => {
+    try {
+      const [reports, sos, resourceRequests] = await Promise.all([
+        storage.getAllDisasterReports(),
+        storage.getAllSOSAlerts(),
+        storage.getAllResourceRequests(),
+      ]);
+
+      const submitted = reports.length;
+      const verified = reports.filter(r => r.verificationCount && r.verificationCount >= 1).length;
+      const withResources = reports.filter(r =>
+        resourceRequests.some(rq => rq.reportId === r.id)
+      ).length;
+      const dispatched = reports.filter(r => r.assignedTeam).length;
+      const resolved = reports.filter(r => r.status === "resolved").length;
+
+      const funnel = [
+        { stage: "Submitted", count: submitted, pct: 100, color: "#6366f1" },
+        { stage: "Verified", count: verified, pct: submitted > 0 ? Math.round((verified / submitted) * 100) : 0, color: "#10b981" },
+        { stage: "Resources Requested", count: withResources, pct: submitted > 0 ? Math.round((withResources / submitted) * 100) : 0, color: "#f59e0b" },
+        { stage: "Dispatched", count: dispatched, pct: submitted > 0 ? Math.round((dispatched / submitted) * 100) : 0, color: "#f97316" },
+        { stage: "Resolved", count: resolved, pct: submitted > 0 ? Math.round((resolved / submitted) * 100) : 0, color: "#22c55e" },
+      ];
+
+      const activeSOS = sos.filter(s => s.status === "active").length;
+      const resolvedSOS = sos.filter(s => s.status === "resolved").length;
+
+      res.json({
+        funnel,
+        sosFunnel: [
+          { stage: "Activated", count: sos.length, pct: 100, color: "#ef4444" },
+          { stage: "Responding", count: sos.filter(s => s.status === "responding").length, pct: sos.length > 0 ? Math.round((sos.filter(s => s.status === "responding").length / sos.length) * 100) : 0, color: "#f97316" },
+          { stage: "Resolved", count: resolvedSOS, pct: sos.length > 0 ? Math.round((resolvedSOS / sos.length) * 100) : 0, color: "#22c55e" },
+        ],
+        overallConversionRate: submitted > 0 ? Math.round((resolved / submitted) * 100) : 0,
+      });
+    } catch (error) {
+      logger.error("Funnel analytics error", error as Error);
+      res.status(500).json({ message: "Funnel analysis failed" });
+    }
+  });
+
+  // §8 Analytics — User cohort analysis
+  app.get("/api/analytics/cohort", isAuthenticated, requireAdmin, async (req: any, res) => {
+    try {
+      const [users, reports] = await Promise.all([
+        storage.getAllUsers(),
+        storage.getAllDisasterReports(),
+      ]);
+
+      const now = Date.now();
+      const MS_DAY = 86400000;
+
+      const cohorts = {
+        new: users.filter(u => now - new Date(u.createdAt).getTime() < 7 * MS_DAY).length,
+        week: users.filter(u => {
+          const age = now - new Date(u.createdAt).getTime();
+          return age >= 7 * MS_DAY && age < 30 * MS_DAY;
+        }).length,
+        month: users.filter(u => {
+          const age = now - new Date(u.createdAt).getTime();
+          return age >= 30 * MS_DAY && age < 90 * MS_DAY;
+        }).length,
+        established: users.filter(u => now - new Date(u.createdAt).getTime() >= 90 * MS_DAY).length,
+      };
+
+      const roleBreakdown = users.reduce<Record<string, number>>((acc, u) => {
+        acc[u.role] = (acc[u.role] || 0) + 1;
+        return acc;
+      }, {});
+
+      const activeReporters = new Set(reports.map(r => r.userId)).size;
+      const multiReporters = Object.entries(
+        reports.reduce<Record<string, number>>((acc, r) => {
+          if (r.userId) acc[r.userId] = (acc[r.userId] || 0) + 1;
+          return acc;
+        }, {})
+      ).filter(([, count]) => count >= 3).length;
+
+      const reportsByRole = Object.entries(roleBreakdown).map(([role, count]) => ({
+        role,
+        users: count,
+        avgReports: reports.filter(r => {
+          const user = users.find(u => u.id === r.userId);
+          return user?.role === role;
+        }).length / Math.max(count, 1),
+      }));
+
+      res.json({
+        userCohorts: [
+          { label: "New (< 7d)", count: cohorts.new, color: "#6366f1" },
+          { label: "Recent (7-30d)", count: cohorts.week, color: "#10b981" },
+          { label: "Regular (30-90d)", count: cohorts.month, color: "#f59e0b" },
+          { label: "Established (90d+)", count: cohorts.established, color: "#ec4899" },
+        ],
+        roleBreakdown: Object.entries(roleBreakdown).map(([role, count]) => ({ role, count })),
+        engagement: {
+          totalUsers: users.length,
+          activeReporters,
+          multiReporters,
+          engagementRate: users.length > 0 ? Math.round((activeReporters / users.length) * 100) : 0,
+        },
+        reportsByRole,
+      });
+    } catch (error) {
+      logger.error("Cohort analytics error", error as Error);
+      res.status(500).json({ message: "Cohort analysis failed" });
+    }
+  });
+
   // System health overview
   app.get("/api/analytics/system-health", isAuthenticated, requireAdmin, async (req: any, res) => {
     try {

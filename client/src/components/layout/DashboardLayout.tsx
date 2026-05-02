@@ -46,7 +46,12 @@ import {
   Award,
   Shield,
   Zap,
+  MessageSquare,
+  Wifi,
+  WifiOff,
+  Brain,
 } from "lucide-react";
+import { useLowBandwidth } from "@/context/LowBandwidthContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -73,6 +78,8 @@ const menuItems = [
   { title: "Reputation", url: "/reputation", icon: Award, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
   { title: "My Reports", url: "/my-reports", icon: FileText, roles: ["citizen", "volunteer", "ngo", "admin"] },
   { title: "Response Teams", url: "/teams", icon: Users, roles: ["volunteer", "ngo", "admin"] },
+  { title: "Messages", url: "/chat", icon: MessageSquare, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
+  { title: "AI Audit", url: "/explainability", icon: Brain, roles: ["admin", "government"] },
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -80,6 +87,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isDark, setIsDark] = useState(false);
   const [notifications] = useState(3);
   const { user } = useAuth();
+  const { isLowBandwidth, toggle: toggleBandwidth } = useLowBandwidth();
 
   const { data: reputation } = useQuery<{ trustScore: number }>({
     queryKey: ["/api/reputation/me"],
@@ -139,6 +147,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleBandwidth}
+                title={isLowBandwidth ? "Low-bandwidth mode ON — click to disable" : "Enable low-bandwidth mode"}
+                data-testid="button-bandwidth-toggle"
+              >
+                {isLowBandwidth ? (
+                  <WifiOff className="w-5 h-5 text-amber-500" />
+                ) : (
+                  <Wifi className="w-5 h-5" />
+                )}
+              </Button>
+
               <Button
                 variant="ghost"
                 size="icon"

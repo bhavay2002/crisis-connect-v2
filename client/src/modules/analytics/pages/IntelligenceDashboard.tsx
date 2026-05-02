@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, LineChart, Line, RadarChart, Radar,
-  PolarGrid, PolarAngleAxis, PolarRadiusAxis
+  PolarGrid, PolarAngleAxis, PolarRadiusAxis, PieChart, Pie, Cell,
 } from "recharts";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { apiRequest } from "@/lib/queryClient";
@@ -70,6 +70,12 @@ export default function IntelligenceDashboard() {
   const { data: anomalies } = useQuery<AnomalyResult>({
     queryKey: ["/api/trust/anomalies"],
     refetchInterval: 60_000,
+  });
+  const { data: funnelData } = useQuery<any>({
+    queryKey: ["/api/analytics/funnel"],
+  });
+  const { data: cohortData } = useQuery<any>({
+    queryKey: ["/api/analytics/cohort"],
   });
 
   const statusColors = { normal: "text-green-500", warning: "text-yellow-500", critical: "text-red-500" };
@@ -176,12 +182,14 @@ export default function IntelligenceDashboard() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="sla">SLA</TabsTrigger>
             <TabsTrigger value="peak">Peak Hours</TabsTrigger>
             <TabsTrigger value="seasonal">Seasonal</TabsTrigger>
             <TabsTrigger value="resources">Resources</TabsTrigger>
+            <TabsTrigger value="funnel">Funnel</TabsTrigger>
+            <TabsTrigger value="cohort">Cohorts</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -425,6 +433,175 @@ export default function IntelligenceDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* §8 Funnel tab */}
+          <TabsContent value="funnel" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-500" />
+                    Incident Conversion Funnel
+                  </CardTitle>
+                  <CardDescription>
+                    Overall conversion: <strong>{funnelData?.overallConversionRate ?? 0}%</strong> (submitted → resolved)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {(funnelData?.funnel ?? []).map((stage: any) => (
+                    <div key={stage.stage} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{stage.stage}</span>
+                        <span className="text-muted-foreground">{stage.count} ({stage.pct}%)</span>
+                      </div>
+                      <div className="h-6 rounded-md overflow-hidden bg-muted">
+                        <div
+                          className="h-full transition-all duration-500"
+                          style={{ width: `${stage.pct}%`, backgroundColor: stage.color }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-red-500" />
+                    SOS Resolution Funnel
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {(funnelData?.sosFunnel ?? []).map((stage: any) => (
+                    <div key={stage.stage} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{stage.stage}</span>
+                        <span className="text-muted-foreground">{stage.count} ({stage.pct}%)</span>
+                      </div>
+                      <div className="h-6 rounded-md overflow-hidden bg-muted">
+                        <div
+                          className="h-full transition-all duration-500"
+                          style={{ width: `${stage.pct}%`, backgroundColor: stage.color }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Funnel Chart</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={funnelData?.funnel ?? []} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="stage" width={130} tick={{ fontSize: 11 }} />
+                    <Tooltip formatter={(v: number) => `${v}%`} />
+                    <Bar dataKey="pct" name="Conversion %" radius={[0, 4, 4, 0]}>
+                      {(funnelData?.funnel ?? []).map((_entry: any, i: number) => (
+                        <Cell key={i} fill={_entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* §8 Cohort tab */}
+          <TabsContent value="cohort" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-3xl font-bold">{cohortData?.engagement?.totalUsers ?? 0}</p>
+                  <p className="text-sm text-muted-foreground">Total Users</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-3xl font-bold text-indigo-600">{cohortData?.engagement?.activeReporters ?? 0}</p>
+                  <p className="text-sm text-muted-foreground">Active Reporters</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4 text-center">
+                  <p className="text-3xl font-bold text-green-600">{cohortData?.engagement?.engagementRate ?? 0}%</p>
+                  <p className="text-sm text-muted-foreground">Engagement Rate</p>
+                  <Progress value={cohortData?.engagement?.engagementRate ?? 0} className="mt-2" />
+                </CardContent>
+              </Card>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-500" />
+                    User Cohorts by Age
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={cohortData?.userCohorts ?? []}
+                          dataKey="count"
+                          nameKey="label"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={70}
+                          label={({ label, count }) => count > 0 ? `${label}: ${count}` : ""}
+                        >
+                          {(cohortData?.userCohorts ?? []).map((_entry: any, i: number) => (
+                            <Cell key={i} fill={_entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reports by Role</CardTitle>
+                  <CardDescription>Average reports per user per role</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={cohortData?.reportsByRole ?? []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="role" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Bar dataKey="avgReports" name="Avg Reports" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Role Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {(cohortData?.roleBreakdown ?? []).map((rb: any) => (
+                    <div key={rb.role} className="text-center p-3 rounded-lg bg-muted/50">
+                      <p className="text-2xl font-bold">{rb.count}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{rb.role}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

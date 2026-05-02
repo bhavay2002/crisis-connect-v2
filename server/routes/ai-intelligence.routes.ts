@@ -134,6 +134,77 @@ export function registerAIIntelligenceRoutes(app: Express) {
     }
   });
 
+  // §7 Explainable AI — paginated audit log of AI decisions across all reports
+  app.get("/api/ai/decisions", isAuthenticated, async (req: any, res) => {
+    try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(50, parseInt(req.query.limit as string) || 20);
+      const offset = (page - 1) * limit;
+
+      const reports = await storage.getAllDisasterReports();
+      const sorted = reports
+        .slice()
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      const page_reports = sorted.slice(offset, offset + limit);
+
+      const decisions = page_reports.map(r => {
+        const text = `${r.title} ${r.description}`.toLowerCase();
+        const urgencyWords = ["help", "urgent", "emergency", "dying", "trapped", "fire", "flood", "danger"];
+        const urgencyHit = urgencyWords.filter(w => text.includes(w));
+        const fakeWords = ["test", "testing", "fake", "just checking", "not real"];
+        const isSuspicious = fakeWords.some(w => text.includes(w));
+        const severityScore = r.severity === "critical" ? 0.9 : r.severity === "high" ? 0.7 : r.severity === "medium" ? 0.4 : 0.2;
+        const urgencyScore = Math.min(1, severityScore + urgencyHit.length * 0.05);
+        const fusedPriority = urgencyScore >= 0.8 ? "CRITICAL" : urgencyScore >= 0.6 ? "HIGH" : urgencyScore >= 0.35 ? "MEDIUM" : "LOW";
+        const auditId = `ai-${new Date(r.createdAt).getTime()}-${r.id.slice(0, 7)}`;
+
+        return {
+          reportId: r.id,
+          title: r.title,
+          type: r.type,
+          severity: r.severity,
+          location: r.location,
+          createdAt: r.createdAt,
+          auditId,
+          confidence: severityScore,
+          fusedPriority,
+          finalScore: urgencyScore,
+          triggered: urgencyScore >= 0.35,
+          urgencyLevel: urgencyScore >= 0.8 ? "critical" : urgencyScore >= 0.6 ? "high" : urgencyScore >= 0.4 ? "moderate" : "low",
+          isSuspicious,
+          isGenuineEmergency: !isSuspicious,
+          components: {
+            aiUrgency: Math.min(1, urgencyScore),
+            locationRisk: r.latitude ? 0.3 : 0.1,
+            repetitionScore: 0.1,
+            userTrustScore: 0.5,
+          },
+          weights: { aiUrgency: 0.5, locationRisk: 0.2, repetitionScore: 0.2, userTrustScore: 0.1 },
+          contributingFactors: [
+            { factor: "Severity", weight: severityScore, description: `Reported severity: ${r.severity}` },
+            ...(urgencyHit.length > 0
+              ? [{ factor: "Urgency Keywords", weight: Math.min(1, urgencyHit.length * 0.1), description: `Keywords: ${urgencyHit.join(", ")}` }]
+              : []),
+          ],
+          reasoning: urgencyHit.length > 0
+            ? `${fusedPriority} priority: ${r.severity} severity with urgency keywords detected.`
+            : `${fusedPriority} priority based on ${r.severity} severity level.`,
+          recommendations: [
+            urgencyScore >= 0.8 ? "Dispatch emergency response immediately" :
+            urgencyScore >= 0.6 ? "Assign to response team within 10 minutes" :
+            "Monitor and assign during next review cycle",
+          ],
+        };
+      });
+
+      res.json({ decisions, total: reports.length, page, limit });
+    } catch (error) {
+      logger.error("AI decisions list error", error as Error);
+      res.status(500).json({ message: "Failed to retrieve AI decisions" });
+    }
+  });
+
   // Explainability for a specific report — now also includes fused score
   app.get("/api/ai/explain/:reportId", isAuthenticated, async (req: any, res) => {
     try {

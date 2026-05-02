@@ -545,6 +545,11 @@ export const messages = pgTable("messages", {
   encryptionIv: varchar("encryption_iv", { length: 32 }),
   encryptionTag: varchar("encryption_tag", { length: 32 }),
   isEncrypted: boolean("is_encrypted").default(false).notNull(),
+  status: text("status").notNull().default("sent"),
+  isPinned: boolean("is_pinned").default(false).notNull(),
+  isPriority: boolean("is_priority").default(false).notNull(),
+  deliveredAt: timestamp("delivered_at"),
+  readAt: timestamp("read_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -721,6 +726,28 @@ export const incidentReports = pgTable("incident_reports", {
 ]);
 
 export type IncidentReport = typeof incidentReports.$inferSelect;
+
+// ─── Device Fingerprinting (Spec §6.2) ───────────────────────────────────────
+
+export const deviceFingerprints = pgTable("device_fingerprints", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  ipAddress: varchar("ip_address", { length: 45 }).notNull(),
+  userAgent: text("user_agent"),
+  fingerprintHash: varchar("fingerprint_hash", { length: 64 }).notNull(),
+  riskScore: integer("risk_score").default(0).notNull(),
+  requestCount: integer("request_count").default(1).notNull(),
+  isFlagged: boolean("is_flagged").default(false).notNull(),
+  flagReason: text("flag_reason"),
+  firstSeenAt: timestamp("first_seen_at").defaultNow().notNull(),
+  lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_device_fp_user_id").on(table.userId),
+  index("idx_device_fp_hash").on(table.fingerprintHash),
+  index("idx_device_fp_ip").on(table.ipAddress),
+]);
+
+export type DeviceFingerprint = typeof deviceFingerprints.$inferSelect;
 
 // ─── Production Elite: State Transition Audit Log ────────────────────────────
 
