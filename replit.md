@@ -140,6 +140,61 @@ Preferred communication style: Simple, everyday language.
 | `/broadcast-alerts` | BroadcastAlerts | ngo, admin |
 | `/trust` | TrustDashboard | admin only |
 
+## Production-Grade Engineering (v3.0 — Signal Fusion & Command Interface)
+
+### Signal Fusion Engine
+- **Service**: `server/modules/ai/signal-fusion.service.ts`
+- Formula: `finalScore = 0.5×ai_urgency + 0.2×location_risk + 0.2×repetition_score + 0.1×user_trust_score`
+- Returns `fusedScore` with `priority` (LOW/MEDIUM/HIGH/CRITICAL), `finalScore`, and all 4 component values
+- Integrated into `POST /api/ai/analyze` response
+
+### Event Aggregation Engine
+- **Service**: `server/modules/ai/event-aggregation.service.ts`
+- Geo clustering: Haversine ≤ 500m, 3-hour rolling window
+- Semantic merge gate: Jaccard similarity ≥ 0.20 on tokenized title+description
+- Actions: `"created"` (new cluster) or `"merged"` (linked to existing incident)
+- Returns `{ action, incidentId, reportId, cluster: { geoDist, semanticSim } }`
+- Manual trigger: `POST /api/admin/incidents/aggregate/:reportId` (admin only)
+
+### Admin Command Interface
+- **Routes**: `server/routes/admin-command.routes.ts`
+- `PATCH /api/admin/incident/:id/override` — severity + notes override with audit log
+- `POST /api/admin/incident/:id/assign` — responder assignment with audit log
+- `POST /api/admin/incident/:id/escalate` — force escalate with reason logging
+- `POST /api/admin/incidents/merge` — manual merge of two incidents
+- `GET /api/admin/incidents` — list active aggregated incidents
+- `GET /api/admin/incidents/:id/reports` — linked report details
+- `GET /api/admin/incident/:id/history` — full state transition log
+- All endpoints protected by `requireRole("admin")`
+
+### IoT Ingestion Pipeline
+- **Routes**: `server/routes/iot.routes.ts`
+- `POST /api/iot/event` — accepts sensor_type, value, location, lat/lon, sensor_id
+- Maps 8 sensor types → disaster types + severities (fire_alarm, flood_sensor, earthquake_sensor, gas_detector, structural_monitor, air_quality, tsunami_warning, landslide_sensor)
+- Creates disaster reports in DB, broadcasts via WebSocket, auto-dispatches for critical events
+- System user created/cached for IoT-generated reports (no manual auth needed)
+- `GET /api/iot/sensor-types` — sensor type catalog with thresholds
+
+### SOS State Machine & History
+- **Routes**: `server/routes/sos.routes.ts`
+- All state transitions logged to `incident_logs` table
+- `GET /api/sos/:id/history` — full transition log with state machine spec:
+  `CREATED → VERIFIED → BROADCASTED → ACCEPTED → IN_PROGRESS → RESOLVED → CLOSED`
+- Escalation transitions also logged with reason
+
+### New Database Tables
+- `incidents` — aggregated multi-report incidents (centroid geo, severity, status, report count)
+- `incident_reports` — join table linking incidents ↔ disaster_reports
+- `incident_logs` — immutable append-only audit log for all state transitions
+
+### Updated Dispatch Formula
+- `40% haversine-geo + 30% reliability + 20% skill-match + 10% response-time`
+- Exposed in dispatch response as `algorithm` field
+
+### Copilot Structured Output
+- `POST /api/ai/copilot` returns `{ steps[], warnings[], resources[] }` per spec
+- 8 action steps, 2 safety warnings, 9 resource items for flood scenario (example)
+
 ## External Dependencies
 -   **Database**: PostgreSQL via Neon serverless.
 -   **AI Service**: Replit AI Integrations (GPT-4o-mini) with rule-based fallback.

@@ -47,6 +47,8 @@ import { registerGeoIntelligenceRoutes } from "./geo-intelligence.routes";
 import { registerTrustRoutes } from "./trust.routes";
 import { registerBroadcastRoutes, setBroadcastFunction as setBroadcastBroadcast } from "./broadcast.routes";
 import { registerAdvancedAnalyticsRoutes } from "./analytics-advanced.routes";
+import { registerAdminCommandRoutes } from "./admin-command.routes";
+import { registerIoTRoutes, setBroadcastFunction as setIoTBroadcast } from "./iot.routes";
 import { wsRateLimiter } from "../middleware/wsRateLimiting";
 import { config } from "../config";
 import { encryptWebSocketMessage, shouldEncryptMessage, type SecureWebSocketMessage } from "../shared/websocket/ws-encryption";
@@ -260,6 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setChatBroadcast(broadcastToAll);
   setAIBroadcast(broadcastToAll);
   setBroadcastBroadcast(broadcastToAll);
+  setIoTBroadcast(broadcastToAll);
 
   // API Version Information Endpoint
   app.get("/api", (req, res) => {
@@ -326,6 +329,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerTrustRoutes(app);
   registerBroadcastRoutes(app);
   registerAdvancedAnalyticsRoutes(app);
+  registerAdminCommandRoutes(app);
+  registerIoTRoutes(app);
 
   // Register tasks routes
   app.use("/api/tasks", tasksRouter);

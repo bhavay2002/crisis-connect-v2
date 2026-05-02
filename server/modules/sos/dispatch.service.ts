@@ -80,9 +80,9 @@ export class SmartDispatchService {
 
         const totalScore =
           distanceScore * 0.4 +
-          skillMatch * 0.3 +
-          availability * 0.15 +
-          reputation * 0.15;
+          reputation * 0.3 +
+          skillMatch * 0.2 +
+          availability * 0.1;
 
         scored.push({
           userId: responder.id,
@@ -109,7 +109,7 @@ export class SmartDispatchService {
 
       return {
         recommended,
-        algorithm: "haversine-geo + skill-match + reputation-weighted",
+        algorithm: "haversine-geo(40%) + reliability(30%) + skill-match(20%) + response-time(10%)",
         sosId,
         dispatchedAt: new Date().toISOString(),
         radiusKm,

@@ -674,3 +674,67 @@ export const insertDisasterPredictionSchema = createInsertSchema(disasterPredict
 
 export type InsertDisasterPrediction = z.infer<typeof insertDisasterPredictionSchema>;
 export type DisasterPrediction = typeof disasterPredictions.$inferSelect;
+
+// ─── Production Elite: Incident Aggregation ───────────────────────────────────
+
+export const incidentStatusEnum = pgEnum("incident_status", [
+  "active",
+  "merged",
+  "resolved",
+  "closed",
+]);
+
+export const incidents = pgTable("incidents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  disasterType: disasterTypeEnum("disaster_type").notNull(),
+  severity: severityEnum("severity").notNull(),
+  status: incidentStatusEnum("status").notNull().default("active"),
+  centroidLat: text("centroid_lat"),
+  centroidLon: text("centroid_lon"),
+  location: text("location").notNull(),
+  reportCount: integer("report_count").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_incidents_status").on(table.status),
+  index("idx_incidents_type").on(table.disasterType),
+  index("idx_incidents_created_at").on(table.createdAt),
+]);
+
+export type Incident = typeof incidents.$inferSelect;
+export type InsertIncident = typeof incidents.$inferInsert;
+
+export const incidentReports = pgTable("incident_reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentId: varchar("incident_id")
+    .notNull()
+    .references(() => incidents.id),
+  reportId: varchar("report_id")
+    .notNull()
+    .references(() => disasterReports.id),
+  mergedAt: timestamp("merged_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_incident_reports_incident_id").on(table.incidentId),
+  index("idx_incident_reports_report_id").on(table.reportId),
+]);
+
+export type IncidentReport = typeof incidentReports.$inferSelect;
+
+// ─── Production Elite: State Transition Audit Log ────────────────────────────
+
+export const incidentLogs = pgTable("incident_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  entityId: varchar("entity_id").notNull(),
+  entityType: varchar("entity_type").notNull().default("report"),
+  fromState: text("from_state").notNull(),
+  toState: text("to_state").notNull(),
+  triggeredBy: varchar("triggered_by"),
+  reason: text("reason"),
+  metadata: jsonb("metadata"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+}, (table) => [
+  index("idx_incident_logs_entity_id").on(table.entityId),
+  index("idx_incident_logs_timestamp").on(table.timestamp),
+]);
