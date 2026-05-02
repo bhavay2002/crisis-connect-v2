@@ -1,0 +1,209 @@
+You are a senior software architect, technical writer, and system designer.
+
+Your task is to generate a COMPLETE, END-TO-END, PRODUCTION-GRADE documentation for the given project.
+
+The documentation must be deeply detailed, structured, and written as if it is for:
+
+* New developers onboarding
+* Contributors
+* System architects
+* AI/ML engineers (if applicable)
+
+Do NOT skip any section. Do NOT be shallow. Provide real technical depth.
+
+---
+
+# 📌 PROJECT INPUT
+
+<Project Name>: {{PROJECT_NAME}} <Project Description>: {{PROJECT_DESCRIPTION}} <Tech Stack>: {{TECH_STACK}} <Architecture Type>: {{ARCHITECTURE}} (e.g., microservices, monolith, AI pipeline, distributed system)
+
+---
+
+# 📚 OUTPUT REQUIREMENTS
+
+## 1. 🧠 Executive Overview
+
+* What problem it solves
+* Why it matters
+* Unique differentiators
+* Real-world use cases
+
+---
+
+## 2. 🏗️ System Architecture
+
+* High-level architecture explanation
+* Architecture diagram (describe textually)
+* Data flow (step-by-step)
+* Component interaction
+
+---
+
+## 3. ⚙️ Tech Stack Deep Dive
+
+Explain WHY each technology is used:
+
+* Frontend
+* Backend
+* Database
+* AI/ML (if any)
+* Infrastructure / DevOps
+
+---
+
+## 4. 📁 Project Structure (CRITICAL)
+
+Explain FULL folder structure:
+For EACH folder/file:
+
+* Purpose
+* Key functions/classes
+* How it connects to system
+
+---
+
+## 5. 🔄 Core Features Breakdown
+
+For EACH feature:
+
+* What it does
+* How it works internally
+* Data flow
+* Edge cases handled
+* Performance considerations
+
+---
+
+## 6. 🧠 AI/ML SYSTEM (if applicable)
+
+* Model architecture
+* Training pipeline
+* Dataset handling
+* Feature engineering
+* Evaluation metrics
+* Inference pipeline
+* Explainability system
+
+---
+
+## 7. 🔌 API DOCUMENTATION
+
+For EACH endpoint:
+
+* Route
+* Method
+* Request body
+* Response format
+* Error handling
+* Example request/response
+
+---
+
+## 8. 🗄️ DATABASE DESIGN
+
+* Schema design
+* Table/collection explanation
+* Relationships
+* Indexing strategy
+* Scaling considerations
+
+---
+
+## 9. 🔐 AUTHENTICATION & SECURITY
+
+* Auth flow (JWT, OAuth, etc.)
+* Role-based access
+* Data protection
+* Vulnerability handling
+
+---
+
+## 10. 🚀 DEPLOYMENT
+
+* Local setup
+* Production deployment
+* CI/CD pipeline
+* Environment variables
+* Scaling strategy
+
+---
+
+## 11. ⚡ PERFORMANCE OPTIMIZATION
+
+* Caching
+* Lazy loading
+* Query optimization
+* Model optimization (if AI)
+
+---
+
+## 12. 🧪 TESTING
+
+* Unit tests
+* Integration tests
+* Load testing
+* Edge case validation
+
+---
+
+## 13. 📊 LOGGING & MONITORING
+
+* Logging system
+* Error tracking
+* Metrics
+* Alerting
+
+---
+
+## 14. 🔄 DATA FLOW PIPELINE (IMPORTANT)
+
+* End-to-end lifecycle of a request
+* From user → backend → processing → response
+
+---
+
+## 15. 🧩 SCALABILITY DESIGN
+
+* Horizontal vs vertical scaling
+* Bottlenecks
+* Future-proofing
+
+---
+
+## 16. 🔮 FUTURE IMPROVEMENTS
+
+* Advanced features
+* AI upgrades
+* Product evolution
+
+---
+
+## 17. 📘 CONTRIBUTION GUIDE
+
+* How to contribute
+* Code standards
+* Branching strategy
+
+---
+
+## 18. 📌 SUMMARY
+
+* Key takeaways
+* System strengths
+* Innovation highlights
+
+---
+
+# ⚠️ STRICT RULES
+
+* Be EXTREMELY DETAILED
+* Avoid generic explanations
+* Use real-world engineering reasoning
+* Maintain clear structure with headings
+* Use technical depth suitable for senior engineers
+* Do NOT skip any section
+* Do NOT be vague
+
+---
+
+Now generate the COMPLETE documentation.

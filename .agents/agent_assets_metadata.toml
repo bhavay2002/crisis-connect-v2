@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "2ZlOSBinEr2pO3qGbRIdG"
+uri = "file://Document.md"
+type = "text"
+title = "CrisisConnect — Complete Technical Documentation"
