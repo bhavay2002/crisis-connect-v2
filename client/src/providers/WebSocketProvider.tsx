@@ -33,14 +33,15 @@ const RECONNECT_BASE_DELAY = 2_000;
 const RECONNECT_MAX_DELAY = 30_000;
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const wsRef = useRef<WebSocket | null>(null);
-  const handlersRef = useRef<Set<MessageHandler>>(new Set());
+  const wsRef             = useRef<WebSocket | null>(null);
+  const handlersRef       = useRef<Set<MessageHandler>>(new Set());
   const reconnectDelayRef = useRef(RECONNECT_BASE_DELAY);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mountedRef = useRef(true);
+  const mountedRef        = useRef(true);
   const [isConnected, setIsConnected] = useState(false);
 
-  const { setConnected, ping, incrementUnread, setUnreadCount } = useRealtimeStore.getState();
+  // Keep a stable ref to connect so onclose can always schedule the latest version
+  const connectRef = useRef<() => void>(() => {});
 
   const broadcast = useCallback((message: any) => {
     handlersRef.current.forEach((h) => {
@@ -48,6 +49,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // connect is defined once; it reads Zustand actions lazily inside via getState()
+  // so there are no reactive dependencies that could recreate it on re-renders.
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -57,24 +60,25 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
     try {
       const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const url = `${proto}//${window.location.host}/ws?token=${encodeURIComponent(token)}`;
-      const ws = new WebSocket(url);
+      const url   = `${proto}//${window.location.host}/ws?token=${encodeURIComponent(token)}`;
+      const ws    = new WebSocket(url);
       wsRef.current = ws;
 
       ws.onopen = () => {
         if (!mountedRef.current) return;
         reconnectDelayRef.current = RECONNECT_BASE_DELAY;
         setIsConnected(true);
-        setConnected(true);
+        // Read actions lazily — avoids listing them as deps
+        useRealtimeStore.getState().setConnected(true);
         if (import.meta.env.DEV) console.log("[WS] connected");
       };
 
       ws.onmessage = (event) => {
         try {
-          const msg = JSON.parse(event.data);
-          ping();
+          const msg   = JSON.parse(event.data);
+          const store = useRealtimeStore.getState();
+          store.ping();
 
-          // Global side-effects driven by message type
           switch (msg.type) {
             case "new_report":
             case "report_updated":
@@ -84,14 +88,14 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             case "new_notification":
               queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread/count"] });
               queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread"] });
-              incrementUnread();
+              store.incrementUnread();
               break;
             case "sos_alert":
               queryClient.invalidateQueries({ queryKey: ["/api/sos"] });
               break;
             case "notification_count":
               if (typeof msg.data?.count === "number") {
-                setUnreadCount(msg.data.count);
+                store.setUnreadCount(msg.data.count);
               }
               break;
             case "batch_matching_complete":
@@ -108,18 +112,24 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       ws.onclose = (e) => {
         if (!mountedRef.current) return;
         setIsConnected(false);
-        setConnected(false);
+        useRealtimeStore.getState().setConnected(false);
         wsRef.current = null;
         if (import.meta.env.DEV) console.log(`[WS] closed (${e.code})`);
 
         const delay = reconnectDelayRef.current;
         reconnectDelayRef.current = Math.min(delay * 1.5, RECONNECT_MAX_DELAY);
-        reconnectTimerRef.current = setTimeout(connect, delay);
+        // Always schedule the latest version of connect via the ref
+        reconnectTimerRef.current = setTimeout(() => connectRef.current(), delay);
       };
 
       ws.onerror = () => {};
     } catch (_) {}
-  }, [broadcast, ping, incrementUnread, setConnected, setUnreadCount]);
+  }, [broadcast]); // only depends on broadcast (stable)
+
+  // Keep ref in sync so onclose closure always calls latest connect
+  useEffect(() => {
+    connectRef.current = connect;
+  });
 
   useEffect(() => {
     mountedRef.current = true;
@@ -129,7 +139,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       wsRef.current?.close();
     };
-  }, [connect]);
+  }, [connect]); // connect is stable (only dep is broadcast)
 
   const sendMessage = useCallback((msg: any) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -156,9 +166,10 @@ export function useWSContext() {
 /** Subscribe to realtime messages without creating a new WS connection. */
 export function useRealtimeMessage(handler: MessageHandler) {
   const { subscribe } = useWSContext();
-  const handlerRef = useRef(handler);
+  const handlerRef    = useRef(handler);
 
-  useEffect(() => { handlerRef.current = handler; }, [handler]);
+  // Always keep the ref current without triggering re-subscriptions
+  useEffect(() => { handlerRef.current = handler; });
 
   useEffect(() => {
     return subscribe((msg) => handlerRef.current(msg));

@@ -6,12 +6,26 @@ import type { User } from "@shared/schema";
 
 /**
  * Primary auth hook.
- * - Fetches current user from /api/auth/me
- * - Syncs result into Zustand authStore so any component can read it
- *   without issuing additional network requests.
+ * - Fetches current user from /api/auth/me via React Query
+ * - Syncs into Zustand via stable selectors (avoids over-subscription)
+ *
+ * Uses fine-grained selectors so only the exact slice of state that
+ * each consumer cares about triggers a re-render.
  */
+
+// Stable selectors — defined outside the hook so they never change identity
+const selectUser          = (s: any) => s.user;
+const selectIsAuth        = (s: any) => s.isAuthenticated;
+const selectIsLoading     = (s: any) => s.isLoading;
+const selectSetUser       = (s: any) => s.setUser;
+const selectSetLoading    = (s: any) => s.setLoading;
+
 export function useAuth() {
-  const { setUser, setLoading, user, isAuthenticated, isLoading } = useAuthStore();
+  const user           = useAuthStore(selectUser);
+  const isAuthenticated= useAuthStore(selectIsAuth);
+  const isLoading      = useAuthStore(selectIsLoading);
+  const setUser        = useAuthStore(selectSetUser);
+  const setLoading     = useAuthStore(selectSetLoading);
 
   const { data, isLoading: queryLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
@@ -20,16 +34,14 @@ export function useAuth() {
     staleTime: 60_000,
   });
 
-  // Keep Zustand store in sync with React Query result
+  // Single combined effect — avoids two separate setState calls per cycle
   useEffect(() => {
     setLoading(queryLoading);
-  }, [queryLoading, setLoading]);
-
-  useEffect(() => {
     if (!queryLoading) {
       setUser(data ?? null);
     }
-  }, [data, queryLoading, setUser]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, queryLoading]);
 
   return {
     user: user ?? data ?? undefined,
