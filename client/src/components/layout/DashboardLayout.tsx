@@ -3,9 +3,8 @@ import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import RoleBadge from "@/components/feed/RoleBadge";
-import TrustScoreBadge from "@/components/feed/TrustScoreBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,94 +14,94 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import {
-  LayoutDashboard,
-  AlertTriangle,
-  PlusCircle,
-  FileText,
-  Users,
-  BarChart3,
-  Bell,
-  User,
-  Settings,
-  LogOut,
-  Moon,
-  Sun,
-  Map as MapIcon,
-  Package,
-  Heart,
-  Sparkles,
-  Award,
-  Shield,
-  Zap,
-  MessageSquare,
-  Wifi,
-  WifiOff,
-  Brain,
-  Building2,
-  ShieldCheck,
-  WifiOff as OfflineIcon,
-  Code,
-  Activity,
-  Globe,
-  Zap as SimZap,
-  ShieldAlert,
+  LayoutDashboard, AlertTriangle, PlusCircle, FileText, Users, BarChart3,
+  Bell, User, Settings, LogOut, Moon, Sun, Map as MapIcon, Package,
+  Heart, Sparkles, Award, Shield, Zap, MessageSquare, Wifi, WifiOff,
+  Brain, Building2, ShieldCheck, Code, Activity, Globe, ShieldAlert,
+  ChevronDown, ChevronRight, Radio, Search, Menu, X,
 } from "lucide-react";
 import { useLowBandwidth } from "@/context/LowBandwidthContext";
 import { useOfflineSync } from "@/context/OfflineSyncContext";
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
+interface DashboardLayoutProps { children: React.ReactNode }
 
-const menuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
-  { title: "Volunteer Hub", url: "/volunteer", icon: Heart, roles: ["volunteer", "ngo", "admin"] },
-  { title: "Active Reports", url: "/reports", icon: AlertTriangle, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
-  { title: "Interactive Map", url: "/map", icon: MapIcon, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
-  { title: "Submit Report", url: "/submit", icon: PlusCircle, roles: ["citizen", "volunteer", "ngo", "admin"] },
-  { title: "Resource Requests", url: "/resource-requests", icon: Package, roles: ["citizen", "volunteer", "ngo", "admin"] },
-  { title: "Aid Matching", url: "/aid-matching", icon: Sparkles, roles: ["volunteer", "ngo", "admin"] },
-  { title: "Matching Engine", url: "/matching-engine", icon: Zap, roles: ["volunteer", "ngo", "admin"] },
-  { title: "Resource Management", url: "/resource-management", icon: Package, roles: ["ngo", "admin"] },
-  { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["admin", "government"] },
-  { title: "Intelligence", url: "/intelligence", icon: Sparkles, roles: ["admin", "government"] },
-  { title: "AI Copilot", url: "/copilot", icon: Zap, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
-  { title: "Risk Map", url: "/risk-map", icon: Shield, roles: ["volunteer", "ngo", "admin", "government"] },
-  { title: "Broadcast Alerts", url: "/broadcast-alerts", icon: Bell, roles: ["ngo", "admin"] },
-  { title: "Trust & Fraud", url: "/trust", icon: Shield, roles: ["admin"] },
-  { title: "My Profile", url: "/profile", icon: User, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
-  { title: "Verification", url: "/verify", icon: Shield, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
-  { title: "Reputation", url: "/reputation", icon: Award, roles: ["citizen", "volunteer", "ngo", "admin", "government"] },
-  { title: "My Reports", url: "/my-reports", icon: FileText, roles: ["citizen", "volunteer", "ngo", "admin"] },
-  { title: "Response Teams", url: "/teams", icon: Users, roles: ["volunteer", "ngo", "admin"] },
-  { title: "Messages", url: "/chat", icon: MessageSquare, roles: ["citizen", "volunteer", "ngo", "admin", "government", "authority", "super_admin"] },
-  { title: "AI Audit", url: "/explainability", icon: Brain, roles: ["admin", "government", "authority", "super_admin"] },
-  { title: "Organizations", url: "/organizations", icon: Building2, roles: ["ngo", "admin", "government", "authority", "super_admin"] },
-  { title: "Privacy & Data", url: "/compliance", icon: ShieldCheck, roles: ["citizen", "volunteer", "ngo", "admin", "government", "authority", "super_admin"] },
-  { title: "Developer Platform", url: "/developer", icon: Code, roles: ["admin", "government", "authority", "super_admin"] },
-  { title: "Monitoring", url: "/monitoring", icon: Activity, roles: ["admin", "government", "authority", "super_admin"] },
-  { title: "Multimodal AI", url: "/multimodal-ai", icon: Brain, roles: ["admin", "authority", "super_admin"] },
-  { title: "Simulation Engine", url: "/simulation", icon: SimZap, roles: ["admin", "authority", "super_admin"] },
-  { title: "Digital Twin", url: "/digital-twin", icon: Globe, roles: ["admin", "authority", "super_admin"] },
-  { title: "AI Override", url: "/ai-override", icon: ShieldAlert, roles: ["admin", "authority", "super_admin"] },
+const NAV_GROUPS = [
+  {
+    label: "Emergency Ops",
+    items: [
+      { title: "Dashboard",        url: "/dashboard",   icon: LayoutDashboard, roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Active Reports",   url: "/reports",     icon: AlertTriangle,   roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Interactive Map",  url: "/map",         icon: MapIcon,         roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Submit Report",    url: "/submit",      icon: PlusCircle,      roles: ["citizen","volunteer","ngo","admin","authority","super_admin"] },
+      { title: "My Reports",       url: "/my-reports",  icon: FileText,        roles: ["citizen","volunteer","ngo","admin","authority","super_admin"] },
+    ],
+  },
+  {
+    label: "Response & Aid",
+    items: [
+      { title: "Volunteer Hub",       url: "/volunteer",        icon: Heart,        roles: ["volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Aid Matching",        url: "/aid-matching",     icon: Sparkles,     roles: ["volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Matching Engine",     url: "/matching-engine",  icon: Zap,          roles: ["volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Resource Requests",   url: "/resource-requests",icon: Package,      roles: ["citizen","volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Resource Management", url: "/resource-management",icon: Package,    roles: ["ngo","admin","authority","super_admin"] },
+      { title: "Response Teams",      url: "/teams",            icon: Users,        roles: ["volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Broadcast Alerts",    url: "/broadcast-alerts", icon: Radio,        roles: ["ngo","admin","authority","super_admin"] },
+    ],
+  },
+  {
+    label: "AI & Intelligence",
+    items: [
+      { title: "Analytics",        url: "/analytics",        icon: BarChart3,   roles: ["admin","government","authority","super_admin"] },
+      { title: "Intelligence",     url: "/intelligence",     icon: Sparkles,    roles: ["admin","government","authority","super_admin"] },
+      { title: "AI Copilot",       url: "/copilot",          icon: Brain,       roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Risk Map",         url: "/risk-map",         icon: Shield,      roles: ["volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "AI Audit",         url: "/explainability",   icon: Brain,       roles: ["admin","government","authority","super_admin"] },
+      { title: "Multimodal AI",    url: "/multimodal-ai",    icon: Brain,       roles: ["admin","authority","super_admin"] },
+    ],
+  },
+  {
+    label: "Top 1% Platform",
+    items: [
+      { title: "Simulation Engine", url: "/simulation",    icon: Zap,          roles: ["admin","authority","super_admin"] },
+      { title: "Digital Twin",      url: "/digital-twin",  icon: Globe,        roles: ["admin","authority","super_admin"] },
+      { title: "AI Override",       url: "/ai-override",   icon: ShieldAlert,  roles: ["admin","authority","super_admin"] },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      { title: "Organizations",    url: "/organizations",  icon: Building2,   roles: ["ngo","admin","government","authority","super_admin"] },
+      { title: "Trust & Fraud",    url: "/trust",          icon: Shield,      roles: ["admin","authority","super_admin"] },
+      { title: "Developer Platform",url: "/developer",     icon: Code,        roles: ["admin","government","authority","super_admin"] },
+      { title: "Monitoring",       url: "/monitoring",     icon: Activity,    roles: ["admin","government","authority","super_admin"] },
+    ],
+  },
+  {
+    label: "Personal",
+    items: [
+      { title: "Messages",         url: "/chat",           icon: MessageSquare,  roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "My Profile",       url: "/profile",        icon: User,           roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Verification",     url: "/verify",         icon: Shield,         roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Reputation",       url: "/reputation",     icon: Award,          roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Privacy & Data",   url: "/compliance",     icon: ShieldCheck,    roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+    ],
+  },
 ];
+
+const ROLE_COLORS: Record<string, string> = {
+  citizen:     "bg-slate-100 text-slate-700",
+  volunteer:   "bg-green-100 text-green-700",
+  ngo:         "bg-blue-100 text-blue-700",
+  admin:       "bg-purple-100 text-purple-700",
+  government:  "bg-orange-100 text-orange-700",
+  authority:   "bg-red-100 text-red-700",
+  super_admin: "bg-rose-100 text-rose-700",
+};
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [location] = useLocation();
   const [isDark, setIsDark] = useState(false);
-  const [notifications] = useState(3);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const { user } = useAuth();
   const { isLowBandwidth, toggle: toggleBandwidth } = useLowBandwidth();
   const { isOnline, queueLength } = useOfflineSync();
@@ -112,174 +111,171 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     enabled: !!user,
   });
 
-  const filteredMenuItems = menuItems.filter((item) =>
-    item.roles.includes(user?.role || "citizen")
-  );
-
-  const allRoles = ["citizen", "volunteer", "ngo", "admin", "government", "authority", "super_admin"] as const;
+  const userRole = user?.role || "citizen";
 
   const toggleTheme = () => {
     setIsDark(!isDark);
     document.documentElement.classList.toggle("dark");
-    console.log("Theme toggled:", !isDark ? "dark" : "light");
   };
 
-  const style = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3rem",
-  };
+  const filteredGroups = NAV_GROUPS.map(g => ({
+    ...g,
+    items: g.items.filter(i => i.roles.includes(userRole)),
+  })).filter(g => g.items.length > 0);
 
   return (
-    <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full">
-        <Sidebar>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-lg font-bold px-4 py-4">
-                Crisis Connect
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {filteredMenuItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={location === item.url}
-                        data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
-                      >
-                        <Link href={item.url}>
-                          <item.icon className="w-5 h-5" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
-
-        <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between h-16 px-4 border-b gap-4">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-            </div>
-
-            <div className="flex items-center gap-2">
-              {!isOnline && (
-                <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-1">
-                  <OfflineIcon className="w-3 h-3" />
-                  <span>Offline{queueLength > 0 ? ` (${queueLength} queued)` : ""}</span>
-                </div>
-              )}
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleBandwidth}
-                title={isLowBandwidth ? "Low-bandwidth mode ON — click to disable" : "Enable low-bandwidth mode"}
-                data-testid="button-bandwidth-toggle"
-              >
-                {isLowBandwidth ? (
-                  <WifiOff className="w-5 h-5 text-amber-500" />
-                ) : (
-                  <Wifi className="w-5 h-5" />
-                )}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                data-testid="button-theme-toggle"
-              >
-                {isDark ? (
-                  <Sun className="w-5 h-5" />
-                ) : (
-                  <Moon className="w-5 h-5" />
-                )}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                data-testid="button-notifications"
-                onClick={() => console.log("Notifications clicked")}
-              >
-                <Bell className="w-5 h-5" />
-                {notifications > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-                )}
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-9 w-9 rounded-full"
-                    data-testid="button-user-menu"
-                  >
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={user?.profileImageUrl || ""} alt={user?.name || "User"} />
-                      <AvatarFallback>
-                        {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{user?.name || "User"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {user?.email || ""}
-                      </p>
-                      <div className="flex gap-2 pt-1 flex-wrap">
-                        {user?.role && <RoleBadge role={user.role} size="sm" />}
-                        {reputation && (
-                          <TrustScoreBadge 
-                            score={reputation.trustScore} 
-                            size="sm" 
-                            showLabel={false}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem data-testid="menu-profile">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
-                  <Link href="/select-role">
-                    <DropdownMenuItem data-testid="menu-change-role">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Change Role</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <DropdownMenuItem data-testid="menu-settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <a href="/api/logout" data-testid="menu-logout">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </a>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </header>
-
-          <main className="flex-1 overflow-auto">
-            {children}
-          </main>
+    <div className="flex h-screen bg-background overflow-hidden">
+      {/* ── Sidebar ── */}
+      <aside className={`
+        flex-shrink-0 flex flex-col bg-slate-950 text-slate-100 border-r border-white/5 transition-all duration-300 overflow-hidden
+        ${sidebarOpen ? "w-64" : "w-0 md:w-14"}
+      `}>
+        {/* Logo */}
+        <div className={`flex items-center h-16 px-4 border-b border-white/5 flex-shrink-0 ${sidebarOpen ? "gap-2" : "justify-center"}`}>
+          <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle className="w-4 h-4 text-white" />
+          </div>
+          {sidebarOpen && <span className="font-black text-white text-sm tracking-tight whitespace-nowrap">CrisisConnect</span>}
         </div>
+
+        {/* Nav scroll */}
+        <nav className="flex-1 overflow-y-auto py-3 scrollbar-thin">
+          {filteredGroups.map((group) => (
+            <div key={group.label} className="mb-1">
+              {sidebarOpen && (
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-4 py-2 mt-1">
+                  {group.label}
+                </p>
+              )}
+              {group.items.map((item) => {
+                const isActive = location === item.url || (item.url !== "/dashboard" && location.startsWith(item.url));
+                return (
+                  <Link key={item.url} href={item.url}>
+                    <a className={`
+                      flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-all duration-150 group
+                      ${isActive
+                        ? "bg-red-600/90 text-white shadow-sm"
+                        : "text-slate-400 hover:text-white hover:bg-white/5"
+                      }
+                      ${!sidebarOpen ? "justify-center" : ""}
+                    `} title={!sidebarOpen ? item.title : undefined}
+                      data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"}`} />
+                      {sidebarOpen && <span className="truncate">{item.title}</span>}
+                    </a>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* User pill */}
+        {sidebarOpen && user && (
+          <div className="p-3 border-t border-white/5 flex-shrink-0">
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={user.profileImageUrl || ""} />
+                <AvatarFallback className="text-xs bg-red-600 text-white">
+                  {user.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-white truncate">{user.name || "User"}</p>
+                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${ROLE_COLORS[userRole] || "bg-slate-100 text-slate-700"}`}>
+                  {userRole}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* ── Main ── */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Header */}
+        <header className="flex items-center justify-between h-16 px-4 bg-background border-b gap-4 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </Button>
+            {/* Breadcrumb */}
+            <div className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground capitalize">
+                {location.replace("/", "").replace(/-/g, " ") || "Dashboard"}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {!isOnline && (
+              <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-full px-2.5 py-1">
+                <WifiOff className="w-3 h-3" />
+                <span>Offline{queueLength > 0 ? ` · ${queueLength}` : ""}</span>
+              </div>
+            )}
+
+            {/* Trust score pill */}
+            {reputation && (
+              <div className="hidden sm:flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-full px-2.5 py-1">
+                <Award className="w-3 h-3" />
+                {reputation.trustScore}
+              </div>
+            )}
+
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleBandwidth} title={isLowBandwidth ? "Low-bandwidth ON" : "Normal bandwidth"} data-testid="button-bandwidth-toggle">
+              {isLowBandwidth ? <WifiOff className="w-4 h-4 text-amber-500" /> : <Wifi className="w-4 h-4" />}
+            </Button>
+
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme} data-testid="button-theme-toggle">
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+
+            <Link href="/notifications">
+              <Button variant="ghost" size="icon" className="h-8 w-8 relative" data-testid="button-notifications">
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              </Button>
+            </Link>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 px-2 gap-2 rounded-full" data-testid="button-user-menu">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={user?.profileImageUrl || ""} />
+                    <AvatarFallback className="text-xs bg-red-600 text-white">
+                      {user?.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="w-3 h-3 text-muted-foreground hidden sm:block" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col gap-1">
+                    <p className="font-semibold text-sm">{user?.name || "User"}</p>
+                    <p className="text-xs text-muted-foreground font-normal">{user?.email}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium w-fit ${ROLE_COLORS[userRole]}`}>{userRole}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <Link href="/profile"><DropdownMenuItem data-testid="menu-profile"><User className="mr-2 h-4 w-4" />Profile</DropdownMenuItem></Link>
+                <Link href="/select-role"><DropdownMenuItem data-testid="menu-change-role"><Settings className="mr-2 h-4 w-4" />Switch Role</DropdownMenuItem></Link>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a href="/api/logout" data-testid="menu-logout" className="text-red-600 focus:text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />Log out
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-auto bg-muted/30">
+          {children}
+        </main>
       </div>
-    </SidebarProvider>
+    </div>
   );
 }
