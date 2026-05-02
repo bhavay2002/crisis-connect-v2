@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { AidOffer } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface Match {
   requestId: string;
@@ -106,7 +105,6 @@ export default function AidOfferMatches() {
 
   if (isLoadingOffer) {
     return (
-      <DashboardLayout>
         <div className="container mx-auto p-4 md:p-6 max-w-4xl">
         <Skeleton className="h-8 w-48 mb-6" />
         <Card>
@@ -119,13 +117,11 @@ export default function AidOfferMatches() {
           </CardContent>
         </Card>
       </div>
-      </DashboardLayout>
     );
   }
 
   if (!offer) {
     return (
-      <DashboardLayout>
         <div className="container mx-auto p-4 md:p-6 max-w-4xl">
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -136,14 +132,12 @@ export default function AidOfferMatches() {
           </CardContent>
         </Card>
       </div>
-      </DashboardLayout>
     );
   }
 
   const ResourceIcon = resourceIcons[offer.resourceType as keyof typeof resourceIcons];
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-4 md:p-6 max-w-4xl">
       <Button
         variant="ghost"
@@ -317,6 +311,5 @@ export default function AidOfferMatches() {
         )}
       </div>
     </div>
-    </DashboardLayout>
   );
 }

@@ -10,6 +10,7 @@ import { LowBandwidthProvider } from "@/context/LowBandwidthContext";
 import { OfflineSyncProvider } from "@/context/OfflineSyncContext";
 import { WebSocketProvider } from "@/providers/WebSocketProvider";
 import { PageSkeleton } from "@/components/shared/PageSkeleton";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 // ─── Auth / public pages (small, load eagerly) ───────────────────────────────
 import Landing from "@/modules/auth/pages/Landing";
@@ -110,6 +111,7 @@ function Router() {
 
   return (
     <WebSocketProvider>
+      <DashboardLayout>
       <Switch>
         {/* Dashboard */}
         <Route path="/"         component={() => <S><Dashboard /></S>} />
@@ -175,6 +177,7 @@ function Router() {
 
         <Route component={() => <S><NotFound /></S>} />
       </Switch>
+      </DashboardLayout>
     </WebSocketProvider>
   );
 }

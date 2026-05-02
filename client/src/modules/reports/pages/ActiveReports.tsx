@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import DisasterReportCard from "@/components/feed/DisasterReportCard";
 import { useRealtimeMessage } from "@/providers/WebSocketProvider";
 import { useToast } from "@/hooks/use-toast";
@@ -83,7 +82,6 @@ export default function ActiveReports() {
   reports.filter(r => r.status !== "resolved").forEach(r => { if (r.severity in sevCounts) sevCounts[r.severity as keyof typeof sevCounts]++; });
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -195,6 +193,5 @@ export default function ActiveReports() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }

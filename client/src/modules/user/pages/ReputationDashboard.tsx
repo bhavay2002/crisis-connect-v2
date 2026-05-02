@@ -16,7 +16,6 @@ import {
   Trophy
 } from "lucide-react";
 import type { UserReputation } from "@shared/schema";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 export default function ReputationDashboard() {
   const { user } = useAuth();
@@ -34,7 +33,6 @@ export default function ReputationDashboard() {
   };
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {!user ? (
           <div className="rounded-2xl border-2 border-dashed py-16 text-center max-w-md mx-auto">
@@ -64,7 +62,6 @@ export default function ReputationDashboard() {
           </>
         )}
       </div>
-    </DashboardLayout>
   );
 }
 

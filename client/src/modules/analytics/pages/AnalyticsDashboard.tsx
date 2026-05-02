@@ -10,7 +10,6 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,7 +89,6 @@ export default function AnalyticsDashboard() {
   ];
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto">
 
         {/* Header */}
@@ -230,6 +228,5 @@ export default function AnalyticsDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

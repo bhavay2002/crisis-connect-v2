@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Upload, AlertCircle, CheckCircle2, Loader2, Camera } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 
 const DISASTER_TYPE_LABELS: Record<string, string> = {
   fire: 'Fire',
@@ -97,7 +96,6 @@ export default function ImageClassification() {
   };
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-4 max-w-4xl">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">Image Classification</h1>
@@ -269,6 +267,5 @@ export default function ImageClassification() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
   );
 }

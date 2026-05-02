@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertResourceRequestSchema } from "@shared/schema";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const formSchema = insertResourceRequestSchema.omit({ userId: true });
 
@@ -78,7 +77,6 @@ export default function SubmitResourceRequest() {
   };
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-4 md:p-6 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Request Resources</h1>
@@ -287,6 +285,5 @@ export default function SubmitResourceRequest() {
         </CardContent>
       </Card>
     </div>
-    </DashboardLayout>
   );
 }

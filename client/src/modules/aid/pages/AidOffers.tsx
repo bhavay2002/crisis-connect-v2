@@ -11,7 +11,6 @@ import type { AidOffer } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeMessage } from "@/providers/WebSocketProvider";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const resourceIcons = {
   food: Package,
@@ -145,7 +144,6 @@ export default function AidOffers() {
   };
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-4 md:p-6">
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -255,6 +253,5 @@ export default function AidOffers() {
         )}
       </Tabs>
     </div>
-    </DashboardLayout>
   );
 }

@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Shield, Users, Building2, UserCircle, CheckCircle2, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { cn } from "@/lib/utils";
 
 const ROLES = [
@@ -86,7 +85,6 @@ export default function RoleSelection() {
   });
 
   return (
-    <DashboardLayout>
       <div className="p-6 max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -168,6 +166,5 @@ export default function RoleSelection() {
           }
         </Button>
       </div>
-    </DashboardLayout>
   );
 }

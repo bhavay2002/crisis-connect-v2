@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { formatDistanceToNow } from "date-fns";
 import { useRealtimeMessage } from "@/providers/WebSocketProvider";
 
@@ -122,7 +121,6 @@ export default function MatchingEngine() {
 
   if (isLoadingAnalytics) {
     return (
-      <DashboardLayout>
         <div className="container mx-auto p-6 space-y-6">
           <Skeleton className="h-12 w-64" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -131,13 +129,11 @@ export default function MatchingEngine() {
             <Skeleton className="h-40" />
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
   if (!analytics) {
     return (
-      <DashboardLayout>
         <div className="container mx-auto p-6">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -147,12 +143,10 @@ export default function MatchingEngine() {
             </AlertDescription>
           </Alert>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -425,6 +419,5 @@ export default function MatchingEngine() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
   );
 }

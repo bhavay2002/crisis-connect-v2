@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Radio, AlertTriangle, Info, Megaphone, Clock, Globe, Loader2 } from "lucide-react";
@@ -78,7 +77,6 @@ export default function BroadcastAlerts() {
   const alerts = data?.alerts ?? [];
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div>
@@ -195,6 +193,5 @@ export default function BroadcastAlerts() {
           )}
         </div>
       </div>
-    </DashboardLayout>
   );
 }

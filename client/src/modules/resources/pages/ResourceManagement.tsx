@@ -12,7 +12,6 @@ import { AlertCircle, Package, Plus, Trash2, TrendingUp, TrendingDown, AlertTria
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { InventoryItem } from "@shared/schema";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 export default function ResourceManagement() {
   const { toast } = useToast();
@@ -79,7 +78,6 @@ export default function ResourceManagement() {
   };
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -261,7 +259,6 @@ export default function ResourceManagement() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
   );
 }
 

@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatsCard from "@/components/feed/StatsCard";
 import DisasterReportCard from "@/components/feed/DisasterReportCard";
 import { useRealtimeMessage } from "@/providers/WebSocketProvider";
@@ -91,7 +90,6 @@ export default function Dashboard() {
   };
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-2xl mx-auto">
 
         {/* ── Critical Alert Banner ── */}
@@ -276,6 +274,5 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

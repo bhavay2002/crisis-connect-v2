@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, MapPin, AlertTriangle, Shield, Navigation } from "lucide-react";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import "leaflet/dist/leaflet.css";
@@ -103,7 +102,6 @@ export default function RiskMap() {
   const safeZones = riskZones.filter(z => z.riskLevel === "very_low" || z.riskLevel === "low");
 
   return (
-    <DashboardLayout>
       <div className="p-4 space-y-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -345,6 +343,5 @@ export default function RiskMap() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
   );
 }

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import DisasterReportCard from "@/components/feed/DisasterReportCard";
 import { AlertTriangle, FileText, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,18 +53,15 @@ export default function MyReports() {
 
   if (!user) {
     return (
-      <DashboardLayout>
         <div className="p-6">
           <div className="rounded-2xl border-2 border-dashed py-16 text-center max-w-md mx-auto">
             <p className="text-sm text-muted-foreground">Please sign in to view your reports</p>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -135,6 +131,5 @@ export default function MyReports() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }

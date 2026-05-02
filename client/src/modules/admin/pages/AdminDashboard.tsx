@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -351,7 +350,6 @@ export default function AdminDashboard() {
 
   if (!isAuthorized) {
     return (
-      <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="rounded-2xl border bg-background p-8 max-w-md text-center">
             <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
@@ -361,25 +359,21 @@ export default function AdminDashboard() {
             <p className="text-sm text-muted-foreground">This dashboard is only accessible to Admin and NGO users.</p>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="w-10 h-10 border-3 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">Loading admin dashboard…</p>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -753,6 +747,5 @@ export default function AdminDashboard() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
   );
 }

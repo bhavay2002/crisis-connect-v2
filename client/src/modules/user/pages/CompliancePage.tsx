@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -118,7 +117,6 @@ export default function CompliancePage() {
   );
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -341,6 +339,5 @@ export default function CompliancePage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

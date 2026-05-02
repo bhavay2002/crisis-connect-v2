@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -227,7 +226,6 @@ export default function VolunteerDashboard() {
     : pendingRequests.length > 0 ? 100 : 0;
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-4 md:p-6 space-y-6">
         <div className="flex items-start justify-between mb-6">
           <div>
@@ -541,6 +539,5 @@ export default function VolunteerDashboard() {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

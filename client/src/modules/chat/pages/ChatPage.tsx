@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeMessage } from "@/providers/WebSocketProvider";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -208,8 +207,7 @@ export default function ChatPage() {
   const sortedMessages = [...messages].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   return (
-    <DashboardLayout>
-      <div className="flex h-[calc(100vh-4rem)] bg-background">
+      <div className="flex h-full bg-slate-900">
         <div className="w-72 border-r flex flex-col">
           <div className="p-4 border-b flex items-center justify-between">
             <h2 className="font-semibold text-sm">Messages</h2>
@@ -387,6 +385,5 @@ export default function ChatPage() {
           )}
         </div>
       </div>
-    </DashboardLayout>
   );
 }

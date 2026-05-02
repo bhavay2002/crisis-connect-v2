@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UploadResult } from "@uppy/core";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -250,7 +249,6 @@ export default function SubmitReport() {
   };
 
   return (
-    <DashboardLayout>
       <div className="p-6">
         <div className="mb-6">
           <div className="flex items-center gap-2.5 mb-1">
@@ -591,6 +589,5 @@ export default function SubmitReport() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

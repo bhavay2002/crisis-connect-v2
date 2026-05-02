@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import type { UserReputation } from "@shared/schema";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 export default function UserProfile() {
   const { user } = useAuth();
@@ -30,13 +29,11 @@ export default function UserProfile() {
 
   if (!user) {
     return (
-      <DashboardLayout>
         <div className="p-6">
           <div className="rounded-2xl border-2 border-dashed py-16 text-center max-w-md mx-auto">
             <p className="text-sm text-muted-foreground">Please sign in to view your profile</p>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
@@ -71,7 +68,6 @@ export default function UserProfile() {
   };
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -206,6 +202,5 @@ export default function UserProfile() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

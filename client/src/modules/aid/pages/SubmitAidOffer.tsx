@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertAidOfferSchema } from "@shared/schema";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const formSchema = insertAidOfferSchema.omit({ userId: true });
 
@@ -66,7 +65,6 @@ export default function SubmitAidOffer() {
   };
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-4 md:p-6 max-w-4xl">
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -254,6 +252,5 @@ export default function SubmitAidOffer() {
         </CardContent>
       </Card>
     </div>
-    </DashboardLayout>
   );
 }

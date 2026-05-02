@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Brain, CloudRain, Activity, AlertTriangle, MapPin } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import 'leaflet/dist/leaflet.css';
@@ -120,7 +119,6 @@ export default function PredictiveModeling() {
   const defaultZoom = 5;
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div>
@@ -348,6 +346,5 @@ export default function PredictiveModeling() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

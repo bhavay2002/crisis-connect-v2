@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatDistanceToNow, subDays, startOfDay, endOfDay, isWithinInterval } from "date-fns";
 import { Flame, Droplet, Mountain, Wind, Car, AlertTriangle, MapPin, Calendar, AlertCircle, ThumbsUp, ShieldCheck, Biohazard, Construction, Waves, Zap, Droplets, Activity } from "lucide-react";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { HeatmapLayer } from "@/components/map/HeatmapLayer";
 import { HeatmapLegend } from "@/components/map/HeatmapLegend";
 import { TimelineControl } from "@/components/map/TimelineControl";
@@ -278,7 +277,6 @@ export default function Map() {
   const TypeIcon = selectedReport ? typeIcons[selectedReport.type] : AlertTriangle;
 
   return (
-    <DashboardLayout>
     <div className="h-full flex flex-col">
       {/* Filters Bar */}
       <Card className="m-4 mb-2">
@@ -691,6 +689,5 @@ export default function Map() {
         </SheetContent>
       </Sheet>
     </div>
-    </DashboardLayout>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,7 +68,6 @@ export default function AIOverridePage() {
   const all = allData?.overrides || [];
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div>
@@ -238,6 +236,5 @@ export default function AIOverridePage() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
   );
 }

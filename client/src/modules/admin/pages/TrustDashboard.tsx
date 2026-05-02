@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Shield, AlertTriangle, UserCheck, TrendingDown, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -64,7 +63,6 @@ export default function TrustDashboard() {
   });
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div>
@@ -191,6 +189,5 @@ export default function TrustDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +105,6 @@ export default function DeveloperPlatformPage() {
   const webhooks = webhooksData?.webhooks || [];
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div>
@@ -319,6 +317,5 @@ if ('sha256=' + sig !== header) throw new Error('Invalid signature');`}</pre>
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

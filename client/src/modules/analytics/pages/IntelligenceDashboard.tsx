@@ -11,7 +11,6 @@ import {
   ResponsiveContainer, LineChart, Line, RadarChart, Radar,
   PolarGrid, PolarAngleAxis, PolarRadiusAxis, PieChart, Pie, Cell,
 } from "recharts";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { apiRequest } from "@/lib/queryClient";
 import {
   Brain, Shield, TrendingUp, Clock, AlertTriangle, CheckCircle,
@@ -101,7 +100,6 @@ export default function IntelligenceDashboard() {
   const uptimeMins = health ? Math.floor((health.uptime % 3600) / 60) : 0;
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -492,6 +490,5 @@ export default function IntelligenceDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

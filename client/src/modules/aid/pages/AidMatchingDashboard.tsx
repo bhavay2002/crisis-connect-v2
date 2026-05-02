@@ -22,7 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const resourceIcons = {
   food: Package,
@@ -346,7 +345,6 @@ export default function AidMatchingDashboard() {
 
   if (!canManageAid) {
     return (
-      <DashboardLayout>
         <div className="container mx-auto p-4 md:p-6 max-w-4xl">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -357,13 +355,11 @@ export default function AidMatchingDashboard() {
             </AlertDescription>
           </Alert>
         </div>
-      </DashboardLayout>
     );
   }
 
   if (isLoadingOffers || isLoadingRequests) {
     return (
-      <DashboardLayout>
         <div className="container mx-auto p-4 md:p-6 max-w-7xl">
           <Skeleton className="h-12 w-64 mb-6" />
           <div className="space-y-4">
@@ -380,12 +376,10 @@ export default function AidMatchingDashboard() {
             ))}
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-4 md:p-6 max-w-7xl">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -510,6 +504,5 @@ export default function AidMatchingDashboard() {
         </TabsContent>
       </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

@@ -1,5 +1,4 @@
 import { useAuth } from "@/hooks/useAuth";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, UserPlus, Shield, Activity, MapPin, AlertCircle } from "lucide-react";
@@ -58,7 +57,6 @@ export default function ResponseTeams() {
 
   if (!canManageTeams) {
     return (
-      <DashboardLayout>
         <div className="p-6 max-w-xl mx-auto pt-16">
           <EmptyState
             icon={AlertCircle}
@@ -67,12 +65,10 @@ export default function ResponseTeams() {
             iconClassName="bg-red-500/10"
           />
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
 
         {/* Header */}
@@ -185,6 +181,5 @@ export default function ResponseTeams() {
           )}
         </div>
       </div>
-    </DashboardLayout>
   );
 }

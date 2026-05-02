@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -148,20 +147,17 @@ export default function ReportDetails() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading report details...</p>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
   if (!report) {
     return (
-      <DashboardLayout>
         <div className="p-6 max-w-4xl mx-auto">
           <div className="rounded-2xl border-2 border-dashed py-16 text-center">
             <AlertTriangle className="h-12 w-12 text-muted-foreground mb-3 mx-auto opacity-40" />
@@ -170,7 +166,6 @@ export default function ReportDetails() {
             <Button onClick={() => navigate("/reports")} data-testid="button-back-to-reports">Back to Reports</Button>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 
@@ -180,7 +175,6 @@ export default function ReportDetails() {
   const severityBorderColors = { critical: "border-l-red-500", high: "border-l-orange-500", medium: "border-l-yellow-500", low: "border-l-blue-500" };
 
   return (
-    <DashboardLayout>
       <div className="p-6 max-w-4xl mx-auto space-y-4">
         <Button variant="ghost" onClick={() => navigate("/reports")} className="h-8 text-xs" data-testid="button-back">
           <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />Back to Reports
@@ -294,6 +288,5 @@ export default function ReportDetails() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

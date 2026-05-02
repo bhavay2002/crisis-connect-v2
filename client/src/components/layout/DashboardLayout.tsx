@@ -134,7 +134,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-slate-950 overflow-hidden">
 
       {/* ── Sidebar ── */}
       <aside className={cn(
@@ -240,7 +240,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex flex-col flex-1 min-w-0">
 
         {/* Header */}
-        <header className="flex items-center justify-between h-16 px-4 bg-background border-b gap-4 flex-shrink-0">
+        <header className="flex items-center justify-between h-16 px-4 bg-slate-950 border-b border-white/5 gap-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -252,8 +252,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </Button>
 
             {/* Breadcrumb */}
-            <div className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground capitalize">
+            <div className="hidden md:flex items-center gap-1.5 text-sm text-slate-400">
+              <span className="font-semibold text-white capitalize">
                 {location.replace("/", "").replace(/-/g, " ") || "Dashboard"}
               </span>
             </div>
@@ -361,7 +361,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-muted/30">
+        <main className="flex-1 overflow-auto bg-slate-900">
           {children}
         </main>
       </div>

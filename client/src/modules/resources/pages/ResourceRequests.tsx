@@ -12,7 +12,6 @@ import { formatDistanceToNow, format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeMessage } from "@/providers/WebSocketProvider";
 import { Progress } from "@/components/ui/progress";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const resourceIcons = {
   food: Package,
@@ -232,7 +231,6 @@ export default function ResourceRequests() {
   };
 
   return (
-    <DashboardLayout>
       <div className="container mx-auto p-4 md:p-6 max-w-7xl">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -339,6 +337,5 @@ export default function ResourceRequests() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

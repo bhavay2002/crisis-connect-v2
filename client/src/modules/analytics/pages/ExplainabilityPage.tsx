@@ -11,7 +11,6 @@ import {
   ResponsiveContainer, RadarChart, Radar, PolarGrid,
   PolarAngleAxis, PolarRadiusAxis, PieChart, Pie, Cell, Legend,
 } from "recharts";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Brain, Shield, AlertTriangle, CheckCircle, Clock, Zap, Eye, BarChart3 } from "lucide-react";
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -99,7 +98,6 @@ export default function ExplainabilityPage() {
     : [];
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -421,6 +419,5 @@ export default function ExplainabilityPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

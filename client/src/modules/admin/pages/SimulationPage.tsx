@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +55,6 @@ export default function SimulationPage() {
   const m = latest?.metricsData;
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -222,6 +220,5 @@ export default function SimulationPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

@@ -8,7 +8,6 @@ import { formatDistanceToNow } from "date-fns";
 import { Link } from "wouter";
 import { Bell, Check, Settings, Trash2, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { cn } from "@/lib/utils";
 
 interface Notification {
@@ -142,7 +141,6 @@ export default function Notifications() {
   const isLoading = activeTab === "all" ? isLoadingAll : isLoadingUnread;
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -218,6 +216,5 @@ export default function Notifications() {
           ))}
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { apiRequest } from "@/lib/queryClient";
 import { Brain, BookOpen, Globe, Phone, AlertTriangle, CheckCircle, Loader2, ChevronRight, Zap, Shield } from "lucide-react";
 
@@ -45,7 +44,6 @@ export default function CrisisCopilot() {
   });
 
   return (
-    <DashboardLayout>
       <div className="p-6 space-y-6 max-w-screen-xl mx-auto">
         {/* Header */}
         <div>
@@ -283,6 +281,5 @@ export default function CrisisCopilot() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }
