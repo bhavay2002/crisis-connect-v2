@@ -1,0 +1,408 @@
+You’re absolutely right—this is where most otherwise solid systems fall apart.
+**Industry-grade apps don’t just “handle errors”; they communicate system state and recover automatically.**
+
+Below is a **production-level Error & Edge UX system** you can implement end-to-end.
+
+---
+
+# 📉 9. ERROR & EDGE UX — INDUSTRY IMPLEMENTATION
+
+## 🧠 Core Principle
+
+> Users should *never wonder what’s happening*
+> The system must always be in one of these states:
+
+```text
+CONNECTED → DEGRADED → OFFLINE → RECOVERING
+```
+
+---
+
+# ⚡ 1. GLOBAL NETWORK STATE SYSTEM
+
+## 🔷 Detect Network Status
+
+```ts id="net_status"
+import { useEffect, useState } from "react";
+
+export function useNetworkStatus() {
+  const [online, setOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const onOnline = () => setOnline(true);
+    const onOffline = () => setOnline(false);
+
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  return online;
+}
+```
+
+---
+
+## 🔷 Global Banner (ALWAYS VISIBLE)
+
+```tsx id="offline_banner"
+function NetworkBanner() {
+  const online = useNetworkStatus();
+
+  if (online) return null;
+
+  return (
+    <div className="bg-yellow-500 text-black text-center py-2">
+      ⚠️ Network lost — working in offline mode
+    </div>
+  );
+}
+```
+
+---
+
+# 🔁 2. RETRY UI (CRITICAL FOR PROFESSIONAL UX)
+
+## 🔷 Pattern
+
+Every failed request should:
+
+* show error
+* provide retry
+* optionally auto-retry
+
+---
+
+## 🔷 Example Component
+
+```tsx id="retry_ui"
+export function RetryCard({ error, onRetry }) {
+  return (
+    <div className="bg-red-900 p-4 rounded-xl">
+      <p className="text-white">⚠️ {error}</p>
+      <button
+        onClick={onRetry}
+        className="mt-2 bg-white text-red-600 px-3 py-1 rounded"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+```
+
+---
+
+## 🔷 TanStack Query Integration (BEST PRACTICE)
+
+```ts id="retry_query"
+useQuery({
+  queryKey: ["reports"],
+  queryFn: fetchReports,
+  retry: 3,
+  retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+});
+```
+
+---
+
+👉 Add UI:
+
+```tsx
+if (error) return <RetryCard error="Failed to load" onRetry={refetch} />;
+```
+
+---
+
+# 📦 3. OFFLINE QUEUE SYSTEM (TOP 1% FEATURE)
+
+## 🔷 Use Case
+
+User clicks SOS while offline → system queues it
+
+---
+
+## 🔷 Store Pending Actions
+
+```ts id="offline_queue"
+const queue = JSON.parse(localStorage.getItem("offlineQueue") || "[]");
+
+export function addToQueue(action) {
+  queue.push(action);
+  localStorage.setItem("offlineQueue", JSON.stringify(queue));
+}
+```
+
+---
+
+## 🔷 Sync When Online
+
+```ts id="sync_queue"
+useEffect(() => {
+  if (navigator.onLine) {
+    const queue = JSON.parse(localStorage.getItem("offlineQueue") || "[]");
+
+    queue.forEach((action) => {
+      sendToServer(action);
+    });
+
+    localStorage.removeItem("offlineQueue");
+  }
+}, [navigator.onLine]);
+```
+
+---
+
+## 🔷 UI Indicator (IMPORTANT)
+
+```tsx id="queue_ui"
+function OfflineQueueIndicator({ count }) {
+  if (!count) return null;
+
+  return (
+    <div className="fixed bottom-4 left-4 bg-yellow-500 p-3 rounded-xl">
+      ⚠️ Queued {count} request(s)
+    </div>
+  );
+}
+```
+
+---
+
+## 🔥 Example UX
+
+```text
+⚠️ Network lost
+Queued 3 SOS requests
+Will send automatically when online
+```
+
+👉 This is **exactly industry-grade behavior**
+
+---
+
+# 🧩 4. GRACEFUL FALLBACK STATES
+
+---
+
+## 🔷 Pattern 1: Empty State
+
+```tsx id="empty_state"
+if (!data.length) {
+  return <div>No incidents detected 🎉</div>;
+}
+```
+
+---
+
+## 🔷 Pattern 2: Loading Skeleton (NOT SPINNER)
+
+```tsx id="skeleton"
+<div className="animate-pulse bg-gray-700 h-20 rounded" />
+```
+
+---
+
+## 🔷 Pattern 3: Partial Failure
+
+```text
+Map failed to load
+→ show list fallback
+```
+
+---
+
+## 🔷 Example
+
+```tsx id="map_fallback"
+{mapError ? <FallbackList /> : <Map />}
+```
+
+---
+
+# 🔄 5. RECOVERY UX (VERY IMPORTANT)
+
+When network comes back:
+
+---
+
+## 🔷 Show Recovery Feedback
+
+```tsx id="recovery"
+useEffect(() => {
+  if (online) {
+    toast.success("Connection restored");
+  }
+}, [online]);
+```
+
+---
+
+## 🔷 Sync Animation
+
+```tsx id="sync_anim"
+<motion.div animate={{ opacity: [0, 1] }}>
+  Syncing queued requests...
+</motion.div>
+```
+
+---
+
+# ⚠️ 6. ERROR BOUNDARY (CRITICAL)
+
+## 🔷 Catch UI Crashes
+
+```tsx id="error_boundary"
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div>Something went wrong 🚨</div>;
+    }
+    return this.props.children;
+  }
+}
+```
+
+---
+
+# 🔥 7. REAL-TIME EDGE HANDLING
+
+---
+
+## 🔷 WebSocket Disconnect
+
+```ts id="socket_error"
+socket.on("disconnect", () => {
+  showBanner("Reconnecting...");
+});
+```
+
+---
+
+## 🔷 Reconnect UX
+
+```ts id="reconnect"
+socket.on("connect", () => {
+  showBanner("Connected");
+});
+```
+
+---
+
+# 🎯 8. STATE MACHINE (PRO LEVEL)
+
+Model your app like:
+
+```text
+IDLE
+LOADING
+SUCCESS
+ERROR
+OFFLINE
+RETRYING
+```
+
+---
+
+👉 Use:
+
+* Zustand OR XState (advanced)
+
+---
+
+# 🎨 9. DESIGN PATTERNS (IMPORTANT)
+
+---
+
+## 🔷 Color System
+
+| State   | Color  |
+| ------- | ------ |
+| Warning | Yellow |
+| Error   | Red    |
+| Offline | Orange |
+| Success | Green  |
+
+---
+
+## 🔷 UX Rules
+
+* never block UI completely
+* always provide next action
+* always show system state
+
+---
+
+# 🚀 WHAT THIS ACHIEVES
+
+After this:
+
+### ✅ Users trust your system
+
+### ✅ Works in bad networks
+
+### ✅ Feels production-ready
+
+### ✅ Handles real-world chaos
+
+---
+
+# 🔥 FINAL INSIGHT
+
+Most apps:
+
+> fail silently ❌
+
+Industry systems:
+
+> **fail loudly, clearly, and recover automatically** ✅
+
+---
+
+# 🚀 FINAL UPGRADE PROMPT
+
+Act as a senior frontend reliability engineer.
+
+Improve my React frontend to industry-level error and edge UX.
+
+Focus on:
+
+* offline detection
+* retry UI
+* queued actions (offline support)
+* graceful fallbacks
+* recovery UX
+* WebSocket reconnection handling
+
+Provide:
+
+* components
+* hooks
+* patterns
+* UX improvements
+
+Goal:
+Make the app resilient in real-world conditions.
+
+---
+
+# 🚀 Next Step
+
+If you want, I can:
+
+* integrate this with your **SOS system**
+* build a **full offline-first flow**
+* connect it with your **WebSocket + backend retry logic**
+
+Just say:
+👉 **“build offline system”**

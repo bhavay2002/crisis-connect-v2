@@ -26,6 +26,15 @@ Each feature is a self-contained mini-application with its own types, services, 
 - `roles/` — **RB-UX (Role-Based UX)**: RoleDashboard router, CitizenDashboard, VolunteerCommandDashboard, AuthorityCommandCenter, AdminRedirect, useCommandMode hook
 - `index.ts` — top-level barrel
 
+**AI Explainability Components** (`client/src/components/ai/`):
+Plug-and-play decision intelligence panel used by Bloomberg/Datadog-style fintech dashboards.
+- `AIExplainabilityPanel` — main component; drop `<AIExplainabilityPanel reportId={id} createdAt={ts} />` anywhere; fetches `/api/ai/explain/:id`
+- `ConfidenceMeter` — animated gradient fill bar; color-coded by level (green ≥80% / yellow ≥60% / orange ≥40% / red <40%)
+- `SignalRadar` — Recharts RadarChart showing 4-axis signal fusion (AI Urgency / Location / Repetition / Trust)
+- `FactorBars` — stagger-animated bars; green = positive contribution, red = negative; sorted by |weight|
+- `DecisionTimeline` — vertical stepper; `deriveTimeline()` synthesizes a reasoning chain from the raw explain API response
+- Embedded in: `ReportDetails` (below report card, collapsed by default), `ExplainabilityPage` (full-page audit tool with decision list + panel)
+
 **Role-Based UX** (`features/roles/`):
 The `/` and `/dashboard` routes render a completely different product surface per role — not just hidden buttons, but separate layouts, workflows, and visual philosophies:
 
