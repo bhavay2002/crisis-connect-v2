@@ -394,3 +394,100 @@ refetchInterval: 30_000,  // was 5000 — backend WS events handle real-time upd
 | H-05 | `ExplainabilityPage.tsx` | Raw `fetch()` bypasses error handling and auth headers | ✅ Fixed |
 
 **TypeScript: 0 errors after all fixes (confirmed via `npx tsc --noEmit`).**
+
+---
+
+## Phase 2 — Deep Backend Audit (2026-05-03)
+
+**Scope:** All 139 TypeScript files under `server/` — routes/, modules/, middleware/, config/, db/, utils/, workers/, shared/  
+**Final state:** ✅ 0 TypeScript errors · ✅ 0 raw `console.*` calls remaining in server code
+
+### Fixes Applied
+
+#### B-01 · Refresh Token Cookie — Critical
+**File:** `server/routes/newAuth.routes.ts`
+
+- `POST /api/auth/login` and `POST /api/auth/register` now set `refreshToken` as an httpOnly, Secure, SameSite=Strict cookie on the path `/api/auth`
+- `POST /api/auth/refresh` reads `req.cookies?.refreshToken` first, falls back to `req.body?.refreshToken` for backwards compatibility
+- `POST /api/auth/logout` now calls `res.clearCookie("refreshToken", ...)` to properly invalidate the session
+
+#### B-02 · Password Hash Leak — High
+**File:** `server/routes/auth.routes.ts`
+
+`GET /api/auth/user` (legacy) returned raw DB user object including `passwordHash`, `twoFactorSecret`, and `backupCodes`. Fields are now stripped before response.
+
+#### B-03 · Unauthenticated SOS PII Endpoint — High
+**File:** `server/routes/sos.routes.ts`
+
+`GET /api/sos/:id` was publicly accessible. Added `isAuthenticated` middleware. Full SOS records (name, phone, GPS location, status) now require a valid access token.
+
+#### B-04 · JWT Weak Secret Fallback — High
+**File:** `server/utils/jwtUtils.ts`
+
+Both `JWT_SECRET` and `JWT_REFRESH_SECRET` silently fell back to hardcoded strings.
+- **Development:** prints startup `⚠️ WARN` if either secret uses the insecure fallback
+- **Production (`NODE_ENV=production`):** throws `Error` at module load time — server refuses to start with weak secrets
+
+#### B-05 · API Key Rate Limit Never Reset — Medium
+**File:** `server/middleware/apiKeyAuth.ts`
+
+`requestCount` was never reset — once an API key hit its daily limit it was permanently blocked. Now compares UTC date of `lastUsedAt` to today; if different, `requestCount` resets to 0 before incrementing.
+
+#### B-06 · Role Validation Missing System Roles — Medium
+**Files:** `server/routes/auth.routes.ts` (both role-update endpoints)
+
+`validRoles` was `["citizen", "volunteer", "ngo", "admin"]` — silently rejected `"authority"`, `"government"`, and `"super_admin"`. Fixed:
+- Both endpoints validate against the full 7-role set
+- `POST /api/admin/users/:userId/role` requires caller to be `admin | authority | super_admin`
+- Assigning `authority`/`super_admin` restricted to `super_admin` only
+- Admins cannot demote themselves (lockout protection)
+
+#### B-07 · `errorHandler.ts` Used `process.env.NODE_ENV` — Low
+**File:** `server/middleware/errorHandler.ts`
+
+Replaced with `config.isDevelopment` from the validated config module.
+
+#### B-08 · AuditLogger Used Raw `console.log` — Low
+**File:** `server/middleware/auditLog.ts`
+
+`AuditLogger.log()` emitted raw JSON to stdout via `console.log`. Migrated to `logger.info` with structured context object — audit entries now flow through the same logging pipeline as all server events.
+
+#### B-09 · 100+ Raw `console.*` Calls Across Server — Low
+**Files:** 15 files (see table below)
+
+Every raw `console.error / console.warn / console.log` call in the server codebase replaced with `logger.error / logger.warn / logger.info` and missing `logger` imports added:
+
+| File | Calls replaced |
+|------|---------------|
+| `server/routes.ts` (legacy monolith) | 93 |
+| `server/routes/sos.routes.ts` | 10 |
+| `server/routes/ai.routes.ts` | 1 |
+| `server/modules/analytics/prediction.service.ts` | 4 |
+| `server/modules/reports/fake-report-detection.service.ts` | 2 |
+| `server/shared/storage/object-storage.ts` | 4 |
+| `server/middleware/auditLog.ts` | 2 |
+| 8 other route files | Logger import added |
+
+### Known Limitations (Tracked, Not Fixed)
+
+| ID | File | Issue | Reason deferred |
+|----|------|-------|----------------|
+| D-01 | `dispatch.service.ts` | `haversineDistance()` defined but unused; `Math.random()` used for distance | Responders have no lat/lng column in DB — requires schema migration |
+| D-02 | `auth.routes.ts` | Duplicate `GET /api/auth/user` (dead code — `newAuth` registered first) | Legacy file kept for reference; both endpoints now sanitize correctly |
+| D-03 | Config | `JWT_SECRET`/`JWT_REFRESH_SECRET` not in Zod config schema | Validated at module load in `jwtUtils.ts` — functionally equivalent |
+
+### Production Deployment Checklist
+
+Before deploying, **all** of the following env vars must be set (server will throw at startup otherwise):
+
+```
+JWT_SECRET=<64-byte hex>          # node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+JWT_REFRESH_SECRET=<64-byte hex>  # same
+SESSION_SECRET=<strong random>
+ENCRYPTION_KEY=<strong random>
+DATABASE_URL=<neon postgres connection string>
+NODE_ENV=production
+REDIS_URL=<redis url>             # for multi-process pub/sub (optional in single-process)
+```
+
+**Final TypeScript: 0 errors · 0 raw console calls · Server starts cleanly** ✅

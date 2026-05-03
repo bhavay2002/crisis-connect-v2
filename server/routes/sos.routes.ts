@@ -6,6 +6,7 @@ import { fromZodError } from "zod-validation-error";
 import { dispatchService, slaEscalationService } from "../modules/sos/dispatch.service";
 import { db } from "../db/db";
 import { eq, sql } from "drizzle-orm";
+import { logger } from "../utils/logger";
 
 // Placeholder for broadcast function - will be injected via index.ts
 let broadcastToAll: (message: any) => void = () => {};
@@ -47,7 +48,7 @@ export function registerSOSRoutes(app: Express) {
         const validationError = fromZodError(error);
         return res.status(400).json({ message: validationError.message });
       }
-      console.error("Error creating SOS alert:", error);
+      logger.error("Error creating SOS alert", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to create SOS alert" });
     }
   });
@@ -72,7 +73,7 @@ export function registerSOSRoutes(app: Express) {
       const alerts = await storage.getAllSOSAlerts();
       res.json(alerts);
     } catch (error) {
-      console.error("Error fetching SOS alerts:", error);
+      logger.error("Error fetching SOS alerts", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch SOS alerts" });
     }
   });
@@ -97,7 +98,7 @@ export function registerSOSRoutes(app: Express) {
       const alerts = await storage.getActiveSOSAlerts();
       res.json(alerts);
     } catch (error) {
-      console.error("Error fetching active SOS alerts:", error);
+      logger.error("Error fetching active SOS alerts", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch active SOS alerts" });
     }
   });
@@ -109,13 +110,13 @@ export function registerSOSRoutes(app: Express) {
       const alerts = await storage.getSOSAlertsByUser(userId);
       res.json(alerts);
     } catch (error) {
-      console.error("Error fetching user SOS alerts:", error);
+      logger.error("Error fetching user SOS alerts", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch user SOS alerts" });
     }
   });
 
-  // Get specific SOS alert
-  app.get("/api/sos/:id", async (req, res) => {
+  // Get specific SOS alert (authenticated — contains PII: coordinates, contact number)
+  app.get("/api/sos/:id", isAuthenticated, async (req: any, res) => {
     try {
       const alert = await storage.getSOSAlert(req.params.id);
       if (!alert) {
@@ -123,7 +124,7 @@ export function registerSOSRoutes(app: Express) {
       }
       res.json(alert);
     } catch (error) {
-      console.error("Error fetching SOS alert:", error);
+      logger.error("Error fetching SOS alert", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch SOS alert" });
     }
   });
@@ -175,7 +176,7 @@ export function registerSOSRoutes(app: Express) {
 
       res.json(updatedAlert);
     } catch (error) {
-      console.error("Error responding to SOS alert:", error);
+      logger.error("Error responding to SOS alert", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to respond to SOS alert" });
     }
   });
@@ -223,7 +224,7 @@ export function registerSOSRoutes(app: Express) {
 
       res.json(updatedAlert);
     } catch (error) {
-      console.error("Error resolving SOS alert:", error);
+      logger.error("Error resolving SOS alert", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to resolve SOS alert" });
     }
   });
@@ -259,7 +260,7 @@ export function registerSOSRoutes(app: Express) {
         totalTransitions: logs.length,
       });
     } catch (error) {
-      console.error("Error fetching SOS history:", error);
+      logger.error("Error fetching SOS history", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch history" });
     }
   });
@@ -289,7 +290,7 @@ export function registerSOSRoutes(app: Express) {
       broadcastToAll({ type: "sos_dispatch_started", data: { sosId: id, respondersFound: result.recommended.length } });
       res.json(result);
     } catch (error) {
-      console.error("Error dispatching SOS:", error);
+      logger.error("Error dispatching SOS", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Dispatch failed" });
     }
   });
@@ -353,7 +354,7 @@ export function registerSOSRoutes(app: Express) {
 
       res.json(updatedAlert);
     } catch (error) {
-      console.error("Error updating SOS alert status:", error);
+      logger.error("Error updating SOS alert status", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to update SOS alert status" });
     }
   });

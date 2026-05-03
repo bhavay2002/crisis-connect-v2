@@ -29,9 +29,17 @@ export function apiKeyAuth(): RequestHandler {
       return res.status(401).json({ message: "API key expired" });
     }
 
-    // Daily rate limiting (simple in-memory approach using requestCount per day)
-    // In production, use Redis with TTL
-    if (keyRecord.requestCount >= keyRecord.dailyLimit) {
+    // Daily rate limiting — reset count if lastUsedAt is from a previous calendar day
+    const now = new Date();
+    const lastUsed = keyRecord.lastUsedAt;
+    const isNewDay = !lastUsed ||
+      lastUsed.getUTCFullYear() !== now.getUTCFullYear() ||
+      lastUsed.getUTCMonth()    !== now.getUTCMonth() ||
+      lastUsed.getUTCDate()     !== now.getUTCDate();
+
+    const effectiveCount = isNewDay ? 0 : keyRecord.requestCount;
+
+    if (effectiveCount >= keyRecord.dailyLimit) {
       const limit = keyRecord.dailyLimit;
       res.set("X-RateLimit-Limit", String(limit));
       res.set("X-RateLimit-Remaining", "0");
@@ -39,14 +47,19 @@ export function apiKeyAuth(): RequestHandler {
         message: "Daily rate limit exceeded",
         limit,
         tier: keyRecord.tier,
+        resetsAt: (() => {
+          const reset = new Date(now);
+          reset.setUTCHours(24, 0, 0, 0);
+          return reset.toISOString();
+        })(),
         upgrade: "Contact us to upgrade to a higher tier",
       });
     }
 
-    // Increment request count (fire-and-forget)
+    // Increment request count (fire-and-forget); reset to 1 on a new day
     db.update(apiKeys).set({
-      requestCount: keyRecord.requestCount + 1,
-      lastUsedAt: new Date(),
+      requestCount: isNewDay ? 1 : effectiveCount + 1,
+      lastUsedAt: now,
     }).where(eq(apiKeys.id, keyRecord.id)).catch(() => {});
 
     const remaining = keyRecord.dailyLimit - keyRecord.requestCount - 1;

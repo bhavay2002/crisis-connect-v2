@@ -1,5 +1,6 @@
 import { Storage, File } from "@google-cloud/storage";
 import { Response } from "express";
+import { logger } from "../../utils/logger";
 import { randomUUID } from "crypto";
 import {
   ObjectAclPolicy,
@@ -51,7 +52,7 @@ export class ObjectStorageService {
       )
     );
     if (paths.length === 0) {
-      console.warn(
+      logger.warn(
         "PUBLIC_OBJECT_SEARCH_PATHS not set. Object storage is disabled. " +
           "Create a bucket in 'Object Storage' tool and set PUBLIC_OBJECT_SEARCH_PATHS env var."
       );
@@ -63,7 +64,7 @@ export class ObjectStorageService {
   getPrivateObjectDir(): string {
     const dir = process.env.PRIVATE_OBJECT_DIR || "";
     if (!dir) {
-      console.warn(
+      logger.warn(
         "PRIVATE_OBJECT_DIR not set. Object storage is disabled. " +
           "Create a bucket in 'Object Storage' tool and set PRIVATE_OBJECT_DIR env var."
       );
@@ -105,7 +106,7 @@ export class ObjectStorageService {
       const stream = file.createReadStream();
 
       stream.on("error", (err) => {
-        console.error("Stream error:", err);
+        logger.error("Stream error:", err instanceof Error ? err : undefined);
         if (!res.headersSent) {
           res.status(500).json({ error: "Error streaming file" });
         }
@@ -113,7 +114,7 @@ export class ObjectStorageService {
 
       stream.pipe(res);
     } catch (error) {
-      console.error("Error downloading file:", error);
+      logger.error("Error downloading file:", error instanceof Error ? error : undefined);
       if (!res.headersSent) {
         res.status(500).json({ error: "Error downloading file" });
       }

@@ -132,7 +132,7 @@ export function registerReportRoutes(app: Express) {
       const reports = await storage.getDisasterReportsByUser(requestedUserId);
       res.json(reports);
     } catch (error) {
-      console.error("Error fetching user reports:", error);
+      logger.error("Error fetching user reports", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch user reports" });
     }
   });
@@ -300,7 +300,7 @@ export function registerReportRoutes(app: Express) {
 
       res.json(report);
     } catch (error) {
-      console.error("Error updating report status:", error);
+      logger.error("Error updating report status", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to update report status" });
     }
   });
@@ -346,7 +346,7 @@ export function registerReportRoutes(app: Express) {
         const validationError = fromZodError(error);
         return res.status(400).json({ message: validationError.message });
       }
-      console.error("Error creating verification:", error);
+      logger.error("Error creating verification", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to create verification" });
     }
   });
@@ -357,7 +357,7 @@ export function registerReportRoutes(app: Express) {
       const count = await storage.getVerificationCountForReport(req.params.reportId);
       res.json({ count });
     } catch (error) {
-      console.error("Error fetching verification count:", error);
+      logger.error("Error fetching verification count", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch verification count" });
     }
   });
@@ -400,7 +400,7 @@ export function registerReportRoutes(app: Express) {
 
       res.json(confirmedReport);
     } catch (error) {
-      console.error("Error confirming report:", error);
+      logger.error("Error confirming report", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to confirm report" });
     }
   });
@@ -443,7 +443,7 @@ export function registerReportRoutes(app: Express) {
 
       res.json(unconfirmedReport);
     } catch (error) {
-      console.error("Error unconfirming report:", error);
+      logger.error("Error unconfirming report", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to unconfirm report" });
     }
   });
@@ -488,7 +488,7 @@ export function registerReportRoutes(app: Express) {
 
       res.json(report);
     } catch (error) {
-      console.error("Error flagging report:", error);
+      logger.error("Error flagging report", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to flag report" });
     }
   });
@@ -526,7 +526,7 @@ export function registerReportRoutes(app: Express) {
 
       res.json(report);
     } catch (error) {
-      console.error("Error unflagging report:", error);
+      logger.error("Error unflagging report", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to unflag report" });
     }
   });
@@ -563,7 +563,7 @@ export function registerReportRoutes(app: Express) {
 
       res.json(report);
     } catch (error) {
-      console.error("Error adding admin notes:", error);
+      logger.error("Error adding admin notes", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to add admin notes" });
     }
   });
@@ -618,7 +618,7 @@ export function registerReportRoutes(app: Express) {
 
       res.json(report);
     } catch (error) {
-      console.error("Error assigning report:", error);
+      logger.error("Error assigning report", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to assign report" });
     }
   });
@@ -656,7 +656,7 @@ export function registerReportRoutes(app: Express) {
 
       res.json(report);
     } catch (error) {
-      console.error("Error unassigning report:", error);
+      logger.error("Error unassigning report", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to unassign report" });
     }
   });
@@ -689,7 +689,7 @@ export function registerReportRoutes(app: Express) {
       const reports = await storage.getReportsByStatus(status as "reported" | "verified" | "responding" | "resolved");
       res.json(reports);
     } catch (error) {
-      console.error("Error fetching filtered reports:", error);
+      logger.error("Error fetching filtered reports", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch filtered reports" });
     }
   });
@@ -715,7 +715,7 @@ export function registerReportRoutes(app: Express) {
       const reports = await storage.getFlaggedReports();
       res.json(reports);
     } catch (error) {
-      console.error("Error fetching flagged reports:", error);
+      logger.error("Error fetching flagged reports", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch flagged reports" });
     }
   });
@@ -741,7 +741,7 @@ export function registerReportRoutes(app: Express) {
       const reports = await storage.getPrioritizedReports();
       res.json(reports);
     } catch (error) {
-      console.error("Error fetching prioritized reports:", error);
+      logger.error("Error fetching prioritized reports", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to fetch prioritized reports" });
     }
   });
@@ -778,7 +778,7 @@ export function registerReportRoutes(app: Express) {
 
       res.json(report);
     } catch (error) {
-      console.error("Error updating report priority:", error);
+      logger.error("Error updating report priority", error instanceof Error ? error : undefined);
       res.status(500).json({ message: "Failed to update report priority" });
     }
   });
