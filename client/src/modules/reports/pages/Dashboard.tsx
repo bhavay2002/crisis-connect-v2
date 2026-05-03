@@ -1,101 +1,88 @@
-import { useState, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+/**
+ * Dashboard — composition-only page.
+ * All business logic lives in feature hooks; this page only wires them together.
+ */
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+
+// ── Feature imports ────────────────────────────────────────────────────────────
+import {
+  useCrisisRealtime,
+  useCrisisActions,
+  useCrisisStats,
+  useSeverityBreakdown,
+  selectNewReportIds,
+  useDecisionStore,
+} from "@/features/crisis";
+import { useMonitoringStats } from "@/features/analytics";
+
+// ── Shared UI ─────────────────────────────────────────────────────────────────
 import StatsCard from "@/components/feed/StatsCard";
 import DisasterReportCard from "@/components/feed/DisasterReportCard";
-import { useRealtimeMessage } from "@/providers/WebSocketProvider";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { useDecisionStore, selectEventLog, selectNewReportIds } from "@/store/decisionStore";
 import { IncidentTimeline } from "@/components/crisis/IncidentTimeline";
-import { LiveCounter } from "@/components/crisis/LiveCounter";
-import { CriticalBadge } from "@/components/crisis/CriticalBadge";
+import { LiveCounter }      from "@/components/crisis/LiveCounter";
+import { CriticalBadge }   from "@/components/crisis/CriticalBadge";
+import { useToast }         from "@/hooks/use-toast";
+import { useAuth }          from "@/hooks/useAuth";
+
 import {
   AlertTriangle, CheckCircle, Users, MapPinned, PlusCircle, Radio,
-  Brain, Globe, Zap, Activity, ArrowRight, TrendingUp, Shield,
-  BarChart3,
+  Brain, Globe, Zap, Activity, ArrowRight, BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input }  from "@/components/ui/input";
 import { Search } from "lucide-react";
 import type { DisasterReport } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
 
 const QUICK_ACTIONS = [
-  { label: "Submit Report",    url: "/submit",           icon: PlusCircle, color: "text-red-500",    bg: "bg-red-500/10",    desc: "Report an incident" },
-  { label: "Broadcast Alert",  url: "/broadcast-alerts", icon: Radio,      color: "text-orange-500", bg: "bg-orange-500/10", desc: "Send emergency alert" },
-  { label: "AI Copilot",       url: "/copilot",          icon: Brain,      color: "text-purple-500", bg: "bg-purple-500/10", desc: "Get AI guidance"   },
-  { label: "Risk Map",         url: "/risk-map",         icon: Globe,      color: "text-teal-500",   bg: "bg-teal-500/10",   desc: "View live map"     },
-  { label: "Simulation",       url: "/simulation",       icon: Zap,        color: "text-yellow-500", bg: "bg-yellow-500/10", desc: "Run crisis sim"    },
-  { label: "Monitoring",       url: "/monitoring",       icon: Activity,   color: "text-cyan-500",   bg: "bg-cyan-500/10",   desc: "System health"     },
+  { label: "Submit Report",    url: "/submit",           icon: PlusCircle, color: "text-red-500",    bg: "bg-red-500/10"    },
+  { label: "Broadcast Alert",  url: "/broadcast-alerts", icon: Radio,      color: "text-orange-500", bg: "bg-orange-500/10" },
+  { label: "AI Copilot",       url: "/copilot",          icon: Brain,      color: "text-purple-500", bg: "bg-purple-500/10" },
+  { label: "Risk Map",         url: "/risk-map",         icon: Globe,      color: "text-teal-500",   bg: "bg-teal-500/10"   },
+  { label: "Simulation",       url: "/simulation",       icon: Zap,        color: "text-yellow-500", bg: "bg-yellow-500/10" },
+  { label: "Monitoring",       url: "/monitoring",       icon: Activity,   color: "text-cyan-500",   bg: "bg-cyan-500/10"   },
 ];
 
 const SEV_BAR: Record<string, string> = {
-  critical: "bg-red-500",
-  high:     "bg-orange-500",
-  medium:   "bg-yellow-500",
-  low:      "bg-blue-500",
+  critical: "bg-red-500", high: "bg-orange-500", medium: "bg-yellow-500", low: "bg-blue-500",
 };
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user }  = useAuth();
 
-  const newReportIds  = useDecisionStore(selectNewReportIds);
+  // ── Feature hooks (business logic, not inline) ────────────────────────────
+  const newReportIds = useDecisionStore(selectNewReportIds);
+  const { upvote }   = useCrisisActions();
 
   const { data: reportsResponse, isLoading } = useQuery<{ data: DisasterReport[]; pagination: any }>({
     queryKey: ["/api/reports"],
   });
-  const { data: monitoringStats } = useQuery<any>({ queryKey: ["/api/monitoring/stats"] });
+  const { data: monitoringStats } = useMonitoringStats();
 
   const reports = reportsResponse?.data || [];
+  const stats   = useCrisisStats(reports as any);
+  const { counts: sevCounts, total } = useSeverityBreakdown(reports as any);
 
-  useRealtimeMessage(useCallback((message: any) => {
-    if (message.type === "new_report") {
-      toast({
-        title: "🚨 New Emergency Report",
-        description: message.data?.title || "A new incident has been reported",
-      });
-    }
-  }, [toast]));
-
-  const handleVerify = async (reportId: string) => {
-    try {
-      await apiRequest(`/api/reports/${reportId}/verify`, { method: "POST" });
-      toast({ title: "Report upvoted" });
-      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
-    } catch (error: any) {
-      if (isUnauthorizedError(error)) { setLocation("/login"); return; }
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  };
-
-  const stats = {
-    activeReports:     reports.filter(r => r.status !== "resolved").length,
-    criticalCount:     reports.filter(r => r.severity === "critical" && r.status !== "resolved").length,
-    verifiedIncidents: reports.filter(r => r.status === "verified" || r.status === "responding").length,
-    responseTeams:     reports.filter(r => r.status === "responding").length,
-    affectedAreas:     new Set(reports.map(r => r.location)).size,
-    resolvedToday:     reports.filter(r => r.status === "resolved").length,
-  };
+  // Subscribe to WS — shows toast on new report
+  useCrisisRealtime({
+    onNewReport: (data) => toast({
+      title: "🚨 New Emergency Report",
+      description: data?.title || "A new incident has been reported",
+    }),
+  });
 
   const criticalReports = reports.filter(r => r.severity === "critical" && r.status !== "resolved");
-
   const filtered = reports
     .filter(r => r.status !== "resolved")
-    .filter(r => !searchQuery || r.title.toLowerCase().includes(searchQuery.toLowerCase()) || r.location.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(r => !searchQuery ||
+      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.location.toLowerCase().includes(searchQuery.toLowerCase()))
     .slice(0, 6);
-
-  const sevCounts = { critical: 0, high: 0, medium: 0, low: 0 };
-  reports.filter(r => r.status !== "resolved").forEach(r => {
-    if (r.severity in sevCounts) sevCounts[r.severity as keyof typeof sevCounts]++;
-  });
-  const total = Object.values(sevCounts).reduce((a, b) => a + b, 0) || 1;
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -122,10 +109,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between gap-4 pl-3">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center flex-shrink-0">
-                  <motion.div
-                    animate={{ opacity: [1, 0.4, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.1 }}
-                  >
+                  <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 1.1 }}>
                     <AlertTriangle className="w-4 h-4 text-red-500" />
                   </motion.div>
                 </div>
@@ -169,19 +153,17 @@ export default function Dashboard() {
       {/* ── Stats Grid ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { title: "Active Reports",  value: stats.activeReports,     icon: AlertTriangle, color: "red"    as const, description: "Unresolved" },
-          { title: "Critical",        value: stats.criticalCount,     icon: AlertTriangle, color: "red"    as const, description: "Immediate action" },
+          { title: "Active Reports",  value: stats.activeReports,     icon: AlertTriangle, color: "red"    as const, description: "Unresolved"         },
+          { title: "Critical",        value: stats.criticalCount,     icon: AlertTriangle, color: "red"    as const, description: "Immediate action"    },
           { title: "Verified",        value: stats.verifiedIncidents, icon: CheckCircle,   color: "blue"   as const, description: "Confirmed incidents" },
-          { title: "Responding",      value: stats.responseTeams,     icon: Users,         color: "orange" as const, description: "Teams deployed" },
-          { title: "Affected Areas",  value: stats.affectedAreas,     icon: MapPinned,     color: "purple" as const, description: "Unique locations" },
-          { title: "Resolved",        value: stats.resolvedToday,     icon: CheckCircle,   color: "green"  as const, description: "Total resolved" },
-        ].map(card => (
-          <StatsCard key={card.title} {...card} />
-        ))}
+          { title: "Responding",      value: stats.responseTeams,     icon: Users,         color: "orange" as const, description: "Teams deployed"      },
+          { title: "Affected Areas",  value: stats.affectedAreas,     icon: MapPinned,     color: "purple" as const, description: "Unique locations"    },
+          { title: "Resolved",        value: stats.resolvedToday,     icon: CheckCircle,   color: "green"  as const, description: "Total resolved"      },
+        ].map(card => <StatsCard key={card.title} {...card} />)}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* ── Left: Reports + search ── */}
+        {/* ── Active incidents ── */}
         <div className="xl:col-span-2 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-bold text-base">Active Incidents</h2>
@@ -196,11 +178,8 @@ export default function Dashboard() {
                   data-testid="input-search-reports"
                 />
               </div>
-              <Button
-                variant="outline" size="sm" className="h-8 text-xs"
-                onClick={() => setLocation("/reports")}
-                data-testid="button-view-all"
-              >
+              <Button variant="outline" size="sm" className="h-8 text-xs"
+                onClick={() => setLocation("/reports")} data-testid="button-view-all">
                 View All
               </Button>
             </div>
@@ -230,9 +209,7 @@ export default function Dashboard() {
                     >
                       {isNew && (
                         <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
+                          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                           className="flex items-center gap-1.5 px-3 py-1 bg-red-500/10 rounded-t-xl border border-b-0 border-red-500/30"
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -244,17 +221,13 @@ export default function Dashboard() {
                       )}
                       <DisasterReportCard
                         report={{
-                          id: report.id,
-                          title: report.title,
-                          type: report.type,
-                          severity: report.severity,
-                          location: report.location,
+                          id: report.id, title: report.title, type: report.type,
+                          severity: report.severity, location: report.location,
                           description: report.description,
                           timestamp: new Date(report.createdAt).toLocaleString(),
-                          verificationCount: report.verificationCount,
-                          status: report.status,
+                          verificationCount: report.verificationCount, status: report.status,
                         }}
-                        onVerify={() => handleVerify(report.id)}
+                        onVerify={() => upvote(report.id)}
                         onViewDetails={() => setLocation(`/reports/${report.id}`)}
                       />
                     </motion.div>
@@ -265,7 +238,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* ── Right: Sidebar panels ── */}
+        {/* ── Right sidebar ── */}
         <div className="space-y-4">
           {/* Quick Actions */}
           <div className="rounded-xl border bg-background p-4">
@@ -294,9 +267,7 @@ export default function Dashboard() {
                 <div key={sev}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="capitalize font-medium flex items-center gap-1.5">
-                      {sev === "critical" && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                      )}
+                      {sev === "critical" && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
                       {sev}
                     </span>
                     <LiveCounter value={sevCounts[sev]} className="tabular-nums text-muted-foreground" />
@@ -317,14 +288,14 @@ export default function Dashboard() {
           {/* Live Event Timeline */}
           <IncidentTimeline />
 
-          {/* System Status */}
+          {/* Platform Health */}
           {monitoringStats && (
             <div className="rounded-xl border bg-background p-4">
               <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-muted-foreground" />
                 Platform Health
               </h3>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2">
                 {[
                   { label: "Total Reports",    value: monitoringStats.platform?.totalReports },
                   { label: "SOS Alerts",       value: monitoringStats.platform?.totalSOS },

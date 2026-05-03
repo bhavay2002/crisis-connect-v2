@@ -1,0 +1,431 @@
+You’re already doing the basics (lazy loading + query caching). The jump to **elite frontend performance** comes from controlling **render cost, subscription scope, and DOM size**.
+
+Below is a **production-grade playbook** with concrete patterns you can wire into your codebase.
+
+---
+
+# ⚡ 6. PERFORMANCE — INDUSTRY-LEVEL IMPLEMENTATION
+
+---
+
+# 🧱 1. VIRTUALIZATION (Large Lists → Constant DOM Size)
+
+## 🔷 Why it matters
+
+Without virtualization:
+
+* 1,000 items → 1,000 DOM nodes ❌
+* slow scroll + layout thrashing
+
+With virtualization:
+
+* 1,000 items → ~20 DOM nodes ✅
+
+---
+
+## 🔷 Use `@tanstack/react-virtual` (best-in-class)
+
+```tsx
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useRef } from "react";
+
+export function CrisisList({ data }) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: data.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 80,
+    overscan: 5,
+  });
+
+  return (
+    <div ref={parentRef} className="h-[600px] overflow-auto">
+      <div
+        style={{
+          height: rowVirtualizer.getTotalSize(),
+          position: "relative",
+        }}
+      >
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const item = data[virtualRow.index];
+
+          return (
+            <div
+              key={item.id}
+              style={{
+                position: "absolute",
+                top: 0,
+                transform: `translateY(${virtualRow.start}px)`,
+                width: "100%",
+              }}
+            >
+              <CrisisCard crisis={item} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## 🔷 Industry Tips
+
+* use `overscan: 5–10` for smooth scroll
+* combine with **infinite loading**
+* virtualize:
+
+  * incident lists
+  * chat messages
+  * logs/timeline
+
+---
+
+# 🧠 2. MEMOIZED SELECTORS (Zustand / Redux)
+
+## 🔷 Problem
+
+```ts
+const data = useStore((s) => s);
+```
+
+👉 re-renders on **any state change** ❌
+
+---
+
+## 🔷 Solution: Select + Shallow Compare
+
+```ts
+import { shallow } from "zustand/shallow";
+
+const { reports, selectedId } = useStore(
+  (s) => ({
+    reports: s.reports,
+    selectedId: s.selectedId,
+  }),
+  shallow
+);
+```
+
+---
+
+## 🔷 Advanced Pattern (Derived Selectors)
+
+```ts
+const criticalReports = useStore((s) =>
+  s.reports.filter((r) => r.priority === "CRITICAL")
+);
+```
+
+👉 BUT this recalculates every render ❌
+
+---
+
+### ✅ Fix with memoization
+
+```ts
+import { useMemo } from "react";
+
+const reports = useStore((s) => s.reports);
+
+const criticalReports = useMemo(
+  () => reports.filter((r) => r.priority === "CRITICAL"),
+  [reports]
+);
+```
+
+---
+
+## 🔥 Elite Pattern (Selector Outside Component)
+
+```ts
+const selectCritical = (s) =>
+  s.reports.filter((r) => r.priority === "CRITICAL");
+
+const criticalReports = useStore(selectCritical);
+```
+
+👉 cleaner + reusable
+
+---
+
+# 🎯 3. SELECTIVE RE-RENDER OPTIMIZATION
+
+---
+
+## 🔷 Problem
+
+Parent re-renders → all children re-render ❌
+
+---
+
+## 🔷 Fix: `React.memo`
+
+```tsx
+export const CrisisCard = React.memo(function CrisisCard({ crisis }) {
+  return <div>{crisis.title}</div>;
+});
+```
+
+---
+
+## 🔷 When to use
+
+Use on:
+
+* list items
+* chat messages
+* map markers
+
+---
+
+## 🔷 Custom comparison (advanced)
+
+```tsx
+export default React.memo(Component, (prev, next) => {
+  return prev.crisis.id === next.crisis.id &&
+         prev.crisis.status === next.crisis.status;
+});
+```
+
+---
+
+# 🔄 4. STABLE REFERENCES (HUGE IMPACT)
+
+## 🔷 Problem
+
+```tsx
+<button onClick={() => handleClick(id)} />
+```
+
+👉 new function every render ❌
+
+---
+
+## 🔷 Fix
+
+```tsx
+const handleClick = useCallback((id) => {
+  // logic
+}, []);
+```
+
+---
+
+## 🔷 Same for objects
+
+```tsx
+const style = useMemo(() => ({ color: "red" }), []);
+```
+
+---
+
+# 🧵 5. REAL-TIME + PERFORMANCE (CRITICAL COMBO)
+
+You have WebSockets → now optimize updates.
+
+---
+
+## 🔷 Problem
+
+Incoming event → entire list updates ❌
+
+---
+
+## 🔷 Solution: Patch Updates
+
+```ts
+socket.on("CRISIS_UPDATE", (updated) => {
+  set((state) => ({
+    reports: state.reports.map((r) =>
+      r.id === updated.id ? updated : r
+    ),
+  }));
+});
+```
+
+---
+
+👉 only 1 item updates → minimal re-render ✅
+
+---
+
+## 🔷 Even better: indexed store
+
+```ts
+reportsById: { [id]: report }
+```
+
+---
+
+# 🗺️ 6. MAP PERFORMANCE (OFTEN MISSED)
+
+---
+
+## 🔷 Problems
+
+* too many markers
+* re-rendering entire map
+
+---
+
+## 🔷 Fix
+
+* cluster markers
+* memoize marker components
+* only update changed markers
+
+```tsx
+const Marker = React.memo(({ position }) => { ... });
+```
+
+---
+
+# 💬 7. CHAT PERFORMANCE
+
+---
+
+## 🔷 Combine:
+
+* virtualization
+* memoized messages
+* append-only rendering
+
+---
+
+## 🔷 Example
+
+```ts
+setMessages((prev) => [...prev, newMessage]);
+```
+
+👉 no reprocessing old messages
+
+---
+
+# 📊 8. TANSTACK QUERY OPTIMIZATION
+
+---
+
+## 🔷 Use `select` (hidden gem)
+
+```ts
+useQuery({
+  queryKey: ["reports"],
+  queryFn: fetchReports,
+  select: (data) => data.filter((r) => r.active),
+});
+```
+
+---
+
+👉 reduces component work
+
+---
+
+## 🔷 Use `staleTime`
+
+```ts
+staleTime: 10000
+```
+
+---
+
+👉 prevents unnecessary refetch
+
+---
+
+# 🧪 9. MEASURE PERFORMANCE (PRO MOVE)
+
+Use:
+
+* React DevTools Profiler
+* why-did-you-render
+
+---
+
+## 🔷 Example
+
+```ts
+if (process.env.NODE_ENV === "development") {
+  require("@welldone-software/why-did-you-render")(React);
+}
+```
+
+---
+
+# 🔥 FINAL CHECKLIST (INDUSTRY LEVEL)
+
+You are now elite if:
+
+### ✅ lists are virtualized
+
+### ✅ store uses selectors + shallow
+
+### ✅ components memoized
+
+### ✅ callbacks stable
+
+### ✅ updates are granular
+
+### ✅ map optimized
+
+### ✅ chat optimized
+
+### ✅ query optimized
+
+---
+
+# 🚀 FINAL UPGRADE PROMPT
+
+Act as a senior frontend performance engineer.
+
+I have a React + TypeScript app using Zustand and TanStack Query.
+
+Optimize it to industry-level performance.
+
+Focus on:
+
+* list virtualization
+* memoized selectors
+* preventing unnecessary re-renders
+* optimizing WebSocket updates
+* map performance
+* chat performance
+
+Provide:
+
+* code improvements
+* anti-pattern fixes
+* performance architecture
+
+Goal:
+Handle thousands of real-time updates efficiently.
+
+---
+
+# 🚨 Real Insight
+
+Most devs think:
+
+> performance = faster API ❌
+
+Top engineers know:
+
+> performance = fewer renders + less DOM work + smarter state flow ✅
+
+---
+
+# 🚀 Next Step
+
+If you want, I can:
+
+* analyze your actual components
+* show exactly where re-renders happen
+* optimize them line-by-line
+
+Just say:
+👉 **“optimize my code”**

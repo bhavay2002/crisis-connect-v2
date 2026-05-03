@@ -16,6 +16,25 @@ Preferred communication style: Simple, everyday language.
 **Routing**: Wouter for client-side routing with `React.lazy` + `Suspense` for all 40+ pages (code splitting).
 **Real-time Updates**: Singleton `WebSocketProvider` at `client/src/providers/WebSocketProvider.tsx` — ONE WS connection per session, subscribed to via `useRealtimeMessage(handler)` hook. Exponential back-off reconnect (2s → 30s).
 
+**Feature-Based Architecture** (`client/src/features/`):
+Each feature is a self-contained mini-application with its own types, services, hooks, store, and components. Pages are composition-only orchestrators.
+- `crisis/` — types, crisis.api.ts, useCrisisRealtime/useCrisisActions/useCrisisStats hooks, crisis.store.ts (re-exports decisionStore), ActionPanel/CriticalBadge/IncidentTimeline/LiveCounter components
+- `chat/` — types, chat.api.ts, useChatSocket/useChatActions hooks, chat.store.ts (Zustand for typing/optimistic), MessageBubble/PinnedBar/QuickActions/RoomList components
+- `map/` — types, geo.api.ts, useMapFilters/useMapSync/useSelectIncident hooks, map.store.ts (re-exports commandCenterStore), IncidentPanel component
+- `sos/` — types, sos.api.ts, useSOSRealtime hook
+- `analytics/` — types, analytics.api.ts, useAnalyticsSummary/useMonitoringStats/useRiskPredictions hooks
+- `index.ts` — top-level barrel (`import { useCrisisActions } from "@/features/crisis"`)
+
+**Shared Layer** (`client/src/shared/`):
+- `services/api.ts` — typed HTTP wrapper (get/post/patch/put/delete) over apiRequest
+- `types/common.types.ts` — Severity, UserRole, LatLng, PaginatedResponse, ApiError
+- `utils/format.ts` — timeAgo, shortDateTime, capitalize, slugToLabel, abbreviate
+- `hooks/index.ts` — re-exports useAuth, usePermissions, useToast, usePerformance
+
+**App Layer** (`client/src/app/`):
+- `providers/index.ts` — barrel for WebSocketProvider, useWSContext, useRealtimeMessage
+- `store/index.ts` — barrel for global Zustand stores (auth, realtime)
+
 **Key Stores** (`client/src/store/`):
 - `authStore.ts` — user session + role
 - `realtimeStore.ts` — WS ping/unread count

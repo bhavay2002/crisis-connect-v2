@@ -77,5 +77,5 @@ export const useDecisionStore = create<DecisionState>()(
 );
 
 export const selectActiveDecision = (s: DecisionState) => s.activeDecision;
-export const selectEventLog = (s: DecisionState) => s.eventLog;
-export const selectNewReportIds = (s: DecisionState) => s.newReportIds;
+export const selectEventLog       = (s: DecisionState) => s.eventLog;
+export const selectNewReportIds   = (s: DecisionState) => s.newReportIds;
