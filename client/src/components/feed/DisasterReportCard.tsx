@@ -1,3 +1,10 @@
+/**
+ * DisasterReportCard — React.memo wrapped with a custom equality check.
+ * Only re-renders when the visible fields actually change.
+ * Anti-pattern avoided: without memo, every WS message caused the entire
+ * report list to re-render even when nothing changed on a given card.
+ */
+import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, ThumbsUp, ShieldCheck, Flame, Droplets, AlertTriangle, Zap, Wind, Activity, Radio } from "lucide-react";
@@ -30,40 +37,42 @@ interface DisasterReportCardProps {
 }
 
 const TYPE_CONFIG: Record<string, { icon: any; color: string; bg: string; label: string }> = {
-  fire:             { icon: Flame,         color: "text-red-500",    bg: "bg-red-500/10",    label: "Fire"             },
-  flood:            { icon: Droplets,      color: "text-blue-500",   bg: "bg-blue-500/10",   label: "Flood"            },
-  earthquake:       { icon: Activity,      color: "text-orange-500", bg: "bg-orange-500/10", label: "Earthquake"       },
-  storm:            { icon: Wind,          color: "text-cyan-500",   bg: "bg-cyan-500/10",   label: "Storm"            },
-  road_accident:    { icon: AlertTriangle, color: "text-yellow-500", bg: "bg-yellow-500/10", label: "Road Accident"    },
-  epidemic:         { icon: Radio,         color: "text-purple-500", bg: "bg-purple-500/10", label: "Epidemic"         },
-  landslide:        { icon: AlertTriangle, color: "text-amber-500",  bg: "bg-amber-500/10",  label: "Landslide"        },
-  gas_leak:         { icon: Zap,           color: "text-yellow-600", bg: "bg-yellow-600/10", label: "Gas Leak"         },
-  building_collapse:{ icon: AlertTriangle, color: "text-red-600",    bg: "bg-red-600/10",    label: "Building Collapse"},
-  chemical_spill:   { icon: Activity,      color: "text-green-600",  bg: "bg-green-600/10",  label: "Chemical Spill"   },
-  power_outage:     { icon: Zap,           color: "text-slate-500",  bg: "bg-slate-500/10",  label: "Power Outage"     },
-  water_contamination:{ icon: Droplets,    color: "text-teal-500",   bg: "bg-teal-500/10",   label: "Water Contamination"},
-  other:            { icon: AlertTriangle, color: "text-slate-400",  bg: "bg-slate-400/10",  label: "Other"            },
+  fire:               { icon: Flame,         color: "text-red-500",    bg: "bg-red-500/10",    label: "Fire"               },
+  flood:              { icon: Droplets,      color: "text-blue-500",   bg: "bg-blue-500/10",   label: "Flood"              },
+  earthquake:         { icon: Activity,      color: "text-orange-500", bg: "bg-orange-500/10", label: "Earthquake"         },
+  storm:              { icon: Wind,          color: "text-cyan-500",   bg: "bg-cyan-500/10",   label: "Storm"              },
+  road_accident:      { icon: AlertTriangle, color: "text-yellow-500", bg: "bg-yellow-500/10", label: "Road Accident"      },
+  epidemic:           { icon: Radio,         color: "text-purple-500", bg: "bg-purple-500/10", label: "Epidemic"           },
+  landslide:          { icon: AlertTriangle, color: "text-amber-500",  bg: "bg-amber-500/10",  label: "Landslide"          },
+  gas_leak:           { icon: Zap,           color: "text-yellow-600", bg: "bg-yellow-600/10", label: "Gas Leak"           },
+  building_collapse:  { icon: AlertTriangle, color: "text-red-600",    bg: "bg-red-600/10",    label: "Building Collapse"  },
+  chemical_spill:     { icon: Activity,      color: "text-green-600",  bg: "bg-green-600/10",  label: "Chemical Spill"     },
+  power_outage:       { icon: Zap,           color: "text-slate-500",  bg: "bg-slate-500/10",  label: "Power Outage"       },
+  water_contamination:{ icon: Droplets,      color: "text-teal-500",   bg: "bg-teal-500/10",   label: "Water Contamination"},
+  other:              { icon: AlertTriangle, color: "text-slate-400",  bg: "bg-slate-400/10",  label: "Other"              },
 };
 
 const SEV_CONFIG = {
-  low:      { bar: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300",     dot: "bg-blue-500"   },
+  low:      { bar: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300",     dot: "bg-blue-500"          },
   medium:   { bar: "bg-yellow-500", badge: "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300", dot: "bg-yellow-500" },
   high:     { bar: "bg-orange-500", badge: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300", dot: "bg-orange-500" },
-  critical: { bar: "bg-red-500",    badge: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300",          dot: "bg-red-500 animate-pulse" },
+  critical: { bar: "bg-red-500",    badge: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300",           dot: "bg-red-500 animate-pulse" },
 };
 
 const STATUS_CONFIG = {
-  reported:  { label: "Reported",  cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"  },
-  verified:  { label: "Verified",  cls: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"       },
-  responding:{ label: "Responding",cls: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"   },
-  resolved:  { label: "Resolved",  cls: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"   },
+  reported:  { label: "Reported",   cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"   },
+  verified:  { label: "Verified",   cls: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"        },
+  responding:{ label: "Responding", cls: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"    },
+  resolved:  { label: "Resolved",   cls: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"    },
 };
 
-export default function DisasterReportCard({ report, onVerify, onConfirm, onViewDetails, userRole, canConfirm, hasVerified }: DisasterReportCardProps) {
-  const t = TYPE_CONFIG[report.type] || TYPE_CONFIG.other;
-  const sev = SEV_CONFIG[report.severity];
-  const status = STATUS_CONFIG[report.status];
-  const Icon = t.icon;
+function DisasterReportCardInner({
+  report, onVerify, onConfirm, onViewDetails, userRole, canConfirm, hasVerified,
+}: DisasterReportCardProps) {
+  const t       = TYPE_CONFIG[report.type] || TYPE_CONFIG.other;
+  const sev     = SEV_CONFIG[report.severity];
+  const status  = STATUS_CONFIG[report.status];
+  const Icon    = t.icon;
   const isConfirmed = !!report.confirmedBy;
 
   return (
@@ -88,7 +97,6 @@ export default function DisasterReportCard({ report, onVerify, onConfirm, onView
               <p className="text-xs text-muted-foreground capitalize mt-0.5">{t.label}</p>
             </div>
           </div>
-          {/* Severity dot + label */}
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className={`w-2 h-2 rounded-full ${sev.dot}`} />
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border uppercase tracking-wide ${sev.badge}`} data-testid={`badge-severity-${report.id}`}>
@@ -124,17 +132,21 @@ export default function DisasterReportCard({ report, onVerify, onConfirm, onView
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Button size="sm" variant={hasVerified ? "default" : "outline"} className="h-7 text-xs px-3" onClick={onVerify} disabled={hasVerified} data-testid={`button-upvote-${report.id}`}>
+          <Button size="sm" variant={hasVerified ? "default" : "outline"} className="h-7 text-xs px-3"
+            onClick={onVerify} disabled={hasVerified} data-testid={`button-upvote-${report.id}`}>
             <ThumbsUp className="w-3 h-3 mr-1" />
             {hasVerified ? "Upvoted" : "Upvote"}
           </Button>
           {canConfirm && (
-            <Button size="sm" variant={isConfirmed ? "default" : "outline"} className={`h-7 text-xs px-3 ${isConfirmed ? "bg-green-600 hover:bg-green-700 border-0" : ""}`} onClick={onConfirm} data-testid={`button-confirm-${report.id}`}>
+            <Button size="sm" variant={isConfirmed ? "default" : "outline"}
+              className={`h-7 text-xs px-3 ${isConfirmed ? "bg-green-600 hover:bg-green-700 border-0" : ""}`}
+              onClick={onConfirm} data-testid={`button-confirm-${report.id}`}>
               <ShieldCheck className="w-3 h-3 mr-1" />
               {isConfirmed ? "Confirmed" : "Confirm"}
             </Button>
           )}
-          <Button size="sm" variant="ghost" className="h-7 text-xs px-3 ml-auto text-muted-foreground hover:text-foreground" onClick={onViewDetails} data-testid={`button-details-${report.id}`}>
+          <Button size="sm" variant="ghost" className="h-7 text-xs px-3 ml-auto text-muted-foreground hover:text-foreground"
+            onClick={onViewDetails} data-testid={`button-details-${report.id}`}>
             Details →
           </Button>
         </div>
@@ -142,3 +154,21 @@ export default function DisasterReportCard({ report, onVerify, onConfirm, onView
     </div>
   );
 }
+
+/**
+ * Custom equality — card only re-renders when its own visible data changes.
+ * A WS ping or unrelated report update will NOT cause this card to re-render.
+ */
+function areEqual(prev: DisasterReportCardProps, next: DisasterReportCardProps): boolean {
+  return (
+    prev.report.id                === next.report.id &&
+    prev.report.status            === next.report.status &&
+    prev.report.severity          === next.report.severity &&
+    prev.report.verificationCount === next.report.verificationCount &&
+    prev.report.confirmedBy       === next.report.confirmedBy &&
+    prev.hasVerified              === next.hasVerified &&
+    prev.canConfirm               === next.canConfirm
+  );
+}
+
+export default React.memo(DisasterReportCardInner, areEqual);

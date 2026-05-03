@@ -1,3 +1,10 @@
+/**
+ * MessageBubble — React.memo with custom equality.
+ * With hundreds of messages in a chat, re-rendering ALL of them on every
+ * new message is expensive. Custom compare ensures only the changed message
+ * (or one whose pin/status changed) triggers a re-render.
+ */
+import React from "react";
 import { motion } from "framer-motion";
 import { Pin, Check, CheckCheck, AlertTriangle, Info } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -58,7 +65,7 @@ export function PriorityMessageBubble({ msg }: { msg: ChatMessage }) {
   );
 }
 
-export function MessageBubble({ msg, isOwn, showAvatar, onPin }: Props) {
+function MessageBubbleInner({ msg, isOwn, showAvatar, onPin }: Props) {
   if (msg.messageType === "system" || msg.messageType === "ai_assistant") {
     return <SystemMessageBubble msg={msg} />;
   }
@@ -115,3 +122,20 @@ export function MessageBubble({ msg, isOwn, showAvatar, onPin }: Props) {
     </motion.div>
   );
 }
+
+/**
+ * Custom equality — only re-render when the message itself changes.
+ * Avoids re-rendering the entire message list on every new message.
+ */
+function areMsgEqual(prev: Props, next: Props): boolean {
+  return (
+    prev.msg.id       === next.msg.id &&
+    prev.msg.status   === next.msg.status &&
+    prev.msg.isPinned === next.msg.isPinned &&
+    prev.msg.content  === next.msg.content &&
+    prev.isOwn        === next.isOwn &&
+    prev.showAvatar   === next.showAvatar
+  );
+}
+
+export const MessageBubble = React.memo(MessageBubbleInner, areMsgEqual);

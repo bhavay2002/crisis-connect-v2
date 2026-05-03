@@ -29,7 +29,10 @@ Each feature is a self-contained mini-application with its own types, services, 
 - `services/api.ts` — typed HTTP wrapper (get/post/patch/put/delete) over apiRequest
 - `types/common.types.ts` — Severity, UserRole, LatLng, PaginatedResponse, ApiError
 - `utils/format.ts` — timeAgo, shortDateTime, capitalize, slugToLabel, abbreviate
-- `hooks/index.ts` — re-exports useAuth, usePermissions, useToast, usePerformance
+- `hooks/useVirtualList.ts` — `useVirtualList` (flat) + `useRowVirtualList` (grid) using @tanstack/react-virtual
+- `hooks/useShallowSelector.ts` — Zustand multi-field selector with shallow comparison
+- `hooks/useStableCallback.ts` — stable callback ref (useEvent pattern) — stops re-subscription loops
+- `hooks/index.ts` — barrel exporting all shared hooks
 
 **App Layer** (`client/src/app/`):
 - `providers/index.ts` — barrel for WebSocketProvider, useWSContext, useRealtimeMessage
