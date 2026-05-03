@@ -201,6 +201,38 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
                 timestamp: Date.now(),
               });
               break;
+
+            // ── §21 Async AI Pipeline — real-time AI score delivery ──────────
+            case "AI_ANALYSIS_COMPLETE":
+              // Surgically patch the report with freshly-computed AI scores
+              if (msg.reportId) {
+                patchReport({
+                  id:                msg.reportId,
+                  aiValidationScore: msg.aiValidationScore,
+                  aiValidationNotes: msg.aiValidationNotes,
+                });
+                // Invalidate the per-report detail view
+                queryClient.invalidateQueries({ queryKey: [`/api/reports/${msg.reportId}`] });
+                queryClient.invalidateQueries({ queryKey: ["/api/system/pipeline/worker"] });
+              }
+              ds.pushEvent({
+                type:      "system",
+                message:   `AI analysis complete — score: ${msg.aiValidationScore ?? "?"}`,
+                subtext:   `Processed in ${msg.processingMs ?? "?"}ms`,
+                timestamp: Date.now(),
+                url:       msg.reportId ? `/reports/${msg.reportId}` : undefined,
+              });
+              break;
+
+            case "AI_ANALYSIS_FAILED":
+              ds.pushEvent({
+                type:      "system",
+                message:   "AI analysis failed for a report",
+                subtext:   msg.error,
+                severity:  "high",
+                timestamp: Date.now(),
+              });
+              break;
           }
 
           broadcast(msg);

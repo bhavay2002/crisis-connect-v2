@@ -81,6 +81,7 @@ const DataFusionPage       = lazy(() => import("@/pages/DataFusionPage"));
 const ExecutiveDashboardPage = lazy(() => import("@/pages/ExecutiveDashboardPage"));
 const GovernanceAdminPage    = lazy(() => import("@/pages/GovernanceAdminPage"));
 const UsageAnalyticsPage     = lazy(() => import("@/pages/UsageAnalyticsPage"));
+const AsyncPipelinePage      = lazy(() => import("@/pages/AsyncPipelinePage"));
 const NotFound          = lazy(() => import("@/pages/not-found"));
 
 // ─── Suspense wrapper ────────────────────────────────────────────────────────
@@ -187,6 +188,7 @@ function Router() {
         <Route path="/executive"        component={() => <S><ExecutiveDashboardPage /></S>} />
         <Route path="/data-governance"  component={() => <S><GovernanceAdminPage /></S>} />
         <Route path="/api-analytics"    component={() => <S><UsageAnalyticsPage /></S>} />
+        <Route path="/async-pipeline"   component={() => <S><AsyncPipelinePage /></S>} />
 
         {/* Misc */}
         <Route path="/chat"             component={() => <S><ChatPage /></S>} />

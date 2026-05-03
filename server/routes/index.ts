@@ -75,6 +75,9 @@ import { eventBus } from "../modules/events/event-bus";
 import { wsRateLimiter } from "../middleware/wsRateLimiting";
 import { config } from "../config";
 import { encryptWebSocketMessage, shouldEncryptMessage, type SecureWebSocketMessage } from "../shared/websocket/ws-encryption";
+import { pubSub, CHANNELS } from "../utils/pubsub";
+import { registerAIAnalysisWorker } from "../workers/ai-analysis.worker";
+import { registerPipelineRoutes, setWsStatsProviders } from "./pipeline.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -277,6 +280,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // §21 — Wire pub/sub AI_ANALYSIS_COMPLETE → WebSocket broadcast
+  pubSub.subscribe(CHANNELS.AI_ANALYSIS_COMPLETE, (data: unknown) => {
+    broadcastToAll({ type: "AI_ANALYSIS_COMPLETE", ...(data as object) });
+  });
+  pubSub.subscribe(CHANNELS.AI_ANALYSIS_FAILED, (data: unknown) => {
+    broadcastToAll({ type: "AI_ANALYSIS_FAILED", ...(data as object) });
+  });
+
+  // §21 — Wire pub/sub room-based broadcast (Redis-ready)
+  pubSub.subscribe(CHANNELS.WS_BROADCAST_ALL, (data: unknown) => {
+    broadcastToAll(data);
+  });
+
+  // §21 — Register AI analysis background worker
+  registerAIAnalysisWorker();
+
+  // §21 — Expose WS stats to pipeline routes
+  setWsStatsProviders(
+    () => wss.clients.size,
+    () => 0  // room tracking not implemented at WS layer yet; pubSub channels cover it
+  );
+
   // Inject broadcast function into route modules
   setReportBroadcast(broadcastToAll);
   setResourceBroadcast(broadcastToAll);
@@ -375,6 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerExecutiveRoutes(app);
   registerGovernanceAdminRoutes(app);
   registerApiAnalyticsRoutes(app);
+  registerPipelineRoutes(app);
 
   // Event bus: wire cross-service listeners
   eventBus.subscribe("CRISIS_CREATED", (payload) => {
