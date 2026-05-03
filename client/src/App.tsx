@@ -73,8 +73,9 @@ const NotificationPreferences= lazy(() => import("@/modules/user/pages/Notificat
 const CompliancePage         = lazy(() => import("@/modules/user/pages/CompliancePage"));
 
 // ─── Misc ────────────────────────────────────────────────────────────────────
-const ChatPage  = lazy(() => import("@/modules/chat/pages/ChatPage"));
-const NotFound  = lazy(() => import("@/pages/not-found"));
+const ChatPage          = lazy(() => import("@/modules/chat/pages/ChatPage"));
+const DecisionEnginePage = lazy(() => import("@/pages/DecisionEnginePage"));
+const NotFound          = lazy(() => import("@/pages/not-found"));
 
 // ─── Suspense wrapper ────────────────────────────────────────────────────────
 
@@ -169,6 +170,9 @@ function Router() {
         <Route path="/notifications"            component={() => <S><Notifications /></S>} />
         <Route path="/notification-preferences" component={() => <S><NotificationPreferences /></S>} />
         <Route path="/compliance"               component={() => <S><CompliancePage /></S>} />
+
+        {/* Decision Engine */}
+        <Route path="/decision-engine"  component={() => <S><DecisionEnginePage /></S>} />
 
         {/* Misc */}
         <Route path="/chat"             component={() => <S><ChatPage /></S>} />

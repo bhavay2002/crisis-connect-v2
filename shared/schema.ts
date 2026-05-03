@@ -1009,3 +1009,56 @@ export const aiOverrides = pgTable("ai_overrides", {
 
 export type AiOverride = typeof aiOverrides.$inferSelect;
 export type InsertAiOverride = typeof aiOverrides.$inferInsert;
+
+// ── Decision Engine Tables (v7.0) ─────────────────────────────────────────────
+
+export const decisionTypeEnum = pgEnum("decision_type", ["DISPATCH", "ESCALATE", "BROADCAST", "PREDEPLOY"]);
+export const decisionStatusEnum = pgEnum("decision_status", ["PENDING", "APPROVED", "EXECUTED", "REJECTED"]);
+
+export const decisions = pgTable("decisions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentId: varchar("incident_id").notNull(),
+  incidentTitle: text("incident_title"),
+  type: decisionTypeEnum("type").notNull(),
+  confidence: integer("confidence").notNull(),
+  severity: severityEnum("severity").notNull(),
+  reason: text("reason").notNull(),
+  contributingSignals: jsonb("contributing_signals").notNull().$type<{
+    aiUrgency: number;
+    locationRisk: number;
+    repetition: number;
+    trust: number;
+  }>(),
+  recommendedActions: jsonb("recommended_actions").$type<Array<{
+    type: string;
+    priority: number;
+    parameters: Record<string, unknown>;
+  }>>(),
+  autoExecutable: boolean("auto_executable").default(false).notNull(),
+  status: decisionStatusEnum("status").default("PENDING").notNull(),
+  executedAt: timestamp("executed_at"),
+  executedBy: varchar("executed_by").references(() => users.id),
+  rejectedBy: varchar("rejected_by").references(() => users.id),
+  rejectedReason: text("rejected_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_decisions_incident").on(table.incidentId),
+  index("idx_decisions_status").on(table.status),
+  index("idx_decisions_created").on(table.createdAt),
+]);
+
+export const incidentMetrics = pgTable("incident_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentId: varchar("incident_id").notNull().unique(),
+  detectedAt: timestamp("detected_at").notNull(),
+  decisionAt: timestamp("decision_at"),
+  dispatchedAt: timestamp("dispatched_at"),
+  resolvedAt: timestamp("resolved_at"),
+  slaTargetSeconds: integer("sla_target_seconds").default(60),
+}, (table) => [
+  index("idx_incident_metrics_incident").on(table.incidentId),
+]);
+
+export type Decision = typeof decisions.$inferSelect;
+export type InsertDecision = typeof decisions.$inferInsert;
+export type IncidentMetrics = typeof incidentMetrics.$inferSelect;

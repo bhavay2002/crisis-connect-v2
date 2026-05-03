@@ -13,6 +13,7 @@ import { AuditLogger } from "../middleware/auditLog";
 import { extractPaginationParams, getPaginationOffsets, createPaginatedResponse } from "../middleware/pagination";
 import { cache, CacheKeys, CacheTTL } from "../utils/cache";
 import { logger } from "../utils/logger";
+import { decisionEngine } from "../modules/decisions/decision-engine.service";
 
 // Placeholder for broadcast function - will be injected via index.ts
 let broadcastToAll: (message: any) => void = () => {};
@@ -201,6 +202,14 @@ export function registerReportRoutes(app: Express) {
         }
       }
       
+      // Fire Decision Engine in background (non-blocking)
+      decisionEngine.generateDecision({
+        reportId: finalReport.id,
+        reportTitle: finalReport.title,
+        aiScore: aiValidation.score ?? 50,
+        severity: (finalReport.severity as "low" | "medium" | "high" | "critical") ?? "medium",
+      }).catch((err) => logger.error("DecisionEngine background call failed", err));
+
       // Broadcast new report to all connected WebSocket clients
       broadcastToAll({ 
         type: "new_report", 
