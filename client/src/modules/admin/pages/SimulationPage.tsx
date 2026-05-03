@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Zap, Play, BarChart3, AlertTriangle, CheckCircle, Activity, Clock, TrendingUp, Users, Target } from "lucide-react";
+import { SimulationScorecard } from "@/components/simulation/SimulationScorecard";
 
 interface ScenarioMeta { label: string; icon: string; description: string; defaultIntensity: string }
 interface SimRun {
@@ -163,16 +164,12 @@ export default function SimulationPage() {
                     <span className="text-sm font-semibold capitalize">{latest.scenario.replace(/_/g, " ")}</span>
                     <span className="text-xs text-muted-foreground">— {latest.location} — {latest.intensity} intensity</span>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                     {[
                       { label: "Events Injected",  value: m.totalEventsInjected,                       icon: Zap,       color: "text-yellow-500", bg: "bg-yellow-500/10" },
                       { label: "Reports Created",   value: m.reportsCreated,                            icon: AlertTriangle, color: "text-red-500", bg: "bg-red-500/10"  },
                       { label: "SOS Alerts",        value: m.sosAlertsCreated,                          icon: Activity,  color: "text-orange-500", bg: "bg-orange-500/10"},
                       { label: "Est. Affected",     value: m.estimatedAffected?.toLocaleString(),       icon: Users,     color: "text-blue-500",   bg: "bg-blue-500/10"  },
-                      { label: "Response Time",     value: `${m.responseTimeSimMs}ms`,                  icon: Clock,     color: "text-cyan-500",   bg: "bg-cyan-500/10"  },
-                      { label: "Failure Rate",      value: `${(m.failureRate * 100).toFixed(1)}%`,      icon: Target,    color: "text-purple-500", bg: "bg-purple-500/10"},
-                      { label: "Queue Backlog",     value: m.queueBacklog,                              icon: BarChart3, color: "text-slate-500",  bg: "bg-slate-500/10" },
-                      { label: "Scenario Score",    value: `${m.scenarioScore}/100`,                    icon: TrendingUp,color: "text-green-500",  bg: "bg-green-500/10" },
                     ].map(({ label, value, icon: Icon, color, bg }) => (
                       <div key={label} className={`rounded-xl p-3 border`}>
                         <div className={`w-7 h-7 rounded-lg ${bg} flex items-center justify-center mb-2`}>
@@ -183,6 +180,12 @@ export default function SimulationPage() {
                       </div>
                     ))}
                   </div>
+                  <SimulationScorecard
+                    metrics={m}
+                    scenario={latest.scenario}
+                    location={latest.location}
+                    intensity={latest.intensity}
+                  />
                 </>
               )}
             </div>

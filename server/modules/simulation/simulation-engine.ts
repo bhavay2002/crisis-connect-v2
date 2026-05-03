@@ -27,6 +27,12 @@ interface SimulationMetrics {
   queueBacklog: number;
   failureRate: number;
   scenarioScore: number;
+  dispatchEfficiency: number;
+  systemLoad: number;
+  failures: number;
+  responseScore: number;
+  slaCompliance: number;
+  missedCritical: number;
 }
 
 const SCENARIO_TEMPLATES: Record<Scenario, {
@@ -175,6 +181,20 @@ export async function runSimulation(config: SimulationConfig): Promise<typeof si
   }
 
   const elapsed = Date.now() - startMs;
+  const failureRate = parseFloat((Math.random() * 0.05 * multiplier).toFixed(3));
+  const failures = Math.round(failureRate * totalEvents);
+  const dispatchEfficiency = parseFloat(Math.min(0.99, (sosCreated / Math.max(totalEvents, 1)) * (1 - failureRate) * 1.4).toFixed(3));
+  const systemLoad = parseFloat(Math.min(0.98, 0.25 + (totalEvents / 50) * 0.6 + failureRate).toFixed(3));
+  const slaTargetMs = 120_000;
+  const slaCompliance = parseFloat(Math.min(1, Math.max(0, 1 - elapsed / slaTargetMs)).toFixed(3));
+  const missedCritical = Math.floor(failures * 0.3);
+  const responseScore = Math.min(100, Math.round(
+    slaCompliance * 35 +
+    dispatchEfficiency * 35 +
+    (1 - failureRate) * 20 +
+    (missedCritical === 0 ? 10 : Math.max(0, 10 - missedCritical * 3))
+  ));
+
   const metrics: SimulationMetrics = {
     totalEventsInjected: totalEvents,
     reportsCreated,
@@ -183,8 +203,14 @@ export async function runSimulation(config: SimulationConfig): Promise<typeof si
     estimatedAffected: Math.round(template.baseAffected * multiplier),
     responseTimeSimMs: elapsed,
     queueBacklog: Math.round(totalEvents * 0.15),
-    failureRate: parseFloat((Math.random() * 0.05 * multiplier).toFixed(3)),
+    failureRate,
     scenarioScore: Math.min(100, Math.round(60 + multiplier * 10 + (reportsCreated / totalEvents) * 20)),
+    dispatchEfficiency,
+    systemLoad,
+    failures,
+    responseScore,
+    slaCompliance,
+    missedCritical,
   };
 
   const [updated] = await db.update(simulationRuns).set({
