@@ -11,7 +11,19 @@ Preferred communication style: Simple, everyday language.
 ### Frontend
 **Framework**: React with TypeScript, using Vite.
 **UI/UX**: shadcn/ui (Radix UI + Tailwind CSS) following an Emergency Services Design Pattern and Material Design principles, prioritizing clarity, speed, and mobile-first accessibility.
-**Design System**: Inter font, JetBrains Mono, HSL-based color system with light/dark themes.
+**Design System** (`client/src/lib/tokens.ts`, `client/src/lib/motion.ts`, `client/src/components/ds/`):
+Production-grade token-driven visual system — Stripe/Linear-level design consistency.
+- **Token Layer** (`tokens.ts`): `COLORS` (brand red, semantic status map critical/high/medium/low/safe/info/warning/offline), `SPACE` (8px grid), `RADIUS`, `TYPE` (typography hierarchy label→caption→body→heading→title→display→stat→mono), `SHADOW`, `Z` (z-index scale), `DURATION`
+- **Motion Library** (`motion.ts`): `MOTION` namespace — `fadeIn/fadeUp/fadeScale/slideRight/slideDown/springPop` (entry/exit), `staggerContainer/staggerChild/staggerGridContainer/staggerGridChild` (list/grid stagger), `pressable/cardHover/iconButton` (micro-interactions), `livePulse/criticalPulse/heartbeat/spin/countFlash` (real-time status), `pageEnter/tabPanel` (page transitions)
+- **DS Components** (`components/ds/`): 5 canonical micro-components that replace ad-hoc patterns everywhere:
+  - `SeverityBadge` — canonical severity pill (critical/high/medium/low). Replaces 50+ ad-hoc color maps. Supports pulse, dot, size variants.
+  - `LiveIndicator` — pulsing live/offline dot with optional label. Replaces ad-hoc green dot + "Live" text patterns.
+  - `StatCard` — metric card with icon, value, trend, severity tinting. Replaces 30+ ad-hoc stat blocks.
+  - `SectionHeader` — page/section header with badge, live indicator, and actions slot.
+  - `EmptyState` — consistent zero-data state with icon, title, description, and action. Replaces ad-hoc empty divs.
+- **CSS Primary Color Fix**: `--primary` changed from blue (217 91%) to brand red (0 72% 51%) in both light/dark modes — shadcn Button `variant="default"` now uses the correct CrisisConnect brand color
+- **Tailwind Extensions**: `crisis` color namespace (critical/high/medium/low/safe), 4 new animation keyframes (fade-in, slide-down, scale-in, ticker for live feeds)
+- **Applied to**: `ActiveReports` (SectionHeader+LiveIndicator+SeverityBadge filters+EmptyState), `VolunteerCommandDashboard` (StatCard stats, SeverityBadge urgency, EmptyState tabs, MOTION presets), `AuthorityCommandCenter` (LiveIndicator header, SeverityBadge map overlay, EmptyState feed, MOTION.criticalPulse, MOTION.pressable actions, MOTION.springPop stats)
 **State Management**: TanStack Query (server state) + Zustand (client state via `client/src/store/`).
 **Routing**: Wouter for client-side routing with `React.lazy` + `Suspense` for all 40+ pages (code splitting).
 **Real-time Updates**: Singleton `WebSocketProvider` at `client/src/providers/WebSocketProvider.tsx` — ONE WS connection per session, subscribed to via `useRealtimeMessage(handler)` hook. Exponential back-off reconnect (2s → 30s).

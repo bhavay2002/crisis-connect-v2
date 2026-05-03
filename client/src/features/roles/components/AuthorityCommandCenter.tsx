@@ -16,9 +16,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 import { Icon } from "leaflet";
 import {
-  AlertTriangle, Radio, Crosshair, MapPin, Clock, Users,
-  ChevronRight, TrendingUp, Activity, CheckCircle, Zap,
-  Navigation, Shield, MessageSquare, BarChart3,
+  AlertTriangle, Radio, Crosshair, Clock, Users,
+  ChevronRight, Activity, CheckCircle, Zap,
+  Navigation, Shield, BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,7 +27,9 @@ import { useDecisionStore, selectEventLog } from "@/features/crisis";
 import { useCrisisActions } from "@/features/crisis";
 import { useCommandCenter, selectSelectedIncident } from "@/features/map";
 import { useCommandMode } from "../hooks/useCommandMode";
-import { timeAgo, slugToLabel } from "@/shared/utils/format";
+import { timeAgo } from "@/shared/utils/format";
+import { SeverityBadge, LiveIndicator, EmptyState, StatCard } from "@/components/ds";
+import { MOTION } from "@/lib/motion";
 import type { DisasterReport } from "@shared/schema";
 import "leaflet/dist/leaflet.css";
 
@@ -81,16 +83,20 @@ export function AuthorityCommandCenter() {
           <span className="font-black text-sm tracking-wide uppercase">Authority Command</span>
         </div>
         {isCommandMode && (
-          <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 0.9 }}
+          <motion.div animate={MOTION.criticalPulse}
             className="flex items-center gap-1.5 text-[11px] font-black text-red-500 bg-red-500/15 border border-red-500/30 rounded-full px-2.5 py-0.5">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500" />COMMAND MODE ACTIVE
           </motion.div>
         )}
         <div className="ml-auto flex items-center gap-4">
           <div className="flex items-center gap-3 text-xs text-slate-400">
-            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />LIVE</span>
+            <LiveIndicator label="Live" size="sm" />
             <span>{activeCount} active incidents</span>
-            {criticalCount > 0 && <span className="text-red-500 font-bold">{criticalCount} CRITICAL</span>}
+            {criticalCount > 0 && (
+              <motion.span animate={MOTION.criticalPulse} className="text-red-500 font-bold">
+                {criticalCount} CRITICAL
+              </motion.span>
+            )}
           </div>
           <Button size="sm" className="h-7 text-xs bg-red-600 hover:bg-red-700 border-0"
             onClick={() => setLocation("/broadcast-alerts")}>
@@ -146,10 +152,9 @@ export function AuthorityCommandCenter() {
               const count = active.filter(r => r.severity === sev).length;
               if (!count) return null;
               return (
-                <div key={sev} className="flex items-center gap-2 bg-slate-900/90 backdrop-blur rounded-lg px-2.5 py-1.5 border border-slate-700">
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: SEV_COLOR[sev] }} />
-                  <span className="text-xs font-bold text-slate-100 capitalize">{sev}</span>
-                  <span className="text-xs font-black text-slate-100 ml-1">{count}</span>
+                <div key={sev} className="flex items-center gap-2 bg-slate-900/90 backdrop-blur rounded-lg px-2 py-1 border border-slate-700">
+                  <SeverityBadge level={sev} size="sm" />
+                  <span className="text-xs font-black text-slate-100 tabular-nums">{count}</span>
                 </div>
               );
             })}
@@ -199,10 +204,7 @@ export function AuthorityCommandCenter() {
                 </motion.button>
               ))}
               {active.length === 0 && (
-                <div className="py-6 text-center">
-                  <CheckCircle className="w-8 h-8 text-green-500 opacity-50 mx-auto mb-2" />
-                  <p className="text-xs text-slate-500">All clear — no active incidents</p>
-                </div>
+                <EmptyState icon={CheckCircle} title="All clear" description="No active incidents" size="sm" />
               )}
             </div>
           </div>
@@ -212,19 +214,20 @@ export function AuthorityCommandCenter() {
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-400 block mb-2.5">Command Actions</span>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: "Broadcast Alert", url: "/broadcast-alerts",  icon: Radio,        danger: true  },
-                { label: "Dispatch Team",   url: "/teams",             icon: Navigation,   danger: false },
-                { label: "AI Copilot",      url: "/copilot",           icon: Zap,          danger: false },
-                { label: "Monitoring",      url: "/monitoring",        icon: Activity,     danger: false },
+                { label: "Broadcast Alert", url: "/broadcast-alerts", icon: Radio,     danger: true  },
+                { label: "Dispatch Team",   url: "/teams",            icon: Navigation, danger: false },
+                { label: "AI Copilot",      url: "/copilot",          icon: Zap,        danger: false },
+                { label: "Monitoring",      url: "/monitoring",       icon: Activity,   danger: false },
               ].map(({ label, url, icon: Icon, danger }) => (
-                <button key={url} onClick={() => setLocation(url)}
-                  className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-center text-[11px] font-semibold transition-all hover:scale-105 ${
+                <motion.button key={url} onClick={() => setLocation(url)}
+                  {...MOTION.pressable}
+                  className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-center text-[11px] font-semibold transition-colors ${
                     danger
                       ? "border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20"
                       : "border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800"
                   }`}>
                   <Icon className="w-4 h-4" />{label}
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
@@ -237,10 +240,7 @@ export function AuthorityCommandCenter() {
             <ScrollArea className="flex-1">
               <div className="divide-y divide-slate-800/60">
                 {eventLog.length === 0 ? (
-                  <div className="py-8 text-center">
-                    <Clock className="w-7 h-7 text-slate-600 mx-auto mb-2" />
-                    <p className="text-xs text-slate-500">Awaiting events…</p>
-                  </div>
+                  <EmptyState icon={Clock} title="Awaiting events" size="sm" />
                 ) : eventLog.map(e => (
                   <div key={e.id} className="px-3 py-2 hover:bg-slate-900/40 transition-colors">
                     <div className="flex items-start gap-2">
@@ -264,12 +264,18 @@ export function AuthorityCommandCenter() {
           {/* Platform stats strip */}
           <div className="border-t border-slate-800 px-3 py-2 grid grid-cols-3 gap-2">
             {[
-              { label: "Active",    value: activeCount,   color: "text-orange-400" },
-              { label: "Critical",  value: criticalCount, color: criticalCount > 0 ? "text-red-400" : "text-slate-400" },
-              { label: "Verified",  value: reports.filter(r => r.status === "verified" || r.status === "responding").length, color: "text-green-400" },
+              { label: "Active",   value: activeCount,   color: "text-orange-400" },
+              { label: "Critical", value: criticalCount, color: criticalCount > 0 ? "text-red-400" : "text-slate-400" },
+              { label: "Verified", value: reports.filter(r => r.status === "verified" || r.status === "responding").length, color: "text-green-400" },
             ].map(s => (
               <div key={s.label} className="text-center">
-                <p className={`text-base font-black ${s.color}`}>{s.value}</p>
+                <motion.p
+                  key={s.value}
+                  {...MOTION.springPop}
+                  className={`text-base font-black tabular-nums ${s.color}`}
+                >
+                  {s.value}
+                </motion.p>
                 <p className="text-[9px] text-slate-500 uppercase tracking-wide">{s.label}</p>
               </div>
             ))}

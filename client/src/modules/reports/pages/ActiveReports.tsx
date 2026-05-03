@@ -18,19 +18,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Input }  from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, CheckCircle } from "lucide-react";
+import { Search, CheckCircle, RefreshCw } from "lucide-react";
 import type { DisasterReport } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useRowVirtualList } from "@/shared/hooks";
 import { RetryCard } from "@/components/system";
-
-const SEV_COUNTS_COLORS: Record<string, string> = {
-  critical: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300",
-  high:     "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300",
-  medium:   "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300",
-  low:      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300",
-};
+import { SeverityBadge, LiveIndicator, EmptyState, SectionHeader } from "@/components/ds";
+import { MOTION } from "@/lib/motion";
+import { COLORS, type SeverityLevel } from "@/lib/tokens";
+import { motion, AnimatePresence } from "framer-motion";
 
 const COLUMNS = 2; // virtualize in 2-col rows
 
@@ -126,32 +123,53 @@ export default function ActiveReports() {
   return (
     <div className="p-6 space-y-6 max-w-screen-2xl mx-auto flex flex-col" style={{ height: "calc(100vh - 64px)" }}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-shrink-0">
-        <div>
-          <h1 className="text-2xl font-black">Active Reports</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Monitor and manage all emergency incidents in real time</p>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-full px-2.5 py-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />Live
-        </div>
+      <div className="flex-shrink-0">
+        <SectionHeader
+          title="Active Reports"
+          description="Monitor and manage all emergency incidents in real time"
+          badge={reports.length > 0 ? reports.length : undefined}
+          live
+          size="lg"
+        />
       </div>
 
-      {/* Severity pills */}
+      {/* Severity filter pills */}
       <div className="flex flex-wrap gap-2 flex-shrink-0">
-        {(["critical","high","medium","low"] as const).map(sev => (
-          <button key={sev} onClick={() => setSeverityFilter(severityFilter === sev ? "all" : sev)}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all capitalize
-              ${severityFilter === sev ? SEV_COUNTS_COLORS[sev] + " ring-1 ring-inset ring-current" : "bg-background border-border hover:border-muted-foreground text-muted-foreground"}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${sev === "critical" ? "bg-red-500" : sev === "high" ? "bg-orange-500" : sev === "medium" ? "bg-yellow-500" : "bg-blue-500"}`} />
-            {sev}
-            <span className="font-black">{sevCounts[sev]}</span>
-          </button>
-        ))}
-        {severityFilter !== "all" && (
-          <button onClick={() => setSeverityFilter("all")} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5">
-            Clear ×
-          </button>
-        )}
+        {(["critical","high","medium","low"] as const).map(sev => {
+          const isActive = severityFilter === sev;
+          return (
+            <motion.button
+              key={sev}
+              onClick={() => setSeverityFilter(isActive ? "all" : sev)}
+              {...MOTION.pressable}
+              className={`flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                isActive
+                  ? `${COLORS.status[sev].bg} ${COLORS.status[sev].text} ${COLORS.status[sev].border} ring-1 ring-inset ring-current`
+                  : "bg-background border-border hover:border-muted-foreground text-muted-foreground"
+              }`}
+            >
+              <motion.span
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${COLORS.status[sev].dot}`}
+                animate={isActive && sev === "critical" ? MOTION.criticalPulse : undefined}
+              />
+              <span className="capitalize">{sev}</span>
+              <span className={`font-black tabular-nums ${isActive ? "" : "text-foreground/60"}`}>
+                {sevCounts[sev]}
+              </span>
+            </motion.button>
+          );
+        })}
+        <AnimatePresence>
+          {severityFilter !== "all" && (
+            <motion.button
+              {...MOTION.springPop}
+              onClick={() => setSeverityFilter("all")}
+              className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5"
+            >
+              Clear ×
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Search + filters */}
@@ -213,10 +231,19 @@ export default function ActiveReports() {
           {[1,2,3,4,5,6].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
         </div>
       ) : filteredReports.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 rounded-xl border-2 border-dashed bg-muted/30 flex-shrink-0">
-          <CheckCircle className="w-12 h-12 text-green-500 mb-3 opacity-50" />
-          <p className="font-bold text-base">No reports match your filters</p>
-          <p className="text-sm text-muted-foreground mt-1">Try adjusting your search or filters</p>
+        <div className="rounded-xl border-2 border-dashed border-border/50 bg-muted/20 flex-shrink-0">
+          <EmptyState
+            icon={CheckCircle}
+            title={searchQuery || severityFilter !== "all" || statusFilter !== "all" ? "No reports match your filters" : "All clear"}
+            description={searchQuery || severityFilter !== "all" || statusFilter !== "all" ? "Try adjusting your search or filter criteria" : "No active emergency incidents at this time"}
+            action={
+              (searchQuery || severityFilter !== "all" || statusFilter !== "all") ? (
+                <Button size="sm" variant="outline" onClick={() => { setSearchQuery(""); setSeverityFilter("all"); setStatusFilter("all"); }}>
+                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Clear filters
+                </Button>
+              ) : undefined
+            }
+          />
         </div>
       ) : (
         /* Scroll container — parentRef attaches here */

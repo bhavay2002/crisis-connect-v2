@@ -76,10 +76,18 @@ export default {
           border: "var(--sidebar-accent-border)"
         },
         status: {
-          online: "rgb(34 197 94)",
-          away: "rgb(245 158 11)",
-          busy: "rgb(239 68 68)",
+          online:  "rgb(34 197 94)",
+          away:    "rgb(245 158 11)",
+          busy:    "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
+        },
+        // CrisisConnect semantic crisis colors
+        crisis: {
+          critical: "#ef4444",
+          high:     "#fb923c",
+          medium:   "#facc15",
+          low:      "#60a5fa",
+          safe:     "#4ade80",
         },
       },
       fontFamily: {
@@ -96,10 +104,30 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to:   { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-down": {
+          from: { opacity: "0", transform: "translateY(-8px)" },
+          to:   { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to:   { opacity: "1", transform: "scale(1)" },
+        },
+        "ticker": {
+          "0%":   { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "accordion-up":   "accordion-up 0.2s ease-out",
+        "fade-in":        "fade-in 0.22s ease-out",
+        "slide-down":     "slide-down 0.2s ease-out",
+        "scale-in":       "scale-in 0.18s ease-out",
+        "ticker":         "ticker 20s linear infinite",
       },
     },
   },

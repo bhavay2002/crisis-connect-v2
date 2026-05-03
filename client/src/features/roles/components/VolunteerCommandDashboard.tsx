@@ -14,7 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  AlertTriangle, CheckCircle2, MapPin, Clock, Navigation, ArrowRight,
+  AlertTriangle, CheckCircle2, MapPin, Clock, Navigation,
   Package, Droplet, Home, Plus, Shirt, HelpCircle, Heart, Users,
   Zap, Shield, ChevronRight, CheckCheck,
 } from "lucide-react";
@@ -26,6 +26,8 @@ import { useToast }  from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { timeAgo }    from "@/shared/utils/format";
 import { useCrisisRealtime } from "@/features/crisis";
+import { SeverityBadge, EmptyState, StatCard } from "@/components/ds";
+import { MOTION } from "@/lib/motion";
 import type { ResourceRequest, AidOffer, DisasterReport } from "@shared/schema";
 
 const RESOURCE_ICONS: Record<string, any> = {
@@ -114,7 +116,7 @@ export function VolunteerCommandDashboard() {
         <div className="flex items-center gap-3 ml-auto">
           {criticalCount > 0 && (
             <motion.div
-              animate={{ opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 1.2 }}
+              animate={MOTION.criticalPulse}
               className="flex items-center gap-1.5 text-xs font-bold text-red-500 bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
@@ -160,11 +162,7 @@ export function VolunteerCommandDashboard() {
               {activeTab === "tasks" && (
                 <motion.div key="tasks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   {pendingTasks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                      <CheckCheck className="w-10 h-10 text-green-500 mb-3 opacity-60" />
-                      <p className="font-semibold text-sm">Inbox zero</p>
-                      <p className="text-xs text-muted-foreground mt-1">All tasks are covered</p>
-                    </div>
+                    <EmptyState icon={CheckCheck} title="Inbox zero" description="All tasks are covered" size="sm" />
                   ) : (
                     <div className="divide-y divide-border/40">
                       {pendingTasks.slice(0, 20).map((task) => {
@@ -180,9 +178,7 @@ export function VolunteerCommandDashboard() {
                               <div className={`w-1.5 flex-shrink-0 self-stretch rounded-full mt-0.5 ${ug.bar}`} />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 mb-1">
-                                  <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border ${ug.badge}`}>
-                                    {task.urgency}
-                                  </span>
+                                  <SeverityBadge level={task.urgency as any} size="sm" dot={false} />
                                   <span className="text-[10px] text-muted-foreground capitalize">{task.resourceType}</span>
                                 </div>
                                 <p className="text-xs font-semibold truncate">{task.quantity} units • {task.location.slice(0, 28)}</p>
@@ -224,10 +220,7 @@ export function VolunteerCommandDashboard() {
                 <motion.div key="reports" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="divide-y divide-border/40">
                   {verifyQueue.length === 0 ? (
-                    <div className="flex flex-col items-center py-16 text-center px-4">
-                      <CheckCircle2 className="w-10 h-10 text-green-500 mb-3 opacity-60" />
-                      <p className="font-semibold text-sm">No reports need verification</p>
-                    </div>
+                    <EmptyState icon={CheckCircle2} title="All verified" description="No reports need verification" size="sm" />
                   ) : verifyQueue.map(r => (
                     <div key={r.id} className="p-3 hover:bg-muted/20 transition-colors">
                       <p className="text-xs font-semibold truncate">{r.title}</p>
@@ -250,14 +243,8 @@ export function VolunteerCommandDashboard() {
                 <motion.div key="offers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="divide-y divide-border/40">
                   {myOffers.length === 0 ? (
-                    <div className="flex flex-col items-center py-16 text-center px-4">
-                      <Heart className="w-10 h-10 text-pink-500 mb-3 opacity-60" />
-                      <p className="font-semibold text-sm">No active offers</p>
-                      <button onClick={() => setLocation("/submit-aid-offer")}
-                        className="mt-3 text-xs text-orange-500 font-semibold hover:underline">
-                        + Create offer
-                      </button>
-                    </div>
+                    <EmptyState icon={Heart} title="No active offers" description="Offer resources to people in need" size="sm"
+                      action={<button onClick={() => setLocation("/submit-aid-offer")} className="text-xs text-orange-500 font-semibold hover:underline">+ Create offer</button>} />
                   ) : myOffers.map(o => (
                     <div key={o.id} className="p-3 hover:bg-muted/20 transition-colors">
                       <div className="flex items-center justify-between">
@@ -283,32 +270,20 @@ export function VolunteerCommandDashboard() {
         <div className="flex-1 flex flex-col overflow-auto p-5 gap-5">
           {/* Stats row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: "Pending Tasks",  value: pendingTasks.length, icon: AlertTriangle, color: "text-orange-500", bg: "bg-orange-500/10" },
-              { label: "Critical",       value: criticalCount,        icon: Zap,           color: "text-red-500",    bg: "bg-red-500/10"    },
-              { label: "My Active",      value: myActive,             icon: Navigation,    color: "text-green-500",  bg: "bg-green-500/10"  },
-              { label: "My Offers",      value: myOffers.length,      icon: Heart,         color: "text-pink-500",   bg: "bg-pink-500/10"   },
-            ].map(s => (
-              <div key={s.label} className="rounded-xl border bg-slate-900/50 p-4 flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
-                  <s.icon className={`w-4 h-4 ${s.color}`} />
-                </div>
-                <div>
-                  <p className="text-xl font-black">{s.value}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                </div>
-              </div>
-            ))}
+            <StatCard label="Pending Tasks" value={pendingTasks.length} icon={AlertTriangle} severity="high" />
+            <StatCard label="Critical"      value={criticalCount}        icon={Zap}           severity={criticalCount > 0 ? "critical" : undefined} />
+            <StatCard label="My Active"     value={myActive}             icon={Navigation} />
+            <StatCard label="My Offers"     value={myOffers.length}      icon={Heart} />
           </div>
 
           {/* Critical tasks highlight */}
           {criticalCount > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+              {...MOTION.fadeUp}
               className="rounded-xl border border-red-500/20 bg-red-500/5 p-4"
             >
               <div className="flex items-center gap-2 mb-3">
-                <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 0.9 }}>
+                <motion.div animate={MOTION.criticalPulse}>
                   <AlertTriangle className="w-4 h-4 text-red-500" />
                 </motion.div>
                 <span className="text-sm font-bold text-red-500">{criticalCount} CRITICAL Task{criticalCount > 1 ? "s" : ""} Need Immediate Response</span>
@@ -331,12 +306,13 @@ export function VolunteerCommandDashboard() {
           {/* Navigation shortcuts */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "All Resource Requests", url: "/resource-requests",  icon: Package,     desc: "See full pending list"           },
-              { label: "Aid Matching",           url: "/aid-matching",        icon: Zap,         desc: "AI-powered resource matching"    },
-              { label: "Report Incidents",       url: "/submit",              icon: AlertTriangle, desc: "File a new emergency report"  },
-              { label: "Team Chat",              url: "/chat",                icon: Users,       desc: "Coordinate with your team"       },
+              { label: "All Resource Requests", url: "/resource-requests",  icon: Package,       desc: "See full pending list"           },
+              { label: "Aid Matching",           url: "/aid-matching",        icon: Zap,           desc: "AI-powered resource matching"    },
+              { label: "Report Incidents",       url: "/submit",              icon: AlertTriangle, desc: "File a new emergency report"     },
+              { label: "Team Chat",              url: "/chat",                icon: Users,         desc: "Coordinate with your team"       },
             ].map(({ label, url, icon: Icon, desc }) => (
-              <button key={url} onClick={() => setLocation(url)}
+              <motion.button key={url} onClick={() => setLocation(url)}
+                {...MOTION.cardHover}
                 className="flex items-center gap-3 p-3.5 rounded-xl border bg-slate-900/40 hover:bg-slate-800/60 transition-colors text-left group">
                 <Icon className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -344,7 +320,7 @@ export function VolunteerCommandDashboard() {
                   <p className="text-[10px] text-muted-foreground">{desc}</p>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
