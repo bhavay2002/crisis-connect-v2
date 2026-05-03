@@ -1,6 +1,6 @@
 # CrisisConnect — Complete Production-Grade Technical Documentation
 
-> Version: 6.0 (Signal Fusion & Platform Ecosystem Maturity Layer)
+> Version: 7.0 (Design System, AI Explainability, Resilience & Role-Based UX Layer)
 > Stack: React 18 + TypeScript + Express.js + PostgreSQL + WebSocket + OpenAI
 > Architecture: Monolithic full-stack with modular service layer, event-driven internals, and AI pipeline
 
@@ -164,7 +164,7 @@ ReportSubmissionForm → apiRequest → /api/reports (POST)
 | **Recharts** | Declarative chart library for analytics dashboards — SVG-based, responsive containers |
 | **React Leaflet + Leaflet.heat** | Interactive map with heatmap overlay, custom markers, and timeline playback controls |
 | **TensorFlow.js + MobileNet** | Client-side image classification — no server round-trip for disaster type detection |
-| **Framer Motion** | Page transitions and micro-interactions for emergency UI clarity |
+| **Framer Motion** | Centralized motion system (`lib/motion.ts`) — 18 named variant presets used across all pages: entry/exit animations, stagger lists, micro-interactions (`pressable`, `cardHover`), and real-time status animations (`livePulse`, `criticalPulse`, `heartbeat`) |
 
 ### Backend
 
@@ -217,6 +217,7 @@ ReportSubmissionForm → apiRequest → /api/reports (POST)
 ├── server/              # Express backend
 ├── shared/              # Types and schemas shared between client and server
 ├── package.json         # Unified monorepo — both client and server in one package
+├── tailwind.config.ts   # Tailwind extensions: crisis colors, custom keyframes
 ├── vite.config.ts       # Vite configuration (served by server in dev mode)
 └── drizzle.config.ts    # Drizzle Kit migration configuration
 ```
@@ -1248,10 +1249,14 @@ Production checklist:
 |---|---|
 | **Code splitting** | 40+ lazy routes with `React.lazy()` + `Suspense` — initial bundle is auth pages only (~50KB) |
 | **Persistent layout** | `DashboardLayout` mounts once in `App.tsx` — sidebar never remounts on navigation |
-| **TanStack Query caching** | `staleTime: 30_000` — same data served from cache for 30s without refetch |
+| **TanStack Query caching** | `staleTime: 30_000` — same data served from cache for 30s without refetch; retry upgraded to 3× with exponential backoff (2ⁿ seconds, max 10s); auth errors skip retries immediately |
 | **WS-driven invalidation** | Reports/notifications refresh only when relevant WS messages arrive — zero polling |
 | **React 18 batching** | All synchronous state updates inside effects are automatically batched into one render |
 | **Zustand selectors** | Module-level selectors (`selectUser`, `selectIsAuth`) prevent over-subscription — components only re-render for their exact slice |
+| **`useShallowSelector`** | Generic Zustand selector with shallow equality — prevents re-render when object reference changes but values are identical |
+| **`useStableCallback`** | `useCallback` + `useRef` hybrid that always returns the same function reference while seeing latest closure values — eliminates unstable deps in WS handlers |
+| **`useVirtualList`** | Generic TanStack Virtual wrapper; `useRowVirtualList` groups items into N-column rows — renders only ~10 DOM rows regardless of list size |
+| **`useRowVirtualList`** | `ActiveReports` with 300 reports renders only ~10 virtualized rows (~150px each) in the DOM at any time |
 | **MobileNet lazy load** | TensorFlow.js model loads only when user navigates to ImageClassification page |
 | **Low-bandwidth mode** | When enabled, non-critical queries are skipped; polling intervals extended |
 
@@ -1477,7 +1482,376 @@ Move analytics queries (`/api/analytics/*`, `/api/intelligence/*`) to a PostgreS
 
 ---
 
-## 16. Future Improvements
+## 16. Role-Based UX System
+
+### Overview
+
+Every role in CrisisConnect sees a fundamentally different interface tuned for their operational context — not just different data, but different layout, information density, interaction pattern, and design philosophy.
+
+**Entry point**: `features/roles/components/RoleDashboard.tsx` — reads `user.role` from auth store and renders the correct dashboard. No routing changes needed; the UX switch is transparent.
+
+---
+
+### CitizenDashboard (`/dashboard` for `citizen` role)
+
+**Design philosophy**: Uber emergency mode. Citizens are scared. Every pixel must reduce friction.
+
+| Element | Detail |
+|---|---|
+| **SOS Button** | Full-width, rounded-2xl, pulsing red halo animation (Framer Motion). Tap → `/submit` in 600ms with scale feedback animation |
+| **Status cards** | Last 3 personal reports with color-coded status (yellow=reported, blue=verified, green=responding, grey=resolved) |
+| **Quick actions** | 4 tiles: Report Emergency, Find Resources, AI Copilot, View Live Map — each with icon, color, and description |
+| **Greeting** | Time-aware: Good morning/afternoon/evening + first name |
+| **Data scope** | Only user's own reports — no platform-wide data visible |
+
+---
+
+### VolunteerCommandDashboard (`/dashboard` for `volunteer` role)
+
+**Design philosophy**: Inbox Zero for tasks. Volunteers need to see what needs doing NOW and act with one click.
+
+**Layout**: 320px task sidebar (left) + main area (right)
+
+| Panel | Detail |
+|---|---|
+| **Task sidebar** | 3 tabs: Tasks (pending requests sorted by urgency), Verify (reports needing confirmation), My Offers |
+| **Urgency sorting** | `critical → high → medium → low` — critical tasks always surface first |
+| **Accept/Complete flow** | Accept → Accept button becomes Complete. Complete → PATCH `/api/resource-requests/:id` → `fulfilled` |
+| **Stats row** | 4 `StatCard` components: Pending Tasks / Critical / My Active / My Offers |
+| **Critical banner** | Appears when `criticalCount > 0` — lists top 3 critical items with one-click Accept |
+| **Nav shortcuts** | 4 quick-nav cards (Resource Requests, Aid Matching, Report, Team Chat) with `MOTION.cardHover` |
+
+---
+
+### AuthorityCommandCenter (`/dashboard` for `authority`/`admin` role)
+
+**Design philosophy**: Air traffic control. Map is the primary surface. Every pixel has operational purpose. Forced dark mode regardless of app theme.
+
+**Layout**: Full-width map (left 2/3) + 320px command panel (right 1/3)
+
+| Panel | Detail |
+|---|---|
+| **Interactive map** | React Leaflet; custom SVG pin icons colored by severity; grayscale + inverted tile style for dark mode |
+| **Map overlay** | Top-left: `SeverityBadge` + count per severity level. Bottom-left: quick nav buttons |
+| **Command panel — Live Incidents** | Top 8 active incidents; clicking navigates to report detail |
+| **Command panel — Command Actions** | 4 buttons: Broadcast Alert (red), Dispatch Team, AI Copilot, Monitoring — `MOTION.pressable` on each |
+| **Command panel — Event Feed** | Scrollable live `eventLog` from `useDecisionStore`; dot color by event type (SOS=red pulse, new_report=orange, broadcast=yellow) |
+| **Stats strip** | Active / Critical / Verified — `MOTION.springPop` animates counts when values change |
+| **COMMAND MODE indicator** | `MOTION.criticalPulse` on badge when `isCommandMode` is active |
+
+---
+
+### `useCommandMode` Hook
+
+```typescript
+const { isCommandMode, criticalCount, activeCount } = useCommandMode();
+// isCommandMode: true when criticalCount > 0 or role is authority/admin
+// criticalCount: reports with severity === "critical" and status !== "resolved"
+// activeCount: all non-resolved reports
+```
+
+---
+
+## 17. AI Explainability System
+
+### Overview
+
+Every AI decision in CrisisConnect is fully auditable. The Explainability System exposes the contributing signals, confidence levels, and reasoning behind each report's AI score — designed for government regulators, NGO managers, and transparency-conscious operators.
+
+**Two entry points**:
+1. **Inline panel**: `<AIExplainabilityPanel reportId={id} createdAt={ts} />` — collapsed panel below any report card, expands on click
+2. **Full audit page**: `/ai-audit` (`ExplainabilityPage.tsx`) — Bloomberg/Datadog-style dark dashboard showing all recent decisions
+
+---
+
+### Sub-Components
+
+| Component | Purpose |
+|---|---|
+| **`ConfidenceMeter`** | Animated gradient fill bar. Color-coded: green ≥80% / yellow ≥60% / orange ≥40% / red <40%. Width animates from 0% on mount. |
+| **`SignalRadar`** | Recharts `RadarChart` with 4-axis signal fusion: AI Urgency / Location Risk / Repetition Density / Trust Score. Filled area + dot grid. |
+| **`FactorBars`** | Horizontal bar chart of contributing factors with color-coded severity indicators. Shows relative weight of each signal. |
+| **`DecisionTimeline`** | Vertical timeline of AI reasoning steps: Input → Analysis → Signal Fusion → Decision → Output. Each step shows timestamp and detail. |
+| **`AIExplainabilityPanel`** | Orchestrator. Fetches `GET /api/ai/explain/:reportId`. Collapsed by default (chevron toggle). Shows ConfidenceMeter summary in collapsed state, full 4-panel grid when expanded. |
+
+---
+
+### API Contract
+
+```
+GET /api/ai/explain/:reportId
+→ {
+    reportId: string,
+    confidence: number,           // 0–100
+    signals: {
+      aiUrgency: number,          // 0–100
+      locationRisk: number,       // 0–100
+      repetitionDensity: number,  // 0–100
+      trustScore: number          // 0–100
+    },
+    factors: Factor[],            // { label, value, weight, severity }
+    timeline: TimelineStep[],     // { step, detail, timestamp }
+    reasoning: string,            // human-readable explanation string
+    auditId: string               // UUID for audit trail linkage
+  }
+```
+
+---
+
+### ExplainabilityPage (`/ai-audit`)
+
+Full-page dark dashboard showing all recent AI decisions across all reports. Features:
+- **Decision log table**: report ID, title, confidence score, priority, audit timestamp — sortable
+- **Signal radar chart**: aggregate signal distribution across recent decisions
+- **Confidence distribution histogram**: shows platform-wide AI confidence spread
+- **Audit trail**: links each decision to its `auditId` for compliance export
+
+---
+
+## 18. Error & Edge UX System
+
+### Overview
+
+The app always occupies one of four explicit states — users never wonder what's happening:
+
+```
+CONNECTED → DEGRADED → OFFLINE → RECOVERING
+```
+
+All components live in `client/src/components/system/`, all hooks in `client/src/shared/hooks/`.
+
+---
+
+### State Machine — `useSystemStatus`
+
+```typescript
+type SystemStatus = "CONNECTED" | "DEGRADED" | "OFFLINE" | "RECOVERING";
+const { status, isOnline, isWSConnected } = useSystemStatus();
+```
+
+| State | Condition | Duration |
+|---|---|---|
+| `CONNECTED` | `isOnline && isWSConnected` | Persistent |
+| `DEGRADED` | `isOnline && !isWSConnected` | Persistent until WS reconnects |
+| `OFFLINE` | `!isOnline` | Until network returns |
+| `RECOVERING` | Just transitioned back to CONNECTED | Auto-clears after 3s |
+
+---
+
+### Components
+
+**`NetworkStatusBanner`** — mounted between header and `<main>` in `DashboardLayout`. Slides in/out with `MOTION.slideDown`. Three visual states:
+- Amber: "No network · N requests queued — will send automatically"
+- Blue: "Live feed disconnected · reconnecting…" (spinner)
+- Green: "Connection restored · syncing…"
+
+Fires a toast notification when state returns to `CONNECTED`.
+
+**`RetryCard`** — standardized retry UI replacing all ad-hoc error states. Props:
+
+```tsx
+<RetryCard
+  message="Failed to load reports"
+  detail="Check your connection and try again"
+  onRetry={refetch}
+  attempts={failureCount}      // shows "Attempt 3 of 3"
+  autoRetry={15}               // countdown: "Retrying in 14s…"
+  variant="card"               // compact | card | full-page
+/>
+```
+
+**`SectionBoundary`** — in-place `React.Component` error boundary. Wraps any widget. On error: shows compact "Section failed / Retry" card exactly where the component was — page stays functional.
+
+```tsx
+<SectionBoundary label="Risk Analytics">
+  <RiskChart />         {/* if this crashes, page stays alive */}
+</SectionBoundary>
+```
+
+**`OfflineQueueBadge`** — fixed bottom-left. Shows queued SOS count. Three animated states:
+- Amber dot: "N queued" 
+- Blue spinner: "Syncing…"
+- Green checkmark: "Synced" (auto-dismisses after 2s)
+
+---
+
+### `useNetworkStatus`
+
+Raw `navigator.onLine` hook with `online`/`offline` window event subscriptions.
+
+---
+
+### Query Client Upgrades
+
+| Setting | Before | After |
+|---|---|---|
+| Retry count | 1 | 3 |
+| Retry delay | Fixed | Exponential: `Math.min(2 ** attempt * 1000, 10_000)` ms |
+| Auth errors (401/403) | Retried | Skip retries immediately |
+| `ActiveReports` error state | Silent empty list | `RetryCard` with 15s auto-retry |
+
+---
+
+## 19. Design System
+
+### Overview
+
+A token-driven visual system that makes the UI feel like a premium SaaS product. Built in three layers: CSS tokens → JS tokens → DS components.
+
+---
+
+### Layer 1 — CSS Variables (`client/src/index.css`)
+
+**Primary color fix**: `--primary` corrected from blue (`217 91% 35%`) to CrisisConnect brand red (`0 72% 51%` light / `0 72% 58%` dark). This makes all shadcn `Button variant="default"` components use the correct brand red automatically — eliminating the previous split where shadcn components were blue while custom components were red.
+
+---
+
+### Layer 2 — JS Token File (`client/src/lib/tokens.ts`)
+
+```typescript
+import { COLORS, SPACE, RADIUS, TYPE, SHADOW, Z, DURATION } from "@/lib/tokens";
+
+// Usage examples
+COLORS.status.critical.bg      // "bg-red-500/10"
+COLORS.status.critical.text    // "text-red-500"
+COLORS.status.critical.hex     // "#ef4444"
+TYPE.label                     // "text-xs font-medium tracking-widest uppercase text-muted-foreground"
+TYPE.stat                      // "text-3xl font-black tabular-nums text-foreground"
+```
+
+| Token Group | Values |
+|---|---|
+| `COLORS.brand` | `red` (#dc2626), `redDim` (#ef4444), `redDeep` (#b91c1c) |
+| `COLORS.status` | critical / high / medium / low / safe / info / warning / offline — each with bg, text, border, dot, hex |
+| `COLORS.surface` | base (slate-950) / raised (slate-900) / overlay (slate-800) / subtle |
+| `COLORS.chart` | 6-color ordered palette for Recharts |
+| `SPACE` | 8px grid: `1` (4px) → `16` (64px) |
+| `RADIUS` | sm (`rounded-md`) / md (`rounded-lg`) / lg (`rounded-xl`) / xl (`rounded-2xl`) / full |
+| `TYPE` | 8 levels: label → caption → body → bodyMd → heading → title → display → stat → mono |
+| `DURATION` | instant (0.1s) / fast (0.15s) / normal (0.2s) / slow (0.3s) / xslow (0.5s) |
+
+---
+
+### Layer 3 — Motion Library (`client/src/lib/motion.ts`)
+
+```typescript
+import { MOTION } from "@/lib/motion";
+
+// Spread onto motion components
+<motion.div {...MOTION.fadeUp}>                // entry animation
+<motion.button {...MOTION.pressable}>         // hover scale + tap scale
+<motion.div animate={MOTION.criticalPulse}>   // real-time pulse
+<motion.ul variants={MOTION.staggerContainer} initial="hidden" animate="show">
+  <motion.li variants={MOTION.staggerChild}>  // staggered list
+```
+
+| Category | Variants |
+|---|---|
+| Entry / exit | `fadeIn`, `fadeUp`, `fadeScale`, `slideRight`, `slideDown`, `springPop` |
+| List / grid stagger | `staggerContainer` + `staggerChild` (40ms gap), `staggerGridContainer` + `staggerGridChild` (60ms gap) |
+| Micro-interactions | `pressable` (1.02 hover / 0.97 tap), `cardHover` (−2px lift), `iconButton` (1.08 scale + 5° rotate) |
+| Real-time status | `livePulse` (1.8s), `criticalPulse` (1.0s + scale), `heartbeat` (2.0s double-beat), `spin` (continuous), `countFlash` (red background flash) |
+| Page transitions | `pageEnter` (fade + 8px translate), `tabPanel` (6px slide) |
+
+**Motion Rules** (enforced system-wide):
+- Entry: fade + upward translate ≤12px
+- Exit: fade + downward translate ≤4px (exits feel snappier than entries)
+- Hover: scale ≤1.05 — never more
+- Tap: always slightly less than hover scale
+- Live alerts: opacity/scale pulse — never position-based for live data
+- Duration: 150–250ms entry, 150ms exit
+
+---
+
+### Layer 4 — DS Components (`client/src/components/ds/`)
+
+Five canonical micro-components. Import from `@/components/ds`.
+
+**`SeverityBadge`** — replaces 50+ ad-hoc severity color maps
+
+```tsx
+<SeverityBadge level="critical" />              // pulsing red pill
+<SeverityBadge level="high" size="sm" dot={false} />  // no dot, small
+<SeverityBadge level="medium" pulse={false} />  // no pulse override
+```
+
+**`LiveIndicator`** — replaces ad-hoc pulsing dot + "Live" patterns
+
+```tsx
+<LiveIndicator />                   // green pulsing "Live"
+<LiveIndicator active={false} />    // grey "Offline"
+<LiveIndicator label="Tracking" size="lg" />
+```
+
+**`StatCard`** — replaces 30+ ad-hoc stat blocks in dashboards
+
+```tsx
+<StatCard
+  label="Active Incidents"
+  value={42}
+  icon={AlertTriangle}
+  severity="critical"      // tints icon area
+  trend="+5 today"
+  negative                 // red trend color
+  onClick={() => navigate("/reports")}
+/>
+```
+
+**`SectionHeader`** — consistent page and section headers
+
+```tsx
+<SectionHeader
+  title="Active Reports"
+  badge={reports.length}   // animated count badge
+  live                     // shows LiveIndicator
+  description="Real-time feed"
+  actions={<Button>Export</Button>}
+  size="lg"
+/>
+```
+
+**`EmptyState`** — consistent zero-data states
+
+```tsx
+<EmptyState
+  icon={CheckCircle}
+  title="All clear"
+  description="No active incidents"
+  action={<Button>Reset filters</Button>}
+  size="md"
+/>
+```
+
+---
+
+### Tailwind Extensions (`tailwind.config.ts`)
+
+**New color namespace** — `crisis`:
+```
+bg-crisis-critical   text-crisis-high   border-crisis-low   text-crisis-safe
+```
+
+**New keyframe animations**:
+| Class | Effect |
+|---|---|
+| `animate-fade-in` | Fade + 8px upward slide, 220ms |
+| `animate-slide-down` | Fade + 8px downward-from-top, 200ms |
+| `animate-scale-in` | Fade + scale from 0.95, 180ms |
+| `animate-ticker` | Continuous horizontal scroll (live feed marquee), 20s linear |
+
+---
+
+### Applied Pages
+
+| Page | Design System Applied |
+|---|---|
+| `ActiveReports` | `SectionHeader` + `LiveIndicator`, animated `SeverityBadge` filter pills with `MOTION.criticalPulse` on active critical, `AnimatePresence` clear button, `EmptyState` with filter-clear action |
+| `VolunteerCommandDashboard` | 4 `StatCard` stats, `SeverityBadge` on urgency, `EmptyState` on all 3 tab states, `MOTION.cardHover` nav shortcuts, `MOTION.criticalPulse` critical banner |
+| `AuthorityCommandCenter` | `LiveIndicator` in header, `SeverityBadge` on map overlay, `EmptyState` on incident feed and event log, `MOTION.pressable` command buttons, `MOTION.springPop` live stat counters |
+
+---
+
+## 20. Future Improvements
 
 ### AI Upgrades
 
@@ -1504,7 +1878,7 @@ Move analytics queries (`/api/analytics/*`, `/api/intelligence/*`) to a PostgreS
 
 ---
 
-## 17. Contribution Guide
+## 21. Contribution Guide
 
 ### How to Contribute
 
@@ -1571,7 +1945,7 @@ All branches merge to `main` via pull request with at least one review.
 
 ---
 
-## 18. Summary
+## 22. Summary
 
 ### Key Takeaways
 
