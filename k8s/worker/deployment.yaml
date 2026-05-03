@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: crisisconnect
+  labels:
+    app: worker
+    component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: worker
+        component: backend
+    spec:
+      terminationGracePeriodSeconds: 60    # workers need time to finish jobs
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+
+      containers:
+        - name: worker
+          image: ghcr.io/YOUR_ORG/crisisconnect-api:latest
+          imagePullPolicy: Always
+          command: ["node", "dist/worker.js"]
+
+          env:
+            - name: WORKER_MODE
+              value: "true"
+            - name: PORT
+              value: "5001"
+
+          envFrom:
+            - configMapRef:
+                name: crisisconnect-config
+            - secretRef:
+                name: crisisconnect-secrets
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+
+          livenessProbe:
+            exec:
+              command: ["node", "-e", "process.exit(0)"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: worker-hpa
+  namespace: crisisconnect
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300

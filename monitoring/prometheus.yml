@@ -1,0 +1,44 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    service: crisisconnect
+    environment: local
+
+scrape_configs:
+  # ── CrisisConnect API ───────────────────────────────────────────────────────
+  - job_name: crisisconnect-api
+    static_configs:
+      - targets: ["api:5000"]
+        labels:
+          service: api
+    metrics_path: /api/metrics
+    scrape_interval: 10s
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+        labels:
+          service: postgres
+    scrape_interval: 30s
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+        labels:
+          service: redis
+    scrape_interval: 15s
+
+  # ── Node process metrics (via prom-client in app) ───────────────────────────
+  - job_name: node-process
+    static_configs:
+      - targets: ["api:5000"]
+    metrics_path: /api/metrics
+    params:
+      format: [prometheus]
+
+# ── Alert Rules ─────────────────────────────────────────────────────────────────
+rule_files:
+  - /etc/prometheus/rules/crisis-alerts.yml

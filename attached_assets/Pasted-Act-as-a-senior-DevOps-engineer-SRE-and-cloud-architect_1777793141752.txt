@@ -1,0 +1,214 @@
+Act as a senior DevOps engineer, SRE, and cloud architect.
+
+I have built a distributed crisis intelligence platform called "CrisisConnect" with:
+
+* Node.js backend (microservices)
+* React frontend
+* WebSocket real-time layer
+* Async AI pipeline (Gemini)
+* Queue system (BullMQ / Kafka)
+* Event bus (Redis Streams / Kafka)
+* PostgreSQL database
+* Redis cache
+* API Gateway
+* Platform APIs (API keys, rate limiting)
+
+Your task is to design and generate a FULL production-grade DevOps system.
+
+---
+
+## 1. INFRASTRUCTURE ARCHITECTURE
+
+Design deployment using:
+
+* Docker (containerization)
+* Kubernetes (or Docker Compose for local)
+* NGINX / API Gateway
+* Cloud provider (AWS / GCP / Azure)
+
+Include:
+
+* service separation:
+
+  * api-service
+  * ai-service
+  * realtime-service
+  * analytics-service
+  * worker-service
+* database:
+
+  * PostgreSQL
+* cache:
+
+  * Redis
+* event system:
+
+  * Kafka or Redis Streams
+
+Provide architecture diagram in text.
+
+---
+
+## 2. DOCKER SETUP
+
+Generate:
+
+* Dockerfile for:
+
+  * backend services
+  * frontend (React)
+* docker-compose.yml for local dev:
+
+Services:
+
+* api
+* worker
+* redis
+* postgres
+* frontend
+
+Include:
+
+* environment variables
+* volumes
+* networking
+
+---
+
+## 3. KUBERNETES DEPLOYMENT
+
+Provide:
+
+* Deployment YAMLs
+* Services (ClusterIP / LoadBalancer)
+* Ingress configuration
+* ConfigMaps and Secrets
+
+Include:
+
+* autoscaling (HPA)
+* rolling updates
+* health checks
+
+---
+
+## 4. CI/CD PIPELINE (GITHUB ACTIONS)
+
+Create pipeline:
+
+Steps:
+
+1. Install dependencies
+2. Run tests
+3. Enforce coverage (80%+)
+4. Build Docker images
+5. Push to container registry
+6. Deploy to Kubernetes
+
+Include:
+
+* staging + production environments
+* environment variables handling
+* rollback strategy
+
+---
+
+## 5. MONITORING & OBSERVABILITY
+
+Set up:
+
+* Prometheus (metrics)
+* Grafana (dashboards)
+* ELK stack (logs)
+
+Track:
+
+* API latency
+* error rates
+* queue length
+* WebSocket connections
+* AI processing time
+
+---
+
+## 6. SCALING STRATEGY
+
+Define:
+
+* horizontal scaling:
+
+  * API pods
+  * worker pods
+* autoscaling rules:
+
+  * CPU usage
+  * queue size
+
+---
+
+## 7. SECURITY
+
+Implement:
+
+* HTTPS (TLS)
+* JWT authentication
+* API key validation
+* secrets management
+* rate limiting
+
+---
+
+## 8. BACKUP & RECOVERY
+
+* database backups (daily)
+* restore strategy
+* failover handling
+
+---
+
+## 9. ENVIRONMENT CONFIGURATION
+
+Define:
+
+* .env structure
+* secrets separation
+* staging vs production configs
+
+---
+
+## 10. DEPLOYMENT STEPS
+
+Provide step-by-step:
+
+* local setup
+* staging deploy
+* production deploy
+
+---
+
+## OUTPUT FORMAT
+
+Provide:
+
+1. Architecture diagram (text)
+2. docker-compose.yml
+3. Dockerfiles
+4. Kubernetes YAMLs
+5. GitHub Actions pipeline
+6. Monitoring setup
+7. Deployment steps
+
+---
+
+## GOAL
+
+Make the system:
+
+* scalable
+* fault-tolerant
+* production-ready
+* deployable by a team
+* industry-grade (top 1%)
+
+Do NOT give generic explanations.
+Give real configs, files, and commands.

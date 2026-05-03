@@ -1,0 +1,64 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: crisisconnect-ingress
+  namespace: crisisconnect
+  annotations:
+    # nginx ingress controller
+    kubernetes.io/ingress.class: "nginx"
+
+    # TLS — cert-manager auto-provisions Let's Encrypt certificates
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+    # WebSocket support (required for /ws endpoint)
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+
+    # Security headers
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://crisisconnect.example.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, X-Requested-With"
+
+    # Rate limiting at ingress level (first line of defence)
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+
+    # Request size limit (for multimodal uploads)
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+
+spec:
+  tls:
+    - hosts:
+        - crisisconnect.example.com
+        - api.crisisconnect.example.com
+      secretName: crisisconnect-tls
+
+  rules:
+    # ── Frontend ──────────────────────────────────────────────────────────────
+    - host: crisisconnect.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+
+    # ── API + WebSocket ───────────────────────────────────────────────────────
+    - host: api.crisisconnect.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 80

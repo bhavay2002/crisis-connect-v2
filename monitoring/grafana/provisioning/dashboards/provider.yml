@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: CrisisConnect
+    orgId: 1
+    folder: CrisisConnect
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

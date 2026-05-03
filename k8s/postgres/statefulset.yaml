@@ -1,0 +1,109 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PostgreSQL StatefulSet
+#
+# NOTE: In production, prefer a managed service (AWS RDS, GCP Cloud SQL, Neon)
+# over running Postgres in Kubernetes. Use this only for staging or if you
+# control your own hardware.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: crisisconnect
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999
+
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+
+          env:
+            - name: POSTGRES_DB
+              value: crisisconnect
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "crisis", "-d", "crisisconnect"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "crisis", "-d", "crisisconnect"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 20Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: crisisconnect
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+
+---
+# Separate credentials secret for Postgres (principle of least privilege)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  namespace: crisisconnect
+type: Opaque
+stringData:
+  username: crisis
+  password: REPLACE_WITH_SECURE_PASSWORD

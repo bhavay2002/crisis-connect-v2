@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: crisisconnect
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: crisisconnect-prod
+        environment: production
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: []
+
+    scrape_configs:
+      # ── CrisisConnect API pods ──────────────────────────────────────────────
+      - job_name: crisisconnect-api
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [crisisconnect]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+
+      # ── Kubernetes nodes ────────────────────────────────────────────────────
+      - job_name: kubernetes-nodes
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # ── PostgreSQL (via postgres_exporter) ──────────────────────────────────
+      - job_name: postgres
+        static_configs:
+          - targets: ["postgres-exporter:9187"]
+        scrape_interval: 30s
+
+      # ── Redis (via redis_exporter) ──────────────────────────────────────────
+      - job_name: redis
+        static_configs:
+          - targets: ["redis-exporter:9121"]
+        scrape_interval: 15s
+
+    # ── Alerting Rules ─────────────────────────────────────────────────────────
+    rule_files:
+      - /etc/prometheus/rules/*.yml
