@@ -23,6 +23,7 @@ import { useLowBandwidth } from "@/context/LowBandwidthContext";
 import { useOfflineSync } from "@/context/OfflineSyncContext";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useWSContext } from "@/providers/WebSocketProvider";
+import { ActionPanel } from "@/components/crisis/ActionPanel";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps { children: React.ReactNode }
@@ -365,6 +366,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* Command Action Panel — fixed bottom-right, role-gated */}
+      <ActionPanel />
     </div>
   );
 }

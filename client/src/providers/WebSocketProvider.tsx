@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRealtimeStore } from "@/store/realtimeStore";
+import { useDecisionStore } from "@/store/decisionStore";
 import { queryClient } from "@/lib/queryClient";
 
 type MessageHandler = (message: any) => void;
@@ -79,19 +80,58 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
           const store = useRealtimeStore.getState();
           store.ping();
 
+          const ds = useDecisionStore.getState();
           switch (msg.type) {
             case "new_report":
+              queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/decisions/active"] });
+              if (msg.data?.id) {
+                ds.markReportNew(msg.data.id);
+                setTimeout(() => ds.unmarkReportNew(msg.data.id), 4000);
+              }
+              ds.pushEvent({
+                type: "new_report",
+                message: msg.data?.title ? `New report: ${msg.data.title}` : "New emergency report",
+                subtext: msg.data?.location,
+                severity: msg.data?.severity,
+                timestamp: Date.now(),
+                url: msg.data?.id ? `/reports/${msg.data.id}` : "/reports",
+              });
+              break;
             case "report_updated":
             case "report_verified":
               queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/decisions/active"] });
+              ds.pushEvent({
+                type: "report_updated",
+                message: msg.type === "report_verified" ? "Report verified by community" : "Report status updated",
+                subtext: msg.data?.location,
+                timestamp: Date.now(),
+                url: msg.data?.id ? `/reports/${msg.data.id}` : undefined,
+              });
               break;
             case "new_notification":
               queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread/count"] });
               queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread"] });
               store.incrementUnread();
+              ds.pushEvent({
+                type: "notification",
+                message: msg.data?.title || "New notification",
+                timestamp: Date.now(),
+                url: "/notifications",
+              });
               break;
             case "sos_alert":
               queryClient.invalidateQueries({ queryKey: ["/api/sos"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/decisions/active"] });
+              ds.pushEvent({
+                type: "sos_alert",
+                message: "SOS alert activated",
+                subtext: msg.data?.location,
+                severity: "critical",
+                timestamp: Date.now(),
+                url: "/reports",
+              });
               break;
             case "notification_count":
               if (typeof msg.data?.count === "number") {
@@ -102,6 +142,33 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
               queryClient.invalidateQueries({ queryKey: ["/api/matching/analytics"] });
               queryClient.invalidateQueries({ queryKey: ["/api/aid-offers"] });
               queryClient.invalidateQueries({ queryKey: ["/api/resource-requests"] });
+              ds.pushEvent({
+                type: "system",
+                message: "AI matching cycle complete",
+                timestamp: Date.now(),
+                url: "/aid-matching",
+              });
+              break;
+            case "ALERT_BROADCAST":
+            case "alert_broadcast":
+              ds.pushEvent({
+                type: "broadcast",
+                message: msg.message || "Emergency broadcast sent",
+                severity: msg.severity,
+                timestamp: Date.now(),
+                url: "/broadcast-alerts",
+              });
+              break;
+            case "SOS_ACTIVATED":
+              queryClient.invalidateQueries({ queryKey: ["/api/sos"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/decisions/active"] });
+              ds.pushEvent({
+                type: "sos_alert",
+                message: "SOS activated",
+                subtext: msg.location,
+                severity: "critical",
+                timestamp: Date.now(),
+              });
               break;
           }
 
