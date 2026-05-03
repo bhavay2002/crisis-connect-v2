@@ -14,6 +14,8 @@ import { cache, CacheKeys, CacheTTL } from "../utils/cache";
 import { logger } from "../utils/logger";
 import { decisionEngine } from "../modules/decisions/decision-engine.service";
 import { enqueueAIAnalysis } from "../workers/ai-analysis.worker";
+import { eventStore, EVENT_TYPES } from "../modules/events/event-store.service";
+import { recordReportForSpikeDetection } from "../modules/predictions/prediction-scheduler";
 
 // Placeholder for broadcast function - will be injected via index.ts
 let broadcastToAll: (message: any) => void = () => {};
@@ -217,6 +219,29 @@ export function registerReportRoutes(app: Express) {
         aiScore: 50, // placeholder; AI_ANALYSIS_COMPLETE WS event will update UI
         severity: (finalReport.severity as "low" | "medium" | "high" | "critical") ?? "medium",
       }).catch((err) => logger.error("DecisionEngine background call failed", err));
+
+      // §26 — Persist report.created to durable event store
+      eventStore.append({
+        eventType:  EVENT_TYPES.REPORT_CREATED,
+        entityId:   finalReport.id,
+        entityType: "report",
+        payload: {
+          reportId:  finalReport.id,
+          type:      finalReport.type,
+          severity:  finalReport.severity,
+          location:  finalReport.location,
+          userId:    userId ?? null,
+          createdAt: new Date().toISOString(),
+        },
+      }).catch(() => {});
+
+      // §28 — Signal spike detection: fire-and-forget, non-blocking
+      try {
+        const zone = finalReport.location ?? "unknown";
+        recordReportForSpikeDetection(zone);
+      } catch {
+        // never block the request
+      }
 
       // Broadcast new report to all connected WebSocket clients
       broadcastToAll({

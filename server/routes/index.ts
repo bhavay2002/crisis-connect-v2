@@ -82,6 +82,9 @@ import { registerPipelineRoutes, setWsStatsProviders } from "./pipeline.routes";
 import { registerAdaptiveFusionRoutes } from "./adaptive-fusion.routes";
 import { registerServiceHealthRoutes } from "./service-health.routes";
 import { adaptiveWeights } from "../modules/fusion/adaptive-weights.service";
+import { registerEventStoreRoutes } from "./event-store.routes";
+import { registerPredictionSchedulerRoutes } from "./predictions-scheduler.routes";
+import { startPredictionScheduler } from "../modules/predictions/prediction-scheduler";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -408,11 +411,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerPipelineRoutes(app);
   registerAdaptiveFusionRoutes(app);
   registerServiceHealthRoutes(app);
+  registerEventStoreRoutes(app);
+  registerPredictionSchedulerRoutes(app);
 
   // §22 — Initialize adaptive weights model on startup
   adaptiveWeights.initialize().catch((err) => {
     logger.warn("[AdaptiveWeights] Startup init failed — using static weights", { err: String(err) });
   });
+
+  // §28 — Start periodic prediction scheduler (every 10 min + spike-triggered)
+  startPredictionScheduler();
 
   // Event bus: wire cross-service listeners
   eventBus.subscribe("CRISIS_CREATED", (payload) => {
@@ -428,9 +436,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     broadcastToAll({ type: "ALERT_BROADCAST", ...payload });
   });
 
-  // EventBus health endpoint
-  app.get("/api/events/stats", (req, res) => {
-    res.json({ listeners: eventBus.getStats(), timestamp: new Date().toISOString() });
+  // §26 — Broadcast durable events to WebSocket in real-time
+  pubSub.subscribe("event:*", (envelope: any) => {
+    broadcastToAll({ type: "DOMAIN_EVENT", event: envelope });
   });
 
   // Register tasks routes

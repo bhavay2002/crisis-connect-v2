@@ -160,12 +160,21 @@ export async function generateAllPredictions(): Promise<LivePrediction[]> {
 
   const saved = await db.insert(disasterPredictions).values(allInserts as any).returning();
 
-  // Auto-create Decision Engine entries for high-risk predictions
+  // §28 — Auto-create Decision Engine entries for high-risk predictions
+  // VERY_HIGH → autoExecutable: true (auto-PREDEPLOY without operator approval)
+  // HIGH      → autoExecutable: false (still needs operator approval)
   for (const pred of saved) {
     const risk = (pred as any).riskLevel;
     if (risk === "very_high" || risk === "high") {
       try {
         const probability = probabilityFromRisk(risk, 5);
+
+        // Build a synthetic report object that the decision engine understands.
+        // For VERY_HIGH, we push aiScore above the 0.8 auto-execute threshold.
+        const aiScore = risk === "very_high"
+          ? Math.max(0.82, probability)  // guarantees autoExecutable = true
+          : Math.min(0.79, probability); // stays below auto-execute for HIGH
+
         const fakeReport = {
           id: `pred-${(pred as any).id}`,
           title: `[PREDICTION] ${risk.toUpperCase()} ${(pred as any).disasterType} risk — ${(pred as any).predictedArea}`,
@@ -174,13 +183,34 @@ export async function generateAllPredictions(): Promise<LivePrediction[]> {
           location: (pred as any).predictedArea,
           description: `AI Predictive Engine detected ${risk} risk for ${(pred as any).disasterType} in ${(pred as any).predictedArea}. Probability: ${Math.round(probability * 100)}%. Confidence: ${(pred as any).confidence}%. Based on: ${((pred as any).predictionFactors || []).join(", ")}.`,
           userId: null,
-          aiScore: probability,
+          aiScore,
           confidence: (pred as any).confidence / 100,
-          urgencyScore: probability,
+          urgencyScore: aiScore,
           latitude: (pred as any).latitude,
           longitude: (pred as any).longitude,
         } as any;
-        await decisionEngine.generateDecision(fakeReport);
+
+        const decision = await decisionEngine.generateDecision(fakeReport);
+
+        // Emit prediction.actioned event for VERY_HIGH auto-executions
+        if (risk === "very_high" && decision) {
+          const { eventStore: es, EVENT_TYPES: ET } = await import("../events/event-store.service");
+          es.append({
+            eventType:  ET.PREDICTION_ACTIONED,
+            entityId:   (pred as any).id,
+            entityType: "prediction",
+            payload: {
+              predictionId: (pred as any).id,
+              decisionId:   (decision as any).id ?? null,
+              risk,
+              type:         (pred as any).disasterType,
+              area:         (pred as any).predictedArea,
+              probability,
+              autoExecuted: true,
+              actionedAt:   new Date().toISOString(),
+            },
+          }).catch(() => {});
+        }
       } catch {
         // non-blocking
       }

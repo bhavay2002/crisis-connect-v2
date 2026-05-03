@@ -17,6 +17,7 @@ import { authenticateToken } from "../middleware/jwtAuth";
 import { requireRole } from "../middleware/roleAuth";
 import { pubSub } from "../utils/pubsub";
 import { outcomeCollector } from "../modules/fusion/outcome-collector.service";
+import { eventStore, EVENT_TYPES } from "../modules/events/event-store.service";
 import { logger } from "../utils/logger";
 
 export function registerDecisionOutcomeRoutes(app: Express) {
@@ -97,6 +98,23 @@ export function registerDecisionOutcomeRoutes(app: Express) {
           responseTimeSec: responseTimeSec ?? null,
           recordedAt:      recorded.createdAt,
         });
+
+        // §26 — Persist to durable event store (survives process restart, replayable)
+        eventStore.append({
+          eventType:  EVENT_TYPES.OUTCOME_RECORDED,
+          entityId:   decisionId,
+          entityType: "decision",
+          payload: {
+            decisionId,
+            incidentId:      dec.incidentId,
+            outcome,
+            responseTimeSec: responseTimeSec ?? null,
+            effectiveness:   effectiveness ?? null,
+            isRealCrisis:    outcome === "SUCCESS" || outcome === "DELAYED",
+            recordedBy:      req.user.userId,
+            recordedAt:      new Date().toISOString(),
+          },
+        }).catch(() => {});
 
         // ── Wire to adaptive weights learning loop ────────────────────────────
         // Infer signal-level ground truth from decision outcome:

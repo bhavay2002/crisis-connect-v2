@@ -6,6 +6,7 @@ import { authenticateToken } from "../middleware/jwtAuth";
 import { requireRole } from "../middleware/roleAuth";
 import { logger } from "../utils/logger";
 import { decisionEngine } from "../modules/decisions/decision-engine.service";
+import { eventStore, EVENT_TYPES } from "../modules/events/event-store.service";
 
 export function registerDecisionRoutes(app: Express) {
   app.get("/api/decisions", authenticateToken, async (req: any, res) => {
@@ -158,6 +159,21 @@ export function registerDecisionRoutes(app: Express) {
         await decisionEngine.executeDecision(id, dec.incidentId);
 
         const [updated] = await db.select().from(decisions).where(eq(decisions.id, id)).limit(1);
+
+        // §26 — Persist to durable event store
+        eventStore.append({
+          eventType:  EVENT_TYPES.DECISION_EXECUTED,
+          entityId:   id,
+          entityType: "decision",
+          payload: {
+            decisionId: id,
+            incidentId: dec.incidentId,
+            type:       dec.type,
+            executedBy: userId,
+            executedAt: new Date().toISOString(),
+          },
+        }).catch(() => {});
+
         res.json(updated);
       } catch (error) {
         logger.error("Failed to approve decision", error as Error);
@@ -186,6 +202,21 @@ export function registerDecisionRoutes(app: Express) {
 
         await decisionEngine.rejectDecision(id, userId, reason);
         const [updated] = await db.select().from(decisions).where(eq(decisions.id, id)).limit(1);
+
+        // §26 — Persist to durable event store
+        eventStore.append({
+          eventType:  EVENT_TYPES.DECISION_REJECTED,
+          entityId:   id,
+          entityType: "decision",
+          payload: {
+            decisionId: id,
+            incidentId: dec.incidentId,
+            rejectedBy: userId,
+            reason,
+            rejectedAt: new Date().toISOString(),
+          },
+        }).catch(() => {});
+
         res.json(updated);
       } catch (error) {
         logger.error("Failed to reject decision", error as Error);

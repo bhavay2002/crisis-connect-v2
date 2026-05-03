@@ -1183,6 +1183,28 @@ export const decisionOutcomes = pgTable("decision_outcomes", {
 export type DecisionOutcome       = typeof decisionOutcomes.$inferSelect;
 export type InsertDecisionOutcome = typeof decisionOutcomes.$inferInsert;
 
+// ── §26 — Durable Event Store ─────────────────────────────────────────────────
+
+export const domainEvents = pgTable("domain_events", {
+  id:          varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId:     varchar("event_id").notNull().unique(),       // client-generated idempotency key
+  eventType:   varchar("event_type", { length: 100 }).notNull(),
+  entityId:    varchar("entity_id"),
+  entityType:  varchar("entity_type", { length: 50 }),
+  payload:     jsonb("payload").notNull().default(sql`'{}'::jsonb`),
+  version:     integer("version").notNull().default(1),
+  processedBy: jsonb("processed_by").notNull().default(sql`'[]'::jsonb`), // array of consumer IDs
+  createdAt:   timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_domain_events_type").on(table.eventType),
+  index("idx_domain_events_entity").on(table.entityId),
+  index("idx_domain_events_created").on(table.createdAt),
+  index("idx_domain_events_event_id").on(table.eventId),
+]);
+
+export type DomainEvent       = typeof domainEvents.$inferSelect;
+export type InsertDomainEvent = typeof domainEvents.$inferInsert;
+
 export type SignalFeature   = typeof signalFeatures.$inferSelect;
 export type SignalOutcome    = typeof signalOutcomes.$inferSelect;
 export type ModelWeight      = typeof modelWeights.$inferSelect;
