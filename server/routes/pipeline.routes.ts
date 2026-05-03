@@ -43,6 +43,12 @@ export function registerPipelineRoutes(app: Express) {
           concurrency:        queueStatus.concurrency,
           isRunning:          queueStatus.isRunning,
           registeredHandlers: queueStatus.registeredHandlers,
+          // §24 — Load shedding fields
+          loadLevel:          queueStatus.loadLevel,
+          isUnderLoad:        queueStatus.isUnderLoad,
+          shedCount:          queueStatus.shedCount,
+          maxQueueSize:       queueStatus.maxQueueSize,
+          shedThreshold:      queueStatus.shedThreshold,
         },
         aiWorker: {
           processed:   workerMetrics.processed,

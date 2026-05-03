@@ -181,7 +181,27 @@ export function registerReportRoutes(app: Express) {
       const priority = validatedData.severity === "critical" ? 10
                      : validatedData.severity === "high"     ? 5
                      : 0;
-      const jobId = await enqueueAIAnalysis(finalReport.id, userId, priority);
+      let jobId: string;
+      try {
+        jobId = await enqueueAIAnalysis(finalReport.id, userId, priority);
+      } catch (queueErr: any) {
+        if (queueErr.name === "QueueSaturatedError") {
+          // §24 Load shedding — queue is saturated, low-priority job rejected
+          logger.warn("[Reports] Load shedding — 503 returned to client", {
+            reportId: finalReport.id,
+            severity: validatedData.severity,
+            priority,
+          });
+          return res.status(503)
+            .set("Retry-After", "5")
+            .json({
+              message: "System under load — please retry shortly",
+              code:    "QUEUE_SATURATED",
+              retryAfterSeconds: 5,
+            });
+        }
+        throw queueErr;
+      }
 
       logger.info("Report accepted — AI analysis enqueued", {
         reportId: finalReport.id,

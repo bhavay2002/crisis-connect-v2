@@ -62,6 +62,7 @@ import { registerSimulationRoutes } from "./simulation.routes";
 import { registerDigitalTwinRoutes } from "./digital-twin.routes";
 import { registerAIOverrideRoutes } from "./ai-override.routes";
 import { registerDecisionRoutes } from "./decisions.routes";
+import { registerDecisionOutcomeRoutes } from "./decision-outcomes.routes";
 import { registerIncidentGraphRoutes } from "./incident-graph.routes";
 import { registerPredictionRoutes } from "./predictions.routes";
 import { registerPolicyEngineRoutes } from "./policy-engine.routes";
@@ -395,6 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerDigitalTwinRoutes(app);
   registerAIOverrideRoutes(app);
   registerDecisionRoutes(app);
+  registerDecisionOutcomeRoutes(app);
   registerIncidentGraphRoutes(app);
   registerPredictionRoutes(app);
   registerPolicyEngineRoutes(app);

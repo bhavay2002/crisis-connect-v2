@@ -1161,6 +1161,28 @@ export const modelWeights = pgTable("model_weights", {
   index("idx_model_weights_created").on(table.createdAt),
 ]);
 
+// ── §23 — Decision Outcomes (closed-loop learning) ───────────────────────────
+
+export const decisionOutcomes = pgTable("decision_outcomes", {
+  id:              varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  decisionId:      varchar("decision_id").notNull().unique(),
+  incidentId:      varchar("incident_id").notNull(),
+  outcome:         varchar("outcome", { length: 20 }).notNull(),  // SUCCESS | DELAYED | FAILED
+  responseTimeSec: integer("response_time_sec"),
+  actionTaken:     varchar("action_taken", { length: 100 }),
+  effectiveness:   integer("effectiveness"),  // 0-100 admin-scored
+  notes:           text("notes"),
+  recordedBy:      varchar("recorded_by"),
+  createdAt:       timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_decision_outcomes_decision").on(table.decisionId),
+  index("idx_decision_outcomes_incident").on(table.incidentId),
+  index("idx_decision_outcomes_created").on(table.createdAt),
+]);
+
+export type DecisionOutcome       = typeof decisionOutcomes.$inferSelect;
+export type InsertDecisionOutcome = typeof decisionOutcomes.$inferInsert;
+
 export type SignalFeature   = typeof signalFeatures.$inferSelect;
 export type SignalOutcome    = typeof signalOutcomes.$inferSelect;
 export type ModelWeight      = typeof modelWeights.$inferSelect;
