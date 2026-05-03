@@ -26,6 +26,17 @@ Each feature is a self-contained mini-application with its own types, services, 
 - `roles/` — **RB-UX (Role-Based UX)**: RoleDashboard router, CitizenDashboard, VolunteerCommandDashboard, AuthorityCommandCenter, AdminRedirect, useCommandMode hook
 - `index.ts` — top-level barrel
 
+**Error & Edge UX System** (`client/src/components/system/`, `client/src/shared/hooks/`):
+Production-grade resilience layer — the app always communicates its state and recovers automatically.
+- `useNetworkStatus` — raw browser online/offline hook (window events)
+- `useSystemStatus` — unified state machine: `CONNECTED | DEGRADED | OFFLINE | RECOVERING`. Combines network + WS. RECOVERING auto-dismisses after 3s.
+- `NetworkStatusBanner` — globally-visible animated banner (amber=offline, blue=degraded/reconnecting, green=recovering). Slides in/out with Framer Motion. Also fires a toast when CONNECTED is restored. Mounted between the header and `<main>` in `DashboardLayout`.
+- `RetryCard` — standardized retry UI: compact/card/full-page variants, auto-retry countdown, attempt counter. Drop `<RetryCard onRetry={refetch} />` into any query error state.
+- `SectionBoundary` — in-place section-level `React.Component` error boundary. Widgets fail gracefully without killing the page. Shows compact error card in-place with a retry button.
+- `OfflineQueueBadge` — fixed bottom-left badge showing queued SOS count. States: amber=queued, blue+spinner=syncing, green=synced (auto-dismisses). Mounted globally in `DashboardLayout`.
+- Query defaults: retry upgraded from 1→3 with exponential backoff (2^n, max 10s). Auth errors skip retries immediately.
+- `ActiveReports` now shows `RetryCard` on error with 15s auto-retry countdown.
+
 **AI Explainability Components** (`client/src/components/ai/`):
 Plug-and-play decision intelligence panel used by Bloomberg/Datadog-style fintech dashboards.
 - `AIExplainabilityPanel` — main component; drop `<AIExplainabilityPanel reportId={id} createdAt={ts} />` anywhere; fetches `/api/ai/explain/:id`

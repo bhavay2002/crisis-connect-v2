@@ -23,6 +23,7 @@ import type { DisasterReport } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useRowVirtualList } from "@/shared/hooks";
+import { RetryCard } from "@/components/system";
 
 const SEV_COUNTS_COLORS: Record<string, string> = {
   critical: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300",
@@ -53,7 +54,7 @@ export default function ActiveReports() {
     [userVerifications]
   );
 
-  const { data: reportsResponse, isLoading } = useQuery<{ data: DisasterReport[]; pagination: any }>({
+  const { data: reportsResponse, isLoading, isError, refetch, failureCount } = useQuery<{ data: DisasterReport[]; pagination: any }>({
     queryKey: ["/api/reports"],
     // select: filter at query layer — component never sees unfiltered data
     select: useCallback(
@@ -199,7 +200,15 @@ export default function ActiveReports() {
       </div>
 
       {/* ── Virtualized grid ─────────────────────────────────────────────────── */}
-      {isLoading ? (
+      {isError ? (
+        <RetryCard
+          message="Failed to load reports"
+          detail="Check your connection and try again"
+          onRetry={refetch}
+          attempts={failureCount}
+          autoRetry={15}
+        />
+      ) : isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-shrink-0">
           {[1,2,3,4,5,6].map(i => <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />)}
         </div>

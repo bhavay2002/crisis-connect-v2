@@ -90,12 +90,12 @@ export const queryClient = new QueryClient({
       refetchOnMount: true,
       // Crisis data: 30 s stale time — balance freshness vs. request rate
       staleTime: 30_000,
-      // Retry once with exponential back-off, not for auth errors
+      // Retry up to 3× with exponential back-off — skip auth errors immediately
       retry: (failureCount, error: any) => {
         if (error?.message?.startsWith("401:") || error?.message?.startsWith("403:")) {
-          return false;
+          return false; // auth errors are not retriable
         }
-        return failureCount < 1;
+        return failureCount < 3;
       },
       retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
     },

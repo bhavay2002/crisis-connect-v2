@@ -24,6 +24,8 @@ import { useOfflineSync } from "@/context/OfflineSyncContext";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useWSContext } from "@/providers/WebSocketProvider";
 import { ActionPanel } from "@/components/crisis/ActionPanel";
+import { NetworkStatusBanner } from "@/components/system/NetworkStatusBanner";
+import { OfflineQueueBadge }   from "@/components/system/OfflineQueueBadge";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps { children: React.ReactNode }
@@ -112,7 +114,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { user } = useAuth();
   const { isLowBandwidth, toggle: toggleBandwidth } = useLowBandwidth();
-  const { isOnline, queueLength } = useOfflineSync();
+  useOfflineSync(); // keep provider subscribed for queue flushing
 
   // Realtime WS connection status from singleton provider
   const { isConnected: wsConnected } = useWSContext();
@@ -261,13 +263,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Offline badge */}
-            {!isOnline && (
-              <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-full px-2.5 py-1">
-                <WifiOff className="w-3 h-3" />
-                <span>Offline{queueLength > 0 ? ` · ${queueLength}` : ""}</span>
-              </div>
-            )}
 
             {/* Trust score */}
             {reputation && (
@@ -361,6 +356,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
+        {/* System state banner — slides in when OFFLINE / DEGRADED / RECOVERING */}
+        <NetworkStatusBanner />
+
         {/* Page content */}
         <main className="flex-1 overflow-auto bg-slate-900">
           {children}
@@ -369,6 +367,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Command Action Panel — fixed bottom-right, role-gated */}
       <ActionPanel />
+
+      {/* Offline queue badge — fixed bottom-left */}
+      <OfflineQueueBadge />
     </div>
   );
 }
