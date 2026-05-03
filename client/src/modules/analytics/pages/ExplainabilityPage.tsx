@@ -9,6 +9,7 @@
  */
 import { useState } from "react";
 import { useQuery }  from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Eye, Clock, Shield, AlertTriangle, ChevronRight } from "lucide-react";
@@ -52,10 +53,7 @@ export default function ExplainabilityPage() {
 
   const { data: decisionsData, isLoading } = useQuery<DecisionsResponse>({
     queryKey: ["/api/ai/decisions", page],
-    queryFn: () =>
-      fetch(`/api/ai/decisions?page=${page}&limit=20`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
-      }).then(r => r.json()),
+    queryFn: () => apiRequest(`/api/ai/decisions?page=${page}&limit=20`),
   });
 
   const decisions = decisionsData?.decisions ?? [];

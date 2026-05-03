@@ -112,7 +112,7 @@ export default function AdaptiveFusionPage() {
 
   const simMutation = useMutation({
     mutationFn: (features: Record<string,number>) =>
-      apiRequest("/api/fusion/simulate", { method: "POST", body: JSON.stringify(features) }).then(r => r.json()),
+      apiRequest("/api/fusion/simulate", { method: "POST", body: JSON.stringify(features) }),
     onSuccess: () => {},
     onError: () => toast({ title: "Simulation failed", variant: "destructive" }),
   });

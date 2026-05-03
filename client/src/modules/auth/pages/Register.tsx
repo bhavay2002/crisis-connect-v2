@@ -53,7 +53,6 @@ export default function Register() {
       }),
     onSuccess: (data) => {
       localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({ title: "Account created! Welcome to CrisisConnect." });
       setLocation("/role-selection");

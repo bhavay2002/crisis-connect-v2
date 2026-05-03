@@ -90,7 +90,7 @@ export function OfflineSyncProvider({ children }: { children: ReactNode }) {
             latitude: item.latitude,
             longitude: item.longitude,
             description: `[OFFLINE-SYNC] ${item.description}`,
-            contactPhone: item.contactPhone,
+            contactNumber: item.contactPhone,
             offlineQueueId: item.id,
             queuedAt: new Date(item.queuedAt).toISOString(),
           }),

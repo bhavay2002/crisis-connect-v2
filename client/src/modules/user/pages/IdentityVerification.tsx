@@ -61,7 +61,7 @@ export default function IdentityVerification() {
       return apiRequest("/api/auth/verify-email", { method: "POST", body: JSON.stringify({ code: emailCode }) });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
         title: "Email Verified",
         description: "Your email has been successfully verified!",
@@ -109,7 +109,7 @@ export default function IdentityVerification() {
       return apiRequest("/api/auth/verify-phone", { method: "POST", body: JSON.stringify({ code: phoneCode, phoneNumber }) });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
         title: "Phone Verified",
         description: "Your phone number has been successfully verified!",
@@ -134,7 +134,7 @@ export default function IdentityVerification() {
       return apiRequest("/api/auth/verify-aadhaar", { method: "POST", body: JSON.stringify({ aadhaarNumber }) });
     },
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reputation/me"] });
       toast({
         title: "Aadhaar Verified",

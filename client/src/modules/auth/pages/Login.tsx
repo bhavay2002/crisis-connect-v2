@@ -36,7 +36,6 @@ export default function Login() {
       }),
     onSuccess: (data) => {
       localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({ title: "Welcome back!" });
       setLocation("/dashboard");

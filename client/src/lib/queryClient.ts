@@ -16,6 +16,43 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// ─── Proactive token refresh ─────────────────────────────────────────────────
+
+let isRefreshing = false;
+let refreshQueue: Array<(ok: boolean) => void> = [];
+
+async function attemptTokenRefresh(): Promise<boolean> {
+  if (isRefreshing) {
+    return new Promise((resolve) => refreshQueue.push(resolve));
+  }
+  isRefreshing = true;
+  try {
+    const res = await fetch("/api/auth/refresh", {
+      method: "POST",
+      credentials: "include",
+    });
+    if (res.ok) {
+      const { accessToken } = await res.json();
+      if (accessToken) {
+        localStorage.setItem("accessToken", accessToken);
+        refreshQueue.forEach((cb) => cb(true));
+        refreshQueue = [];
+        isRefreshing = false;
+        return true;
+      }
+    }
+    refreshQueue.forEach((cb) => cb(false));
+    refreshQueue = [];
+    isRefreshing = false;
+    return false;
+  } catch {
+    refreshQueue.forEach((cb) => cb(false));
+    refreshQueue = [];
+    isRefreshing = false;
+    return false;
+  }
+}
+
 // ─── Core fetch wrapper ──────────────────────────────────────────────────────
 
 export async function apiRequest<T = any>(
@@ -31,6 +68,24 @@ export async function apiRequest<T = any>(
     },
     credentials: "include",
   });
+
+  // On 401: attempt one silent token refresh before giving up
+  if (res.status === 401 && !url.includes("/api/auth/")) {
+    const refreshed = await attemptTokenRefresh();
+    if (refreshed) {
+      const retryRes = await fetch(url, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+          ...options?.headers,
+        },
+        credentials: "include",
+      });
+      await throwIfResNotOk(retryRes);
+      return retryRes.json();
+    }
+  }
 
   await throwIfResNotOk(res);
   return res.json();
@@ -48,6 +103,21 @@ export function getQueryFn<T>(options: { on401: UnauthorizedBehavior }): QueryFu
       credentials: "include",
     });
 
+    // On 401: attempt one silent token refresh before returning null or throwing
+    if (res.status === 401 && !url.includes("/api/auth/")) {
+      const refreshed = await attemptTokenRefresh();
+      if (refreshed) {
+        const retryRes = await fetch(url, {
+          headers: getAuthHeaders(),
+          credentials: "include",
+        });
+        if (options.on401 === "returnNull" && retryRes.status === 401) return null as T;
+        await throwIfResNotOk(retryRes);
+        return retryRes.json() as Promise<T>;
+      }
+      if (options.on401 === "returnNull") return null as T;
+    }
+
     if (options.on401 === "returnNull" && res.status === 401) return null as T;
     await throwIfResNotOk(res);
     return res.json() as Promise<T>;
@@ -57,7 +127,7 @@ export function getQueryFn<T>(options: { on401: UnauthorizedBehavior }): QueryFu
 // ─── Global error handler ────────────────────────────────────────────────────
 
 function handleGlobalError(error: Error) {
-  // 401 → clear token and redirect to login
+  // 401 after refresh attempt failed → clear token and redirect to login
   if (error.message.startsWith("401:")) {
     localStorage.removeItem("accessToken");
     // Avoid redirect loop on auth endpoints
@@ -66,7 +136,7 @@ function handleGlobalError(error: Error) {
     }
     return;
   }
-  // 403 → optional: show toast (imported lazily to avoid circular deps)
+  // 403 → log in dev only
   if (error.message.startsWith("403:")) {
     if (import.meta.env.DEV) console.warn("[API] 403 Forbidden:", error.message);
   }

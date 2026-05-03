@@ -134,6 +134,7 @@ async function buildPredictionsForZone(
       weatherData: null,
       seismicData: null,
       predictionFactors: factors,
+      validFrom: now,
       validUntil,
     } as any);
   }
