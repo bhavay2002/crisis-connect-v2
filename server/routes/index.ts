@@ -78,6 +78,9 @@ import { encryptWebSocketMessage, shouldEncryptMessage, type SecureWebSocketMess
 import { pubSub, CHANNELS } from "../utils/pubsub";
 import { registerAIAnalysisWorker } from "../workers/ai-analysis.worker";
 import { registerPipelineRoutes, setWsStatsProviders } from "./pipeline.routes";
+import { registerAdaptiveFusionRoutes } from "./adaptive-fusion.routes";
+import { registerServiceHealthRoutes } from "./service-health.routes";
+import { adaptiveWeights } from "../modules/fusion/adaptive-weights.service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -401,6 +404,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerGovernanceAdminRoutes(app);
   registerApiAnalyticsRoutes(app);
   registerPipelineRoutes(app);
+  registerAdaptiveFusionRoutes(app);
+  registerServiceHealthRoutes(app);
+
+  // §22 — Initialize adaptive weights model on startup
+  adaptiveWeights.initialize().catch((err) => {
+    logger.warn("[AdaptiveWeights] Startup init failed — using static weights", { err: String(err) });
+  });
 
   // Event bus: wire cross-service listeners
   eventBus.subscribe("CRISIS_CREATED", (payload) => {

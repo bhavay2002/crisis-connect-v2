@@ -3,6 +3,8 @@ import { disasterReports, userReputation } from "@shared/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
 import { logger } from "../../utils/logger";
 import type { MultiSignalAnalysisResult } from "./crisis-intelligence.service";
+import { adaptiveWeights } from "../fusion/adaptive-weights.service";
+import { featureStore } from "../fusion/feature-store.service";
 
 export interface FusedScore {
   finalScore: number;
@@ -33,10 +35,11 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export class SignalFusionService {
-  private readonly WEIGHTS = {
-    aiUrgency: 0.5,
-    locationRisk: 0.2,
-    repetitionScore: 0.2,
+  // ── Static fallback (used when adaptive model unavailable) ──────────────────
+  private readonly STATIC_WEIGHTS = {
+    aiUrgency:      0.5,
+    locationRisk:   0.2,
+    repetitionScore:0.2,
     userTrustScore: 0.1,
   };
 
@@ -47,6 +50,7 @@ export class SignalFusionService {
       longitude?: string;
       userId?: string;
       type: string;
+      reportId?: string;   // optional — if provided, features are saved to feature store
     }
   ): Promise<FusedScore> {
     const [locationRisk, repetitionScore, userTrustScore] = await Promise.all([
@@ -57,11 +61,28 @@ export class SignalFusionService {
 
     const aiUrgency = aiResult.urgencyScore.score / 10;
 
+    // ── §22 Adaptive Weights — use learned model if ready ────────────────────
+    let activeWeights = this.STATIC_WEIGHTS;
+    let modelVersion  = "v0-static";
+    let isAdaptive    = false;
+
+    if (adaptiveWeights.isReady()) {
+      const learned = adaptiveWeights.getWeights();
+      activeWeights = {
+        aiUrgency:       learned.aiScore,
+        locationRisk:    learned.locationRisk,
+        repetitionScore: learned.repetitionScore,
+        userTrustScore:  learned.userTrust,
+      };
+      modelVersion = learned.version;
+      isAdaptive   = true;
+    }
+
     const finalScore =
-      this.WEIGHTS.aiUrgency * aiUrgency +
-      this.WEIGHTS.locationRisk * locationRisk +
-      this.WEIGHTS.repetitionScore * repetitionScore +
-      this.WEIGHTS.userTrustScore * userTrustScore;
+      activeWeights.aiUrgency       * aiUrgency +
+      activeWeights.locationRisk     * locationRisk +
+      activeWeights.repetitionScore  * repetitionScore +
+      activeWeights.userTrustScore   * userTrustScore;
 
     const normalized = Math.min(1, Math.max(0, finalScore));
 
@@ -75,26 +96,39 @@ export class SignalFusionService {
     if (locationRisk >= 0.5) reasons.push(`elevated location risk (${(locationRisk * 100).toFixed(0)}%)`);
     if (repetitionScore >= 0.5) reasons.push(`repeated reports in area (score ${(repetitionScore * 100).toFixed(0)}%)`);
     if (userTrustScore < 0.4) reasons.push("low user trust weight applied");
+    if (isAdaptive) reasons.push(`adaptive weights ${modelVersion}`);
 
     logger.info("Signal fusion computed", {
-      finalScore: normalized.toFixed(3),
+      finalScore:   normalized.toFixed(3),
       priority,
       aiUrgency,
       locationRisk,
       repetitionScore,
       userTrustScore,
+      modelVersion,
+      isAdaptive,
     });
+
+    // ── §22 Feature Store — persist vector for later training ─────────────────
+    if (input.reportId) {
+      featureStore.save(
+        input.reportId,
+        { aiScore: aiUrgency, locationRisk, repetitionScore, userTrust: userTrustScore, weatherScore: 0, socialScore: 0 },
+        normalized,
+        modelVersion,
+      ).catch(() => {});  // fire-and-forget
+    }
 
     return {
       finalScore: Math.round(normalized * 1000) / 1000,
       priority,
       components: {
-        aiUrgency: Math.round(aiUrgency * 1000) / 1000,
-        locationRisk: Math.round(locationRisk * 1000) / 1000,
+        aiUrgency:       Math.round(aiUrgency * 1000) / 1000,
+        locationRisk:    Math.round(locationRisk * 1000) / 1000,
         repetitionScore: Math.round(repetitionScore * 1000) / 1000,
-        userTrustScore: Math.round(userTrustScore * 1000) / 1000,
+        userTrustScore:  Math.round(userTrustScore * 1000) / 1000,
       },
-      weights: this.WEIGHTS,
+      weights: activeWeights,
       reasoning: reasons.length
         ? `Priority ${priority} due to: ${reasons.join("; ")}.`
         : `Normal priority — no elevated signals detected.`,
@@ -165,6 +199,45 @@ export class SignalFusionService {
     } catch (error) {
       logger.error("Repetition score computation error", error as Error);
       return 0.1;
+    }
+  }
+
+  /**
+   * Compute the full feature vector for a report without requiring a MultiSignalAnalysisResult.
+   * Used by the AI worker to save features to the feature store after async AI validation.
+   */
+  async computeFeatureVector(
+    aiScore: number,    // 0–1 (normalized from AIValidationService score/100)
+    input: {
+      latitude?:  string;
+      longitude?: string;
+      userId?:    string;
+      type:       string;
+      reportId:   string;
+    }
+  ): Promise<void> {
+    try {
+      const [locationRisk, repetitionScore, userTrustScore] = await Promise.all([
+        this.computeLocationRisk(input.latitude, input.longitude),
+        this.computeRepetitionScore(input.type, input.latitude, input.longitude),
+        this.computeUserTrustScore(input.userId),
+      ]);
+
+      const w = adaptiveWeights.isReady() ? adaptiveWeights.getWeights() : null;
+      const modelVersion = w ? w.version : "v0-static";
+
+      const fusedScore = w
+        ? w.aiScore * aiScore + w.locationRisk * locationRisk + w.repetitionScore * repetitionScore + w.userTrust * userTrustScore
+        : this.STATIC_WEIGHTS.aiUrgency * aiScore + this.STATIC_WEIGHTS.locationRisk * locationRisk + this.STATIC_WEIGHTS.repetitionScore * repetitionScore + this.STATIC_WEIGHTS.userTrustScore * userTrustScore;
+
+      await featureStore.save(
+        input.reportId,
+        { aiScore, locationRisk, repetitionScore, userTrust: userTrustScore, weatherScore: 0, socialScore: 0 },
+        Math.min(1, Math.max(0, fusedScore)),
+        modelVersion,
+      );
+    } catch (err) {
+      logger.warn("[SignalFusion] computeFeatureVector failed", { reportId: input.reportId });
     }
   }
 

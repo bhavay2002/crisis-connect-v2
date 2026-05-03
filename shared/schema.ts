@@ -1107,3 +1107,63 @@ export const policyRuleLogs = pgTable("policy_rule_logs", {
 export type PolicyRule = typeof policyRules.$inferSelect;
 export type InsertPolicyRule = typeof policyRules.$inferInsert;
 export type PolicyRuleLog = typeof policyRuleLogs.$inferSelect;
+
+// ── §22 — Adaptive Signal Fusion: Feature Store ───────────────────────────────
+
+export const signalFeatures = pgTable("signal_features", {
+  id:               varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reportId:         varchar("report_id").notNull(),
+  aiScore:          text("ai_score"),
+  locationRisk:     text("location_risk"),
+  repetitionScore:  text("repetition_score"),
+  userTrust:        text("user_trust"),
+  weatherScore:     text("weather_score"),
+  socialScore:      text("social_score"),
+  fusedScore:       text("fused_score"),
+  modelVersion:     varchar("model_version", { length: 50 }),
+  createdAt:        timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_signal_features_report").on(table.reportId),
+  index("idx_signal_features_created").on(table.createdAt),
+]);
+
+// ── §22 — Outcome Labels (training targets) ────────────────────────────────────
+
+export const signalOutcomes = pgTable("signal_outcomes", {
+  id:              varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reportId:        varchar("report_id").notNull().unique(),
+  isRealCrisis:    boolean("is_real_crisis").notNull(),
+  falsePositive:   boolean("false_positive").default(false).notNull(),
+  responseTimeSec: integer("response_time_sec"),
+  labelSource:     varchar("label_source", { length: 40 }).notNull(),
+  labeledBy:       varchar("labeled_by"),
+  createdAt:       timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_signal_outcomes_report").on(table.reportId),
+  index("idx_signal_outcomes_created").on(table.createdAt),
+]);
+
+// ── §22 — Model Weight Versions ────────────────────────────────────────────────
+
+export const modelWeights = pgTable("model_weights", {
+  id:          varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  version:     varchar("version", { length: 50 }).notNull().unique(),
+  weights:     jsonb("weights").notNull(),
+  precision:   text("precision"),
+  recall:      text("recall"),
+  f1Score:     text("f1_score"),
+  sampleCount: integer("sample_count").default(0).notNull(),
+  isActive:    boolean("is_active").default(false).notNull(),
+  isShadow:    boolean("is_shadow").default(false).notNull(),
+  createdAt:   timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_model_weights_active").on(table.isActive),
+  index("idx_model_weights_created").on(table.createdAt),
+]);
+
+export type SignalFeature   = typeof signalFeatures.$inferSelect;
+export type SignalOutcome    = typeof signalOutcomes.$inferSelect;
+export type ModelWeight      = typeof modelWeights.$inferSelect;
+export type InsertSignalFeature  = typeof signalFeatures.$inferInsert;
+export type InsertSignalOutcome  = typeof signalOutcomes.$inferInsert;
+export type InsertModelWeight    = typeof modelWeights.$inferInsert;

@@ -652,6 +652,91 @@ Flow: `POST /api/reports` → DB write → 202 Accepted → JobQueue worker → 
 - Horizontal scaling path: set `REDIS_URL` → all nodes share the same pub/sub bus
 - Idempotent processing: worker guards against double-processing the same report
 
+### §22 — Adaptive Signal Fusion + Service Architecture Layer (Implemented)
+
+**The problem solved:** `SignalFusionService` had hardcoded static weights (AI:0.5, Location:0.2, Repetition:0.2, Trust:0.1). No feature store, no outcome labeling, no learning system.
+
+**1. DB Schema additions (3 new tables — migrated)**
+
+- `signal_features` — persists per-report feature vectors at fusion time (reportId, aiScore, locationRisk, repetitionScore, userTrust, weatherScore, socialScore, fusedScore, modelVersion)
+- `signal_outcomes` — outcome labels for training (reportId, isRealCrisis, falsePositive, responseTimeSec, labelSource, labeledBy)
+- `model_weights` — weight version history (version, weights JSONB, precision, recall, f1Score, sampleCount, isActive, isShadow)
+
+**2. Adaptive Weights Engine (`server/modules/fusion/adaptive-weights.service.ts`)**
+
+- Algorithm: Stochastic Gradient Descent on binary cross-entropy (logistic regression)
+- Prediction: `σ(w·x + bias)` where x = feature vector
+- Update: `w_i ← w_i + α * (y - σ(w·x)) * x_i` with α = 0.01
+- Safety guardrails: weights clamped to [0.02, 0.95], normalized to sum = 1
+- Static priors as v0 (current hardcoded weights) — model improves from each labeled outcome
+- Shadow model: runs a higher-LR variant alongside prod for comparison
+- DB-backed: loads active weights on startup, persists each update as a versioned record
+
+**3. Feature Store (`server/modules/fusion/feature-store.service.ts`)**
+
+- `save(reportId, features, fusedScore, modelVersion)` — called from two paths:
+  - `SignalFusionService.computeFusedScore()` (when `reportId` provided — used by `/api/ai/analyze`)
+  - `SignalFusionService.computeFeatureVector()` — called from AI analysis worker after async validation
+- `get(reportId)` → feature vector + model prediction + SHAP-style contributions
+- `getRecent(n)` → for batch precision/recall computation
+
+**4. Outcome Collector (`server/modules/fusion/outcome-collector.service.ts`)**
+
+- `record(reportId, isRealCrisis, opts)` — idempotent, labeled outcomes trigger weight update
+- Label sources: `manual` (admin API), `auto_verified` (verified count ≥ 3), `auto_flagged` (spam), `auto_resolved` (status = resolved)
+- Fetches features from store → calls `adaptiveWeights.learnFromOutcome()` → one SGD step → new model version persisted
+- `computeMetrics()` — evaluates precision/recall/F1 over recent labeled outcomes vs model predictions
+
+**5. Modified `SignalFusionService` (server/modules/ai/signal-fusion.service.ts)**
+
+- `computeFusedScore()` — uses `adaptiveWeights.getWeights()` when model is ready, falls back to static weights if not
+- `computeFeatureVector()` — new public method, called by AI worker to save features without needing MultiSignalAnalysisResult
+- Active weights and version included in the returned `FusedScore` object and logged
+
+**6. AI Worker Integration (`server/workers/ai-analysis.worker.ts`)**
+
+- After AI validation, calls `signalFusionService.computeFeatureVector()` (fire-and-forget) to save features for every processed report
+- This closes the loop: every report that goes through the async pipeline gets a feature vector persisted automatically
+
+**7. Adaptive Fusion API (`server/routes/adaptive-fusion.routes.ts`)**
+
+- `GET /api/fusion/model` — current weight vector, model version, precision/recall, guardrails
+- `GET /api/fusion/performance` — weight history (all versions), recent outcomes, current metrics
+- `POST /api/fusion/outcomes/:reportId` — label a report outcome (triggers SGD weight update, returns updated model)
+- `GET /api/fusion/features/:reportId` — stored feature vector + model prediction + shadow comparison + per-feature contributions
+- `GET /api/fusion/outcomes` — recent labeled outcomes
+- `POST /api/fusion/simulate` — predict crisis probability for any feature vector against current model
+
+**8. Service Architecture Layer (`server/routes/service-health.routes.ts`)**
+
+- `GET /api/services/health` — full architecture map: 5 logical service definitions (AI, Realtime, Analytics, Fusion, Core API)
+- Each service: routes owned, data owned, extraction phase, extraction notes, per-service request/error/latency metrics
+- Event contracts documented (report.created, report.enriched, decision.created, ai.completed, outcome.labeled)
+- Pub/sub status, migration roadmap (Phase 1–5 strangler fig plan)
+- `recordServiceCall(service, ms, isError)` — exported metric accumulator for other services to call
+
+**9. Dashboard (`/adaptive-fusion`)**
+
+- Architecture flow diagram: 7-step pipeline from "Report Created" → "SGD Weight Update"
+- KPI row: model version, labeled outcomes count, precision, F1
+- Weight vector bar chart: animated, color-coded per signal, with descriptions
+- Model metrics: precision/recall/F1 pills + version history table
+- Simulator: drag-and-drop sliders for all 6 features, real-time model prediction, per-feature contribution bars
+- Outcome feed: live labeled outcomes with label source badges
+- Service architecture map: 5 service cards with extraction phase badges + strangler fig migration path
+
+**Verified (full integration test):**
+
+| Check | Result |
+|---|---|
+| Feature store populated after worker | ✅ `aiScore: 0.5, locationRisk: 0.689, fusedScore: 0.518` |
+| Label outcome → SGD step | ✅ `v1`, sampleCount: 1, weights shifted |
+| Second label → second SGD step | ✅ `v2`, sampleCount: 2 |
+| Model transitions to adaptive mode | ✅ `mode: "adaptive-sgd", isAdaptive: true` |
+| Weight drift visible across versions | ✅ `v0: ai=0.5 → v1: ai=0.502 → v2: ai=0.476` |
+| `/api/services/health` architecture map | ✅ 5 services, migration roadmap, pub/sub status |
+| Simulate endpoint | ✅ flood scenario → 67.59% crisis probability |
+
 ## External Dependencies
 -   **Database**: PostgreSQL via Neon serverless.
 -   **AI Service**: Replit AI Integrations (GPT-4o-mini) with rule-based fallback.

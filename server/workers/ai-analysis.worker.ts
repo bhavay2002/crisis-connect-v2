@@ -28,6 +28,7 @@ import { logger } from "../utils/logger";
 import { db } from "../db/db";
 import { disasterReports } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { signalFusionService } from "../modules/ai/signal-fusion.service";
 
 // ── Job payload types ──────────────────────────────────────────────────────
 
@@ -106,6 +107,18 @@ async function handleAIAnalysis(data: AIAnalysisJobData): Promise<void> {
       updatedAt: new Date(),
     })
     .where(eq(disasterReports.id, reportId));
+
+  // 4b. §22 — Save feature vector to feature store (fire-and-forget)
+  signalFusionService.computeFeatureVector(
+    aiResult.score / 100,   // normalize 0–100 → 0–1
+    {
+      latitude:  report.latitude  ?? undefined,
+      longitude: report.longitude ?? undefined,
+      userId:    report.userId    ?? undefined,
+      type:      report.type,
+      reportId,
+    }
+  ).catch(() => {});
 
   const processingMs = Date.now() - start;
 

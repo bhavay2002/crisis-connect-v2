@@ -78,6 +78,7 @@ const NAV_GROUPS = [
       { title: "Data Governance",   url: "/data-governance", icon: Lock,       roles: ["admin","super_admin"] },
       { title: "API Analytics",     url: "/api-analytics",   icon: BarChart3,  roles: ["admin","super_admin"] },
       { title: "Async Pipeline",    url: "/async-pipeline",  icon: Zap,        roles: ["admin","super_admin"] },
+      { title: "Adaptive Fusion",   url: "/adaptive-fusion", icon: Brain,      roles: ["admin","super_admin"] },
     ],
   },
   {
