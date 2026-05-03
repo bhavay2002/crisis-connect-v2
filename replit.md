@@ -516,6 +516,39 @@ CrisisConnect is no longer a reporting app. It is an **AI Intelligence Platform 
 - "Digital Twin" at `/digital-twin` — Globe icon
 - "AI Override" at `/ai-override` — ShieldAlert icon
 
+### §19 — Intelligence & Orchestration Layer (Implemented)
+Three new enterprise capabilities complete the platform's "Top 1%" status:
+
+**1. Multi-Source Data Fusion Engine** (`/data-fusion`)
+- `server/modules/fusion/data-fusion.service.ts` — normalizes 5 signal sources into unified schema
+- Generates simulated social media posts, news articles, IoT sensor readings, and weather alerts per incident
+- Fusion formula: `confidence = AI×0.40 + social×0.20 + weather×0.20 + IoT×0.10 + news×0.10`
+- API: `GET /api/fusion/signals` (live stream), `GET /api/fusion/stats`, `GET /api/fusion/analyze/:reportId`
+- UI: `DataFusionPage.tsx` — architecture banner, 5-source health panel, per-incident signal breakdown bar charts, expandable signal details
+
+**2. Personalized Response Engine** (`/api/responders/ranked/:reportId`)
+- `server/modules/responders/responder-ranking.service.ts` — spec-compliant scoring formula
+- Formula: `score = 0.35×skillMatch + 0.25×proximity + 0.20×pastPerformance − 0.20×fatigue`
+- DISASTER_SKILL_MAP for 12 emergency types with role-based skill matching
+- API: `GET /api/responders/ranked/:reportId`, `POST /api/responders/rank` (ad-hoc)
+- Component: `ResponderRankingPanel.tsx` — ranked list with medal icons, expandable score breakdown bars per factor
+
+**3. Policy Engine** (`/policy-engine`) — enterprise rules engine
+- `server/modules/policy/policy-engine.service.ts` — evaluates IF/AND/OR conditions, executes 4 action types
+- 4 default rules seeded on startup: Critical+Slow→NotifyAuthority, HighAI→Broadcast, Flood/EQ→Escalate, LowConf→Log
+- DB tables: `policy_rules` + `policy_rule_logs` (created via `npm run db:push`)
+- Actions: NOTIFY_AUTHORITY, BROADCAST_ALERT, ESCALATE, LOG (all integrated with EventBus)
+- API: CRUD + `POST /api/policy-engine/test` + `POST /api/policy-engine/evaluate` + stats + logs
+- UI: `PolicyEnginePage.tsx` — visual IF→THEN Rule Builder with live test simulator, toggle/priority/delete, AND/OR operators
+
+### New Tables in §19 (migrated via `npm run db:push`)
+- `policy_rules` — name, conditions JSONB, logicalOperator, actions JSONB, enabled, priority, triggerCount, lastTriggeredAt, createdBy FK
+- `policy_rule_logs` — ruleId FK, triggeredBy, eventData JSONB, actionsExecuted JSONB, result, errorMessage
+
+### New Nav Items (admin/authority/super_admin roles — "Top 1% Platform" section)
+- "Policy Engine" at `/policy-engine` — Settings icon
+- "Data Fusion" at `/data-fusion` — Layers icon
+
 ## External Dependencies
 -   **Database**: PostgreSQL via Neon serverless.
 -   **AI Service**: Replit AI Integrations (GPT-4o-mini) with rule-based fallback.

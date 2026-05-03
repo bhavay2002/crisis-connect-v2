@@ -1062,3 +1062,48 @@ export const incidentMetrics = pgTable("incident_metrics", {
 export type Decision = typeof decisions.$inferSelect;
 export type InsertDecision = typeof decisions.$inferInsert;
 export type IncidentMetrics = typeof incidentMetrics.$inferSelect;
+
+// ── Policy Engine ─────────────────────────────────────────────────────────────
+export const policyRules = pgTable("policy_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  conditions: jsonb("conditions").notNull().$type<Array<{
+    field: string;
+    operator: "=" | "!=" | ">" | "<" | ">=" | "<=" | "contains" | "in";
+    value: string | number | string[];
+  }>>(),
+  logicalOperator: varchar("logical_operator", { length: 10 }).default("AND").notNull(),
+  actions: jsonb("actions").notNull().$type<Array<{
+    type: string;
+    parameters?: Record<string, unknown>;
+  }>>(),
+  enabled: boolean("enabled").default(true).notNull(),
+  priority: integer("priority").default(0).notNull(),
+  triggerCount: integer("trigger_count").default(0).notNull(),
+  lastTriggeredAt: timestamp("last_triggered_at"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_policy_rules_enabled").on(table.enabled),
+  index("idx_policy_rules_priority").on(table.priority),
+]);
+
+export const policyRuleLogs = pgTable("policy_rule_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ruleId: varchar("rule_id").references(() => policyRules.id).notNull(),
+  triggeredBy: varchar("triggered_by", { length: 100 }),
+  eventData: jsonb("event_data"),
+  actionsExecuted: jsonb("actions_executed"),
+  result: varchar("result", { length: 20 }).notNull().default("success"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_policy_rule_logs_rule").on(table.ruleId),
+  index("idx_policy_rule_logs_created").on(table.createdAt),
+]);
+
+export type PolicyRule = typeof policyRules.$inferSelect;
+export type InsertPolicyRule = typeof policyRules.$inferInsert;
+export type PolicyRuleLog = typeof policyRuleLogs.$inferSelect;

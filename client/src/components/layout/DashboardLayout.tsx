@@ -17,7 +17,7 @@ import {
   User, Settings, LogOut, Moon, Sun, Map as MapIcon, Package,
   Heart, Sparkles, Award, Shield, Zap, MessageSquare, Wifi, WifiOff,
   Brain, Building2, ShieldCheck, Code, Activity, Globe, ShieldAlert,
-  ChevronDown, Radio, Menu, X,
+  ChevronDown, Radio, Menu, X, Layers,
 } from "lucide-react";
 import { useLowBandwidth } from "@/context/LowBandwidthContext";
 import { useOfflineSync } from "@/context/OfflineSyncContext";
@@ -72,6 +72,8 @@ const NAV_GROUPS = [
       { title: "Digital Twin",      url: "/digital-twin",    icon: Globe,      roles: ["admin","authority","super_admin"] },
       { title: "AI Override",       url: "/ai-override",     icon: ShieldAlert,roles: ["admin","authority","super_admin"] },
       { title: "AI Governance",     url: "/governance",      icon: ShieldCheck,roles: ["admin","authority","super_admin"] },
+      { title: "Policy Engine",     url: "/policy-engine",   icon: Settings,   roles: ["admin","authority","super_admin"] },
+      { title: "Data Fusion",       url: "/data-fusion",     icon: Layers,     roles: ["admin","authority","super_admin"] },
     ],
   },
   {

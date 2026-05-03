@@ -76,6 +76,8 @@ const CompliancePage         = lazy(() => import("@/modules/user/pages/Complianc
 const ChatPage          = lazy(() => import("@/modules/chat/pages/ChatPage"));
 const DecisionEnginePage   = lazy(() => import("@/pages/DecisionEnginePage"));
 const GovernanceDashboard  = lazy(() => import("@/pages/GovernanceDashboard"));
+const PolicyEnginePage     = lazy(() => import("@/pages/PolicyEnginePage"));
+const DataFusionPage       = lazy(() => import("@/pages/DataFusionPage"));
 const NotFound          = lazy(() => import("@/pages/not-found"));
 
 // ─── Suspense wrapper ────────────────────────────────────────────────────────
@@ -172,9 +174,11 @@ function Router() {
         <Route path="/notification-preferences" component={() => <S><NotificationPreferences /></S>} />
         <Route path="/compliance"               component={() => <S><CompliancePage /></S>} />
 
-        {/* Decision Engine */}
+        {/* Decision Engine + Orchestration */}
         <Route path="/decision-engine"  component={() => <S><DecisionEnginePage /></S>} />
         <Route path="/governance"       component={() => <S><GovernanceDashboard /></S>} />
+        <Route path="/policy-engine"    component={() => <S><PolicyEnginePage /></S>} />
+        <Route path="/data-fusion"      component={() => <S><DataFusionPage /></S>} />
 
         {/* Misc */}
         <Route path="/chat"             component={() => <S><ChatPage /></S>} />
