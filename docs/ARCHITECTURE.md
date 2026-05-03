@@ -1,539 +1,256 @@
-# Crisis Connect - Architecture & Best Practices
+# Architecture
+
+## Purpose
+
+Describes the layered architecture of CrisisConnect — how each layer is organized, how data flows between them, and the design decisions that govern scalability and resilience.
+
+---
 
 ## Overview
-This document outlines the architectural decisions, best practices, and code organization patterns used in Crisis Connect.
 
-## Table of Contents
-1. [Code Organization](#code-organization)
-2. [Error Handling](#error-handling)
-3. [Configuration Management](#configuration-management)
-4. [Validation & Type Safety](#validation--type-safety)
-5. [Logging](#logging)
-6. [API Design](#api-design)
-7. [Scalability Patterns](#scalability-patterns)
-8. [Security](#security)
+CrisisConnect is a full-stack TypeScript monorepo with three primary tiers: a React client, an Express API server, and a PostgreSQL data layer. The server is further divided into domain modules, each owning its own routes, services, and data access logic.
 
 ---
 
-## Code Organization
-
-### Directory Structure
+## Layer Diagram
 
 ```
-server/
-├── config/              # Configuration management
-│   └── index.ts        # Centralized config with validation
-├── errors/             # Custom error classes
-│   └── AppError.ts     # Base and specific error types
-├── middleware/         # Express middleware
-│   └── errorHandler.ts # Global error handling
-├── utils/              # Utility modules
-│   ├── logger.ts       # Structured logging
-│   └── clustering.ts   # Domain utilities
-├── services/           # Business logic layer
-├── repositories/       # Data access layer (NEW)
-│   ├── report.repository.ts    # Report data access
-│   ├── resource.repository.ts  # Resource data access
-│   └── aid.repository.ts       # Aid data access
-├── controllers/        # Route handlers
-├── routes/             # API route definitions
-└── db/                 # Database configuration
-    └── storage.ts      # Storage implementation
-
-shared/
-├── schema.ts           # Database schema & types
-└── validation.ts       # Shared validation schemas
-```
-
-### Layer Responsibilities
-
-**Routes** → **Controllers** → **Services** → **Repositories** → **Storage/Database**
-
-- **Routes**: Define HTTP endpoints, minimal logic
-- **Controllers**: Handle HTTP concerns (request/response)
-- **Services**: Contain business logic, orchestrate operations
-- **Repositories**: Data access abstraction, decouple services from storage (NEW)
-- **Storage**: Direct database operations via ORM
-
-### Middleware Order
-
-Critical middleware ordering in `server/index.ts`:
-
-```typescript
-// 1. Request parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-// 2. Structured request logging
-app.use(requestLoggingMiddleware);
-
-// 3. Session & authentication
-app.use(session(...));
-app.use(passport.initialize());
-app.use(passport.session());
-
-// 4. API routes
-const server = await registerRoutes(app);
-
-// 5. API error handlers (BEFORE frontend catch-all)
-app.use("/api", notFoundHandler);  // Returns JSON 404 for missing API routes
-app.use(errorHandler);             // Handles all errors with standardized JSON
-
-// 6. Frontend catch-all (MUST be last)
-if (isDevelopment) {
-  await setupVite(app, server);
-} else {
-  serveStatic(app);
-}
-```
-
-**Rationale**: The 404 and error handlers MUST be registered before the Vite/static middleware to ensure unknown API routes return JSON errors instead of the SPA HTML. The frontend catch-all should always be last to handle all non-API routes.
-
----
-
-## Repository Pattern
-
-### Purpose
-
-The repository layer decouples business logic from data access, providing:
-- **Abstraction**: Services don't need to know about database implementation
-- **Testability**: Easy to mock repositories for unit testing
-- **Maintainability**: Database changes are isolated to repositories
-- **Consistency**: Standardized data access patterns across domains
-
-### Repository Structure
-
-Each domain has its own repository with consistent method naming:
-
-```typescript
-// server/repositories/report.repository.ts
-export class ReportRepository {
-  async findById(id: string): Promise<Report | undefined> { }
-  async findAll(): Promise<Report[]> { }
-  async findByUserId(userId: string): Promise<Report[]> { }
-  async create(data: InsertReport): Promise<Report> { }
-  async updateStatus(id: string, status: string): Promise<Report | undefined> { }
-  // ... other domain-specific methods
-}
-```
-
-### Using Repositories in Services
-
-Services should use repositories instead of direct storage access:
-
-```typescript
-// CORRECT: Using repository
-import { reportRepository } from "../repositories/report.repository";
-
-export class ReportService {
-  async getReportById(id: string): Promise<DisasterReport> {
-    const report = await reportRepository.findById(id);
-    if (!report) throw new NotFoundError("Report");
-    return report;
-  }
-}
-
-// AVOID: Direct storage access (breaks separation of concerns)
-import { storage } from "../db/storage";
-const report = await storage.getDisasterReport(id);
-```
-
-### Benefits
-
-1. **Single Responsibility**: Repositories only handle data access
-2. **Easy Testing**: Mock repositories without touching database
-3. **Database Migration**: Change ORM or database without touching services
-4. **Consistent Patterns**: All data access follows the same conventions
-
----
-
-## Error Handling
-
-### Centralized Error Management
-
-All errors extend `AppError` base class for consistency:
-
-```typescript
-// Custom error types
-import { BadRequestError, NotFoundError, ValidationError } from "@/errors/AppError";
-
-// Usage in routes/services
-throw new NotFoundError("Report");
-throw new ValidationError("Invalid coordinates", { latitude, longitude });
-```
-
-### Error Response Format
-
-All API errors follow a standardized structure:
-
-```json
-{
-  "success": false,
-  "error": {
-    "message": "Resource not found",
-    "code": "NOT_FOUND",
-    "statusCode": 404,
-    "details": { /* optional */ }
-  }
-}
-```
-
-### Async Error Handling
-
-Use `asyncHandler` wrapper to eliminate try-catch boilerplate:
-
-```typescript
-import { asyncHandler } from "@/middleware/errorHandler";
-
-app.get("/api/reports/:id", asyncHandler(async (req, res) => {
-  const report = await storage.getDisasterReport(req.params.id);
-  if (!report) throw new NotFoundError("Report");
-  res.json(report);
-}));
+┌────────────────────────────────────────────────────────────────┐
+│                         CLIENT (React 18)                      │
+│  Features  │  Design System  │  Stores (Zustand)  │  Wouter   │
+└───────────────────────────┬────────────────────────────────────┘
+                            │ HTTPS / WSS (port 5000)
+┌───────────────────────────▼────────────────────────────────────┐
+│                       API GATEWAY (Express 4)                  │
+│  JWT Auth  │  Rate Limiting  │  Helmet  │  Zod Validation      │
+│  Audit Logging  │  Metrics Middleware  │  CORS                 │
+└───────────────────────────┬────────────────────────────────────┘
+                            │
+┌───────────────────────────▼────────────────────────────────────┐
+│                     DOMAIN SERVICES                            │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │ AI Layer │  │SOS Engine│  │  Geo     │  │  Event Bus   │  │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘  │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │Simulation│  │DigitalTwin│ │  Trust   │  │  Resilience  │  │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘  │
+└───────────────────────────┬────────────────────────────────────┘
+                            │
+┌───────────────────────────▼────────────────────────────────────┐
+│                       DATA LAYER                               │
+│  Drizzle ORM  │  PostgreSQL (Neon serverless)                  │
+│  In-memory cache  │  Background job queue  │  WS broadcast     │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Configuration Management
+## Detailed Breakdown
 
-### Type-Safe Environment Variables
+### 1. Client Layer (`client/src/`)
 
-Configuration is centralized and validated on startup:
+**Framework:** React 18 + Vite, TypeScript strict mode.
 
-```typescript
-import { config } from "@/config";
+**State management:**
 
-// Type-safe access
-const apiKey = config.openai.apiKey;
-const isEnabled = config.isFeatureEnabled("openai");
+| Store | Library | Scope |
+|---|---|---|
+| Server state | TanStack Query v5 | API cache, background refetch, pagination |
+| UI/Client state | Zustand v5 | Auth session, WS connection, selected incident |
+| Form state | React Hook Form + Zod | All form inputs with validation |
+
+**Routing:** Wouter with `React.lazy` + `Suspense` for all 40+ pages — zero bundle cost for unvisited routes.
+
+**Real-time:** A singleton `WebSocketProvider` maintains one WS connection per browser session. All components subscribe via `useRealtimeMessage(handler)`. Exponential backoff reconnect (2s → 30s max).
+
+**Feature architecture:** Each feature under `client/src/features/` is a self-contained module:
+```
+features/crisis/
+├── types.ts          # TypeScript interfaces
+├── crisis.api.ts     # API call functions
+├── crisis.store.ts   # Zustand slice
+├── hooks/            # useCrisisRealtime, useCrisisActions…
+└── components/       # ActionPanel, CriticalBadge…
 ```
 
-### Environment Schema
+Pages in `client/src/pages/` are composition-only orchestrators.
 
-All environment variables are validated using Zod:
+**Design system (`client/src/components/ds/`):**
 
-```typescript
-// server/config/index.ts
-const envSchema = z.object({
-  DATABASE_URL: z.string().min(1),
-  OPENAI_API_KEY: z.string().optional(),
-  // ... all environment variables
-});
-```
-
-### Benefits
-
-- **Type Safety**: Compile-time checking of config access
-- **Validation**: Fails fast on startup if config is invalid
-- **Documentation**: Schema serves as documentation
-- **Testability**: Easy to mock in tests
+| Component | Purpose |
+|---|---|
+| `SeverityBadge` | Canonical severity pill — replaces 50+ ad-hoc color maps |
+| `StatCard` | Metric card with icon, value, trend, severity tint |
+| `SectionHeader` | Page header with badge, live indicator, and actions slot |
+| `LiveIndicator` | Pulsing live/offline dot with optional label |
+| `EmptyState` | Consistent zero-data state with icon, title, action |
 
 ---
 
-## Validation & Type Safety
+### 2. API Gateway Layer
 
-### Request Validation
+**Framework:** Express.js 4 with ESM modules, TypeScript 5.6.
 
-Use Zod schemas for all input validation:
+**Middleware stack (execution order):**
 
-```typescript
-import { insertDisasterReportSchema } from "@shared/schema";
-
-const validatedData = insertDisasterReportSchema.parse(req.body);
+```
+1.  express.json() + urlencoded()
+2.  compression (gzip for responses >1KB)
+3.  helmet (CSP, HSTS, X-Content-Type)
+4.  cors (origin allowlist)
+5.  express-mongo-sanitize (NoSQL injection prevention)
+6.  cookieParser
+7.  metricsMiddleware (records all requests on res.finish)
+8.  requestLoggingMiddleware (structured JSON logs)
+9.  JWT authentication (per-route via jwtAuth middleware)
+10. authorize(action) RBAC middleware (per-route)
+11. route handlers
+12. notFoundHandler (JSON 404 for /api/* routes)
+13. errorHandler (standardized JSON error envelope)
 ```
 
-### Pagination & Filtering
+**Route organization:** Each domain has its own route file in `server/routes/`. All files are registered in `server/routes/index.ts`.
 
-Standardized pagination with type-safe helpers:
+---
 
-```typescript
-import { validatePagination, createPaginatedResponse } from "@shared/validation";
+### 3. Domain Services (`server/modules/`)
 
-const params = validatePagination(req.query);
-const data = await storage.getReports(params);
-const response = createPaginatedResponse(data, total, params);
+| Module | Key Services | Responsibility |
+|---|---|---|
+| `ai/` | `crisis-intelligence`, `signal-fusion`, `multimodal`, `rag-knowledge`, `event-aggregation` | AI scoring, fusion, copilot, deduplication |
+| `sos/` | `dispatch.service` | Smart dispatch, SLA escalation timers |
+| `geo/` | `risk-mapping.service` | Grid-based risk scoring, route optimization |
+| `simulation/` | `simulation-engine` | Synthetic crisis injection for load testing |
+| `digital-twin/` | `digital-twin.service` | City graph model, crisis propagation |
+| `trust/` | `behavioral-analysis.service` | Per-user trust scoring, anomaly detection |
+| `security/` | `device-fingerprint.service` | IP+UA fingerprinting, multi-account detection |
+| `predictions/` | `predictive-response.service` | ML-based disaster forecasting |
+| `resilience/` | `circuit-breaker`, `retry` | External API protection patterns |
+| `integration/` | `maps.service`, `weather.service` | Nominatim, Open-Meteo, Overpass APIs |
+| `events/` | `event-bus` | Typed internal event bus (9 event types) |
+| `monitoring/` | `metrics-store` | Prometheus-format metrics collection |
+| `webhooks/` | `webhook-dispatcher` | HMAC-signed external webhook fan-out |
+
+---
+
+### 4. Data Layer
+
+**ORM:** Drizzle ORM with `@neondatabase/serverless` driver.
+
+**Key tables:**
+
+| Table | Purpose |
+|---|---|
+| `users` | Accounts with 7-value role enum |
+| `disaster_reports` | Core incident records with AI scores and media URLs |
+| `sos_alerts` | SOS events with full state machine |
+| `incidents` | Aggregated multi-report incidents |
+| `incident_logs` | Immutable append-only audit trail |
+| `ai_overrides` | Human review queue for AI decisions |
+| `organizations` | Multi-tenant org layer with member roles |
+| `weather_data` | Cached weather snapshots per region |
+| `city_nodes` / `city_edges` | Digital twin infrastructure graph |
+| `simulation_runs` | Simulation history with injected event IDs |
+| `api_keys` | Developer API key registry (SHA-256 hash only) |
+| `webhook_subscriptions` / `webhook_deliveries` | Developer platform delivery log |
+| `device_fingerprints` | Security fingerprint tracking |
+| `user_consents` | GDPR consent records |
+
+---
+
+## Data Flow
+
+### Incident Report Submission
+
+```
+Client form submit
+    → POST /api/reports (Zod validation)
+    → AI multi-signal analysis (crisis-intelligence.service)
+    → Signal fusion (signal-fusion.service)
+    → Event aggregation / deduplication (event-aggregation.service)
+    → Insert disaster_reports row
+    → eventBus.publish("CRISIS_CREATED")
+    → WebSocket broadcast to all clients
+    → Smart dispatch evaluation (dispatch.service)
+    → SLA escalation timers registered
+    → Response: { reportId, fusedScore, priority, dispatch, auditId }
 ```
 
-### Update Schemas
+### SOS Lifecycle State Machine
 
-Partial schemas for PATCH operations:
+```
+POST /api/sos
+    → Insert sos_alerts (status: CREATED)
+    → SmartDispatch: score = 40%geo + 30%skill + 15%avail + 15%rep
+    → Assign responder → broadcast sos_dispatch_notification
+    → t+30s: SLAEscalationService → expand radius, retry dispatch
+    → t+60s: notify authorities → broadcast escalation alert
+    → t+120s: public broadcast → all connected clients
+    → Responder PATCH /api/sos/:id → transitions logged to incident_logs
+    → Final state: RESOLVED | CLOSED
+```
 
-```typescript
-import { updateDisasterReportSchema } from "@shared/validation";
+### WebSocket Event Fan-out
 
-const updates = updateDisasterReportSchema.parse(req.body);
+```
+eventBus.publish({ type: "CRISIS_CREATED", payload: { ... } })
+    → CrisisEventBus (extends EventEmitter)
+    → registered listener in routes/index.ts
+    → broadcastToAll({ type: "NEW_CRISIS", ... })
+    → ws.send() to every connected WebSocket client
+    → Client WebSocketProvider → useRealtimeMessage handlers
+    → TanStack Query cache invalidation → UI update
 ```
 
 ---
 
-## Logging
+## Scalability Design
 
-### Structured Logging
+### Horizontal Scaling
 
-Use the logger utility for consistent, structured logs:
-
-```typescript
-import { logger } from "@/utils/logger";
-
-logger.info("Report created", { reportId, userId });
-logger.error("Failed to process report", error, { reportId });
-logger.warn("Rate limit approaching", { userId, requestCount });
-logger.debug("Cache hit", { key, ttl });
-```
-
-### Log Levels
-
-- **DEBUG**: Detailed development information
-- **INFO**: General operational information
-- **WARN**: Warning messages for recoverable issues
-- **ERROR**: Error conditions requiring attention
-
-### Context Propagation
-
-Create child loggers with inherited context:
-
-```typescript
-const requestLogger = logger.child({ requestId, userId });
-requestLogger.info("Processing request");
-```
-
----
-
-## API Design
-
-### RESTful Conventions
-
-- Use proper HTTP methods (GET, POST, PATCH, DELETE)
-- Use plural nouns for collections (`/api/reports`)
-- Use nested resources for relationships (`/api/reports/:id/votes`)
-- Return appropriate status codes (200, 201, 404, 422, 500)
-
-### Response Standards
-
-**Success Response:**
-```json
-{
-  "data": { /* resource */ },
-  "pagination": { /* if applicable */ }
-}
-```
-
-**Error Response:**
-```json
-{
-  "success": false,
-  "error": {
-    "message": "...",
-    "code": "...",
-    "statusCode": 400
-  }
-}
-```
-
-### Pagination
-
-All list endpoints support pagination:
-
-```
-GET /api/reports?page=1&limit=20&sortBy=createdAt&sortOrder=desc
-```
-
----
-
-## Scalability Patterns
-
-### Database Optimization
-
-1. **Indexes**: Add indexes for frequently queried fields
-2. **Pagination**: Always paginate large result sets
-3. **Query Optimization**: Use Drizzle query builders efficiently
-4. **Connection Pooling**: Leverage Neon's serverless driver
+- **Stateless API pods:** Session state lives in PostgreSQL (connect-pg-simple). JWT auth is stateless.
+- **WebSocket fan-out:** Currently in-process. Multi-pod deployments replace in-memory pub/sub with Redis — `server/utils/pubsub.ts` handles both modes transparently via `REDIS_URL`.
+- **Job queue:** `server/utils/jobQueue.ts` is in-process. Redis-backed Bull is the documented multi-pod upgrade path.
+- **AI analysis:** Offloaded to `server/workers/ai-analysis.worker.ts` via job queue — the API pod never blocks on AI calls.
 
 ### Caching Strategy
 
-```typescript
-// Cache frequently accessed, rarely changing data
-- User profiles
-- Static configuration
-- Aggregated statistics
-```
-
-### Background Processing
-
-For heavy operations:
-- AI validation/detection → Queue for async processing
-- Email/SMS notifications → Background jobs
-- Image processing → Offload to worker threads
-
-### Rate Limiting
-
-Protect endpoints with rate limiting:
-
-```typescript
-import rateLimit from "express-rate-limit";
-
-const limiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.maxRequests,
-});
-
-app.use("/api/", limiter);
-```
+| Data | Cache | TTL | Invalidation |
+|---|---|---|---|
+| Disaster reports list | In-memory LRU | 30s | On new report insert |
+| User stats | In-memory | 60s | On user update |
+| Geocode results | In-memory | 24h | Never (stable geographic data) |
+| Weather data | PostgreSQL row | On-demand fetch | On `GET /api/integration/weather` |
 
 ---
 
-## Security
+## Key Design Decisions
 
-### Input Validation
-
-- **Always** validate and sanitize user input
-- Use Zod schemas for type-safe validation
-- Reject invalid data early
-
-### Error Messages
-
-- Don't expose sensitive information in errors
-- Use generic messages in production
-- Log detailed errors server-side
-
-### Authentication & Authorization
-
-- Verify authentication on protected routes
-- Check user permissions (role-based access)
-- Never trust client-provided user IDs
-
-### SQL Injection Prevention
-
-- Use Drizzle ORM's parameterized queries
-- Never concatenate user input into SQL
-- Validate all inputs
+| Decision | Rationale |
+|---|---|
+| ESM modules (Node 20) | Native `import/export`, no CommonJS interop complexity |
+| Drizzle ORM over Prisma | Lighter runtime, better Neon serverless compatibility |
+| Zustand over Redux | Simpler boilerplate, no action/reducer ceremony for UI state |
+| Wouter over React Router | Smaller bundle, sufficient for SPA routing patterns |
+| Circuit breakers on all external calls | External APIs fail during disasters — fallbacks prevent cascading failures |
+| Typed event bus | Decouples modules without a message broker in single-pod deployments |
+| Feature-based frontend | Domain teams can own their feature folder independently |
 
 ---
 
-## Best Practices Checklist
+## Edge Cases & Limitations
 
-### When Adding a New Feature
-
-- [ ] Define types in `shared/schema.ts`
-- [ ] Create validation schemas in `shared/validation.ts`
-- [ ] Use custom error classes from `errors/AppError.ts`
-- [ ] Add proper logging with context
-- [ ] Implement pagination for list endpoints
-- [ ] Add input validation
-- [ ] Handle errors gracefully
-- [ ] Update API documentation
-- [ ] Consider scalability impact
-
-### Code Quality
-
-- [ ] Follow DRY (Don't Repeat Yourself)
-- [ ] Single Responsibility Principle
-- [ ] Meaningful variable names
-- [ ] Add JSDoc comments for complex functions
-- [ ] Type everything (no `any` unless absolutely necessary)
-- [ ] Handle edge cases
-- [ ] Clean up unused code
-
-### Before Deployment
-
-- [ ] Test error handling
-- [ ] Verify environment variables
-- [ ] Check database migrations
-- [ ] Review security implications
-- [ ] Test rate limiting
-- [ ] Verify logging works
-- [ ] Check performance impact
+- **WebSocket multi-pod:** In-process pub/sub does not fan out across multiple server pods. Redis is the documented upgrade path (already abstracted).
+- **AI fallback accuracy:** Rule-based scoring is significantly less accurate than GPT-4o-mini, particularly for nuanced or multilingual reports.
+- **Neon cold-start latency:** First query after idle can add 200–500ms. Use connection pooling in production.
+- **Digital twin defaults:** The Mumbai-inspired 15-node seed is illustrative. Real deployments must seed actual city infrastructure.
 
 ---
 
-## Performance Optimization
+## Related Docs
 
-### Query Optimization
-- Use `SELECT` specific columns instead of `SELECT *`
-- Add appropriate indexes
-- Avoid N+1 queries
-- Use database aggregations
-
-### Caching
-- Cache static data
-- Use Redis for distributed caching
-- Implement cache invalidation strategy
-
-### Code Optimization
-- Minimize synchronous operations
-- Use streams for large data
-- Implement pagination everywhere
-- Optimize bundle size
-
----
-
-## Monitoring & Observability
-
-### Logging Best Practices
-- Log all errors with context
-- Use structured logging (JSON)
-- Include request IDs for tracing
-- Don't log sensitive data
-
-### Metrics to Track
-- API response times
-- Error rates by endpoint
-- Database query performance
-- Cache hit/miss rates
-- User activity patterns
-
----
-
-## Migration Guide
-
-### From Old Pattern to New
-
-**Before:**
-```typescript
-app.get("/api/reports", async (req, res) => {
-  try {
-    const reports = await storage.getAllDisasterReports();
-    res.json(reports);
-  } catch (error) {
-    res.status(500).json({ message: "Error" });
-  }
-});
-```
-
-**After:**
-```typescript
-import { asyncHandler } from "@/middleware/errorHandler";
-import { validatePagination, createPaginatedResponse } from "@shared/validation";
-import { logger } from "@/utils/logger";
-
-app.get("/api/reports", asyncHandler(async (req, res) => {
-  const params = validatePagination(req.query);
-  const { data, total } = await storage.getDisasterReports(params);
-  
-  logger.info("Reports fetched", { count: data.length, page: params.page });
-  
-  res.json(createPaginatedResponse(data, total, params));
-}));
-```
-
----
-
-## Contributing
-
-When contributing to this codebase:
-
-1. Follow the established patterns
-2. Add tests for new features
-3. Update documentation
-4. Use the logging and error handling utilities
-5. Keep security in mind
-6. Consider scalability impact
-
----
-
-## Resources
-
-- [Drizzle ORM Documentation](https://orm.drizzle.team/)
-- [Zod Validation](https://zod.dev/)
-- [Express Best Practices](https://expressjs.com/en/advanced/best-practice-performance.html)
-- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
+- [SYSTEM_DESIGN.md](SYSTEM_DESIGN.md) — deeper trade-off analysis
+- [FEATURE_ENGINEERING.md](FEATURE_ENGINEERING.md) — AI pipeline internals
+- [DEPLOYMENT.md](DEPLOYMENT.md) — running in production
+- [CONFIGURATION.md](CONFIGURATION.md) — all environment variables
+- [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) — full directory map
