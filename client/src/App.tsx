@@ -78,6 +78,9 @@ const DecisionEnginePage   = lazy(() => import("@/pages/DecisionEnginePage"));
 const GovernanceDashboard  = lazy(() => import("@/pages/GovernanceDashboard"));
 const PolicyEnginePage     = lazy(() => import("@/pages/PolicyEnginePage"));
 const DataFusionPage       = lazy(() => import("@/pages/DataFusionPage"));
+const ExecutiveDashboardPage = lazy(() => import("@/pages/ExecutiveDashboardPage"));
+const GovernanceAdminPage    = lazy(() => import("@/pages/GovernanceAdminPage"));
+const UsageAnalyticsPage     = lazy(() => import("@/pages/UsageAnalyticsPage"));
 const NotFound          = lazy(() => import("@/pages/not-found"));
 
 // ─── Suspense wrapper ────────────────────────────────────────────────────────
@@ -179,6 +182,11 @@ function Router() {
         <Route path="/governance"       component={() => <S><GovernanceDashboard /></S>} />
         <Route path="/policy-engine"    component={() => <S><PolicyEnginePage /></S>} />
         <Route path="/data-fusion"      component={() => <S><DataFusionPage /></S>} />
+
+        {/* Reliability + Executive + Platform */}
+        <Route path="/executive"        component={() => <S><ExecutiveDashboardPage /></S>} />
+        <Route path="/data-governance"  component={() => <S><GovernanceAdminPage /></S>} />
+        <Route path="/api-analytics"    component={() => <S><UsageAnalyticsPage /></S>} />
 
         {/* Misc */}
         <Route path="/chat"             component={() => <S><ChatPage /></S>} />

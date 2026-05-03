@@ -17,7 +17,7 @@ import {
   User, Settings, LogOut, Moon, Sun, Map as MapIcon, Package,
   Heart, Sparkles, Award, Shield, Zap, MessageSquare, Wifi, WifiOff,
   Brain, Building2, ShieldCheck, Code, Activity, Globe, ShieldAlert,
-  ChevronDown, Radio, Menu, X, Layers,
+  ChevronDown, Radio, Menu, X, Layers, LineChart, Lock,
 } from "lucide-react";
 import { useLowBandwidth } from "@/context/LowBandwidthContext";
 import { useOfflineSync } from "@/context/OfflineSyncContext";
@@ -74,6 +74,9 @@ const NAV_GROUPS = [
       { title: "AI Governance",     url: "/governance",      icon: ShieldCheck,roles: ["admin","authority","super_admin"] },
       { title: "Policy Engine",     url: "/policy-engine",   icon: Settings,   roles: ["admin","authority","super_admin"] },
       { title: "Data Fusion",       url: "/data-fusion",     icon: Layers,     roles: ["admin","authority","super_admin"] },
+      { title: "Executive View",    url: "/executive",       icon: LineChart,  roles: ["admin","authority","super_admin","government"] },
+      { title: "Data Governance",   url: "/data-governance", icon: Lock,       roles: ["admin","super_admin"] },
+      { title: "API Analytics",     url: "/api-analytics",   icon: BarChart3,  roles: ["admin","super_admin"] },
     ],
   },
   {

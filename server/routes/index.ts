@@ -65,6 +65,9 @@ import { registerDecisionRoutes } from "./decisions.routes";
 import { registerIncidentGraphRoutes } from "./incident-graph.routes";
 import { registerPredictionRoutes } from "./predictions.routes";
 import { registerPolicyEngineRoutes } from "./policy-engine.routes";
+import { registerExecutiveRoutes } from "./executive.routes";
+import { registerGovernanceAdminRoutes } from "./governance-admin.routes";
+import { registerApiAnalyticsRoutes } from "./api-analytics.routes";
 import { registerDataFusionRoutes } from "./data-fusion.routes";
 import { registerResponderRoutes } from "./responders.routes";
 import { deviceFingerprintService } from "../modules/security/device-fingerprint.service";
@@ -369,6 +372,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerPolicyEngineRoutes(app);
   registerDataFusionRoutes(app);
   registerResponderRoutes(app);
+  registerExecutiveRoutes(app);
+  registerGovernanceAdminRoutes(app);
+  registerApiAnalyticsRoutes(app);
 
   // Event bus: wire cross-service listeners
   eventBus.subscribe("CRISIS_CREATED", (payload) => {
