@@ -16,9 +16,16 @@ Preferred communication style: Simple, everyday language.
 **Routing**: Wouter for client-side routing with `React.lazy` + `Suspense` for all 40+ pages (code splitting).
 **Real-time Updates**: Singleton `WebSocketProvider` at `client/src/providers/WebSocketProvider.tsx` — ONE WS connection per session, subscribed to via `useRealtimeMessage(handler)` hook. Exponential back-off reconnect (2s → 30s).
 
+**Key Stores** (`client/src/store/`):
+- `authStore.ts` — user session + role
+- `realtimeStore.ts` — WS ping/unread count
+- `decisionStore.ts` — active decision, event log (40 items), new report IDs highlight window
+- `commandCenterStore.ts` — selectedIncident, routes (polylines), bidirectional map⇄panel sync
+
 **Key Features**:
 -   **Dashboards**: Includes a main dashboard, Volunteer Hub (demand-supply, resource management, report verification, AI insights), and Admin Dashboard (user management, report moderation, analytics export).
--   **Interactive Map**: Leaflet-based map with color-coded markers, a high-impact heatmap, demo overlays (shelters, evacuation zones), timeline playback, and filter controls for 13 disaster types. The heatmap aggregates data from multiple sources with weighted intensity.
+-   **Command Center Map** (`/map`): Operational split-pane layout — full-screen Leaflet map (left) + `IncidentPanel` (right, 380px). Clicking any marker hydrates the panel instantly via `commandCenterStore` (Zustand). `useMapEvents` flies the map to the selected incident. Severity-coded markers scale up when selected. Route polylines overlay on dispatch. Panel shows SLA timer, AI confidence bar, verification count, and 4 command buttons (Dispatch / Broadcast / Full Report / Upvote). Filters and heatmap/layer controls remain in a collapsible top bar.
+-   **Interactive Map layers**: Heatmap overlay, demo shelters/evacuation zones/roads, timeline playback, filter controls for 13 disaster types — all preserved from previous version.
 -   **Report Submission**: Multi-step form supporting 13 emergency types, severity, automatic GPS, multi-media upload (photos/videos/voice recordings to S3-compatible storage), and AI validation.
 -   **Resource Management**: Systems for victims to request resources and volunteers to offer them, with AI-powered matching and status tracking.
 -   **Notification System**: Real-time WebSocket-based notifications with priority levels and user preferences.

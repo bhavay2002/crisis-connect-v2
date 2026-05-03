@@ -1,0 +1,341 @@
+You’re zeroing in on the **two UI surfaces that define “operational-grade” systems**: the **Map (Command Center)** and **Chat (Action-first comms)**. Below is a **production-ready upgrade spec** with concrete architecture, APIs, and React patterns you can drop into your codebase.
+
+---
+
+# 🗺️ 3. MAP → COMMAND CENTER (Operational UI)
+
+## 🔷 Layout: Split, Synchronized, Persistent
+
+```text
+┌───────────────────────────────┬──────────────────────────────┐
+│            MAP                │        INCIDENT PANEL        │
+│  - incidents (clustered)      │  - header (severity, SLA)    │
+│  - responders (live)          │  - details + media           │
+│  - routes (polyline)          │  - responders list           │
+│                               │  - actions (dispatch, etc.)  │
+└───────────────────────────────┴──────────────────────────────┘
+```
+
+**Key rule:** selection is **single source of truth** → clicking a marker **hydrates the panel**, and panel actions **mutate map state**.
+
+---
+
+## 🔷 Frontend State (Zustand)
+
+```ts
+// store/commandCenterStore.ts
+import { create } from "zustand";
+
+type Incident = { id: string; lat: number; lng: number; priority: string };
+type Responder = { id: string; lat: number; lng: number; heading?: number };
+
+export const useCommandCenter = create<{
+  selectedIncident?: Incident;
+  responders: Record<string, Responder>;
+  routes: Record<string, [number, number][]>; // incidentId → polyline
+  setSelected: (i?: Incident) => void;
+  upsertResponder: (r: Responder) => void;
+  setRoute: (incidentId: string, poly: [number, number][]) => void;
+}>((set) => ({
+  responders: {},
+  routes: {},
+  setSelected: (i) => set({ selectedIncident: i }),
+  upsertResponder: (r) =>
+    set((s) => ({ responders: { ...s.responders, [r.id]: r } })),
+  setRoute: (incidentId, poly) =>
+    set((s) => ({ routes: { ...s.routes, [incidentId]: poly } })),
+}));
+```
+
+---
+
+## 🔷 Map (React Leaflet) with Clustering + Selection
+
+```tsx
+// features/map/CommandMap.tsx
+import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
+import { useCommandCenter } from "@/store/commandCenterStore";
+
+export default function CommandMap({ incidents }) {
+  const { setSelected, routes } = useCommandCenter();
+
+  return (
+    <MapContainer center={[28.61, 77.20]} zoom={12} className="h-full">
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+      <MarkerClusterGroup chunkedLoading>
+        {incidents.map((i) => (
+          <Marker
+            key={i.id}
+            position={[i.lat, i.lng]}
+            eventHandlers={{ click: () => setSelected(i) }}
+          />
+        ))}
+      </MarkerClusterGroup>
+
+      {Object.entries(routes).map(([id, poly]) => (
+        <Polyline key={id} positions={poly} />
+      ))}
+    </MapContainer>
+  );
+}
+```
+
+---
+
+## 🔷 Live Responder Movement (WebSocket → Smooth Interpolation)
+
+```ts
+// hooks/useResponderStream.ts
+import { useEffect } from "react";
+import { useCommandCenter } from "@/store/commandCenterStore";
+
+export function useResponderStream(socket) {
+  const upsert = useCommandCenter((s) => s.upsertResponder);
+
+  useEffect(() => {
+    socket.on("RESPONDER_UPDATE", (r) => {
+      upsert(r); // {id, lat, lng, heading}
+    });
+    return () => socket.off("RESPONDER_UPDATE");
+  }, [socket, upsert]);
+}
+```
+
+For smooth motion, interpolate positions (lerp) inside a `requestAnimationFrame` loop or use a library like `react-leaflet-animated-marker`.
+
+---
+
+## 🔷 Route Visualization (Directions API → Polyline)
+
+```ts
+// services/geo.ts
+export async function fetchRoute(from, to) {
+  const res = await fetch(`/api/geo/route?from=${from}&to=${to}`);
+  const { polyline } = await res.json(); // [[lat,lng],...]
+  return polyline;
+}
+```
+
+```ts
+// on incident select
+const poly = await fetchRoute(responderCoord, incidentCoord);
+setRoute(incidentId, poly);
+```
+
+---
+
+## 🔷 Incident Panel (Actions drive the system)
+
+```tsx
+// features/map/IncidentPanel.tsx
+import { useCommandCenter } from "@/store/commandCenterStore";
+
+export default function IncidentPanel() {
+  const { selectedIncident } = useCommandCenter();
+
+  if (!selectedIncident) return <EmptyState />;
+
+  return (
+    <div className="p-4 bg-slate-900 h-full">
+      <h2 className="text-xl font-bold">🚨 {selectedIncident.priority}</h2>
+      <p className="text-sm opacity-80">ID: {selectedIncident.id}</p>
+
+      <div className="mt-4 space-y-2">
+        <button className="btn-primary">Dispatch nearest</button>
+        <button className="btn-secondary">Broadcast alert</button>
+        <button className="btn-secondary">View live feed</button>
+      </div>
+
+      {/* responders list, SLA timers, media, etc. */}
+    </div>
+  );
+}
+```
+
+---
+
+## 🔷 What Makes This “Operational-Grade”
+
+* **Bidirectional sync** (map ⇄ panel)
+* **Live movement + routes** (situational awareness)
+* **Cluster → drill-down UX** (scale handling)
+* **Actions in-context** (no navigation hops)
+
+---
+
+# 💬 4. CHAT → OPERATIONAL COMMUNICATION
+
+## 🔷 Shift: Messaging → Action System
+
+Design chat as a **control surface**, not a conversation.
+
+---
+
+## 🔷 Data Model (extend your existing)
+
+```ts
+type Message = {
+  id: string;
+  text?: string;
+  type: "text" | "priority" | "system" | "action";
+  priority?: "normal" | "high" | "critical";
+  pinned?: boolean;
+  actions?: { id: string; label: string }[];
+  status: "sent" | "delivered" | "read";
+  createdAt: string;
+};
+```
+
+---
+
+## 🔷 Priority Messages (Attention-first)
+
+```tsx
+function MessageBubble({ m }: { m: Message }) {
+  const isCritical = m.priority === "critical";
+
+  return (
+    <div
+      className={`p-3 rounded-xl ${
+        isCritical ? "bg-red-600 text-white animate-pulse" : "bg-slate-800"
+      }`}
+    >
+      <p>{m.text}</p>
+      {m.actions?.length ? (
+        <div className="mt-2 flex gap-2">
+          {m.actions.map((a) => (
+            <button key={a.id} className="btn-mini">
+              {a.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+```
+
+---
+
+## 🔷 Pinned Instructions (Always Visible)
+
+```tsx
+function PinnedBar({ pinned }: { pinned: Message[] }) {
+  if (!pinned.length) return null;
+  return (
+    <div className="bg-yellow-500/10 border-b border-yellow-500/30 p-2">
+      {pinned.map((m) => (
+        <div key={m.id} className="text-sm">
+          📌 {m.text}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## 🔷 Quick Actions (Zero-friction ops)
+
+```tsx
+function QuickActions({ onSend }) {
+  const actions = [
+    { id: "send_location", label: "Send location" },
+    { id: "request_backup", label: "Request backup" },
+    { id: "mark_resolved", label: "Mark resolved" },
+  ];
+
+  return (
+    <div className="flex gap-2 p-2 border-t">
+      {actions.map((a) => (
+        <button
+          key={a.id}
+          className="btn-mini"
+          onClick={() => onSend({ type: "action", actionId: a.id })}
+        >
+          {a.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+Backend should map these to **commands**, not just messages:
+
+```ts
+// POST /chat/action
+{ actionId: "request_backup", incidentId: "123" }
+// → triggers dispatch/escalation and emits system message + WS events
+```
+
+---
+
+## 🔷 System Messages (State Changes in Chat)
+
+```tsx
+// example system message
+{
+  type: "system",
+  text: "Responder A assigned • ETA 6 min",
+}
+```
+
+Render them with distinct styling (neutral, non-interactive) so the chat becomes a **timeline of operations**.
+
+---
+
+## 🔷 Read/Delivery + Typing (Keep but Don’t Lead)
+
+Keep ✓ / ✓✓ and typing indicators, but **visually subordinate** them to priority/action content.
+
+---
+
+## 🔷 What Makes This “Operational-Grade”
+
+* **Action buttons inside chat** (no context switch)
+* **Priority styling** (attention routing)
+* **Pinned instructions** (shared ground truth)
+* **System events inline** (audit + timeline)
+
+---
+
+# 🔗 Glue It Together (Critical)
+
+* **Action Panel → Chat**: dispatch creates a *system message* + opens room
+* **Chat Action → Map**: “Request backup” highlights nearest responders on map
+* **Map Select → Chat**: selecting incident opens its chat room
+* **All via WebSocket events**:
+
+  * `INCIDENT_SELECTED`
+  * `RESPONDER_ASSIGNED`
+  * `ROUTE_UPDATED`
+  * `CHAT_ACTION_EXECUTED`
+
+---
+
+# ⚙️ Minimal Event Contracts
+
+```ts
+// examples
+socket.emit("INCIDENT_SELECTED", { incidentId });
+socket.on("RESPONDER_ASSIGNED", ({ incidentId, responder }) => { ... });
+socket.on("ROUTE_UPDATED", ({ incidentId, polyline }) => { ... });
+socket.on("CHAT_ACTION_EXECUTED", ({ actionId, incidentId }) => { ... });
+```
+
+---
+
+# 🧪 Acceptance Criteria (What “Pro” Looks Like)
+
+* Select incident → **panel updates instantly**, map recenters, chat opens
+* Dispatch → **route appears**, responders move, chat logs system event
+* New critical event → **visual + (optional) sound cue**, timeline updates
+* User can complete a workflow (**detect → decide → act → verify**) **without leaving the screen**
+
+---
+
+If you want, I can turn this into a **drop-in module** for your current repo (components + hooks + stores wired to your existing endpoints) or review your current Map/Chat files and refactor them to this standard.

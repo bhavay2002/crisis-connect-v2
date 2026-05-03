@@ -215,6 +215,58 @@ export function registerChatRoutes(app: Express) {
     }
   });
 
+  // Quick action endpoint — maps actionId to a system message + WS events
+  app.post("/api/chat/rooms/:roomId/action", isAuthenticated, async (req: any, res) => {
+    try {
+      const { roomId } = req.params;
+      const userId = req.user.userId;
+      const { actionId, incidentId } = req.body as { actionId: string; incidentId?: string };
+
+      const isMember = await storage.isChatRoomMember(roomId, userId);
+      if (!isMember) return res.status(403).json({ message: "Not a member" });
+
+      const ACTION_LABELS: Record<string, string> = {
+        send_location:   "📍 Location shared by responder",
+        request_backup:  "🆘 Backup requested — nearest units notified",
+        mark_resolved:   "✅ Incident marked as resolved by responder",
+        broadcast_alert: "📢 Emergency broadcast triggered",
+      };
+
+      const label = ACTION_LABELS[actionId] || `Action executed: ${actionId}`;
+
+      const systemMsg = await storage.createMessage({
+        chatRoomId:  roomId,
+        senderId:    null,
+        content:     label,
+        messageType: "system",
+        status:      "delivered",
+        isPinned:    false,
+        isPriority:  false,
+      });
+
+      broadcastToAll({
+        type:  "chat_message",
+        event: "RECEIVE_MESSAGE",
+        data:  { roomId, id: systemMsg.id, messageType: "system", content: label },
+      });
+
+      broadcastToAll({
+        type:    "CHAT_ACTION_EXECUTED",
+        actionId,
+        incidentId,
+        roomId,
+        executedBy: userId,
+        timestamp:  new Date().toISOString(),
+      });
+
+      logger.info("Chat action executed", { actionId, roomId, userId });
+      res.json({ ok: true, systemMessage: systemMsg });
+    } catch (error) {
+      logger.error("Chat action error", error as Error);
+      res.status(500).json({ message: "Failed to execute action" });
+    }
+  });
+
   app.post("/api/chat/dm", isAuthenticated, async (req: any, res) => {
     try {
       const { targetUserId, incidentId } = req.body;
