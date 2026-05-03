@@ -11,5 +11,11 @@ export { useMapFilters }     from "./hooks/useMapFilters";
 export { useSelectIncident } from "./hooks/useMapSync";
 export { useCommandCenter }  from "./store/map.store";
 
+// ── Stable selectors ──────────────────────────────────────────────────────────
+export {
+  selectSelectedIncident,
+  selectRoutes,
+} from "@/store/commandCenterStore";
+
 // ── Components (from existing map components) ─────────────────────────────────
 export { IncidentPanel } from "@/components/map/IncidentPanel";

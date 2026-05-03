@@ -20,10 +20,25 @@ Preferred communication style: Simple, everyday language.
 Each feature is a self-contained mini-application with its own types, services, hooks, store, and components. Pages are composition-only orchestrators.
 - `crisis/` — types, crisis.api.ts, useCrisisRealtime/useCrisisActions/useCrisisStats hooks, crisis.store.ts (re-exports decisionStore), ActionPanel/CriticalBadge/IncidentTimeline/LiveCounter components
 - `chat/` — types, chat.api.ts, useChatSocket/useChatActions hooks, chat.store.ts (Zustand for typing/optimistic), MessageBubble/PinnedBar/QuickActions/RoomList components
-- `map/` — types, geo.api.ts, useMapFilters/useMapSync/useSelectIncident hooks, map.store.ts (re-exports commandCenterStore), IncidentPanel component
+- `map/` — types, geo.api.ts, useMapFilters/useMapSync/useSelectIncident hooks, map.store.ts (re-exports commandCenterStore), IncidentPanel component; exports selectSelectedIncident/selectRoutes stable selectors
 - `sos/` — types, sos.api.ts, useSOSRealtime hook
 - `analytics/` — types, analytics.api.ts, useAnalyticsSummary/useMonitoringStats/useRiskPredictions hooks
-- `index.ts` — top-level barrel (`import { useCrisisActions } from "@/features/crisis"`)
+- `roles/` — **RB-UX (Role-Based UX)**: RoleDashboard router, CitizenDashboard, VolunteerCommandDashboard, AuthorityCommandCenter, AdminRedirect, useCommandMode hook
+- `index.ts` — top-level barrel
+
+**Role-Based UX** (`features/roles/`):
+The `/` and `/dashboard` routes render a completely different product surface per role — not just hidden buttons, but separate layouts, workflows, and visual philosophies:
+
+| Role            | Component                    | Philosophy                        |
+|-----------------|------------------------------|-----------------------------------|
+| citizen / user  | `CitizenDashboard`           | SOS-first, minimal, calming       |
+| volunteer / ngo | `VolunteerCommandDashboard`  | Task queue + accept/complete flow |
+| admin / super   | `AdminRedirect → /admin`     | Operations control (existing)     |
+| authority / gov | `AuthorityCommandCenter`     | Map-primary, dark command mode    |
+
+- `useCommandMode` — detects critical incidents live; components shift to heightened visual state (darker, more contrast)
+- `RoleDashboard` — lazy-loads only the role-specific component (no wasted bundle for other roles)
+- `AuthorityCommandCenter` — forced dark, Leaflet map takes 2/3 of screen, 1/3 command panel with live incident feed + event timeline + dispatch actions
 
 **Shared Layer** (`client/src/shared/`):
 - `services/api.ts` — typed HTTP wrapper (get/post/patch/put/delete) over apiRequest
