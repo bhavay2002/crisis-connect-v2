@@ -2,7 +2,7 @@ import { storage } from "../../db/storage";
 import type { DisasterReport, InsertDisasterReport, InsertVerification } from "@shared/schema";
 import type { PaginationParams } from "@shared/pagination";
 import type { ReportFilter } from "@shared/filtering";
-import { AIValidationService } from "../validators/aiValidation";
+import { AIValidationService } from "../../validators/aiValidation";
 import { clusteringService } from "../../utils/clustering";
 import { logger } from "../../utils/logger";
 import { NotFoundError, ConflictError } from "../../errors/AppError";

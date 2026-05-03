@@ -76,8 +76,8 @@ function SignalPill({ signal }: { signal: Signal }) {
         <div className="flex items-center gap-1.5 mb-0.5">
           <span className={`text-xs font-semibold ${cfg.color}`}>{cfg.label}</span>
           <span className="text-xs text-slate-500">{Math.round(signal.confidence * 100)}%</span>
-          {signal.metadata?.platform && (
-            <span className="text-xs text-slate-600">· {String(signal.metadata.platform)}</span>
+          {Boolean(signal.metadata?.platform) && (
+            <span className="text-xs text-slate-600">· {String(signal.metadata?.platform)}</span>
           )}
         </div>
         <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">{signal.text}</p>

@@ -423,8 +423,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   startPredictionScheduler();
 
   // Event bus: wire cross-service listeners
-  eventBus.subscribe("CRISIS_CREATED", (payload) => {
-    broadcastToAll({ type: "NEW_CRISIS", ...payload });
+  eventBus.subscribe("CRISIS_CREATED", ({ type: incidentType, ...rest }) => {
+    broadcastToAll({ type: "NEW_CRISIS", incidentType, ...rest });
   });
   eventBus.subscribe("CRISIS_UPDATED", (payload) => {
     broadcastToAll({ type: "CRISIS_UPDATED", ...payload });

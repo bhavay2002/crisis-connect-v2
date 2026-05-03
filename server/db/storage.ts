@@ -23,6 +23,9 @@ import {
   type InsertChatRoomMember,
   type Message,
   type InsertMessage,
+  type Notification,
+  type InsertNotification,
+  type NotificationPreferences,
   users,
   disasterReports,
   verifications,
@@ -36,6 +39,8 @@ import {
   chatRoomMembers,
   messages,
   deviceFingerprints,
+  notifications,
+  notificationPreferences,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, sql } from "drizzle-orm";
@@ -192,6 +197,10 @@ export interface IStorage {
   updateSimilarReports(reportId: string, similarReportIds: string[]): Promise<DisasterReport | undefined>;
   getReportsWithClusters(): Promise<DisasterReport[]>;
   getRecentReports(limit: number): Promise<DisasterReport[]>;
+
+  // Notification operations
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1269,6 +1278,19 @@ export class DatabaseStorage implements IStorage {
   async upsertDeviceFingerprint(data: { userId?: string; ipAddress: string; userAgent?: string }): Promise<{ riskScore: number; isFlagged: boolean }> {
     const { deviceFingerprintService } = await import("../modules/security/device-fingerprint.service");
     return deviceFingerprintService.upsert(data);
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [row] = await db.insert(notifications).values(notification).returning();
+    return row;
+  }
+
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined> {
+    const [row] = await db
+      .select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId));
+    return row;
   }
 }
 

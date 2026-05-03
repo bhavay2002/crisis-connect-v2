@@ -96,7 +96,7 @@ export function registerExecutiveRoutes(app: Express) {
         : 0;
 
       // False report rate
-      const flagged = allReports.filter(r => r.flagType === "fake").length;
+      const flagged = allReports.filter(r => r.flagType === "false_report").length;
       const falseReportRate = last7dReports.length > 0
         ? parseFloat(((flagged / Math.max(last7dReports.length, 1)) * 100).toFixed(1))
         : 0;

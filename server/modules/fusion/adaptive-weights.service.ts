@@ -124,8 +124,8 @@ export class AdaptiveWeightsService {
 
       this.ready = true;
       logger.info("[AdaptiveWeights] Initialized", {
-        version:      this.current.version,
-        sampleCount:  this.current.sampleCount,
+        version:      this.current?.version ?? STATIC_VERSION,
+        sampleCount:  this.current?.sampleCount ?? 0,
         hasShadow:    !!this.shadow,
       });
     } catch (err) {

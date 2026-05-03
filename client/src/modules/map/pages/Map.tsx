@@ -271,7 +271,7 @@ export default function Map() {
                 return (
                   <Marker key={report.id} position={[lat,lng]}
                     icon={createIcon(severityColors[report.severity]||"#64748b", isSelected)}
-                    eventHandlers={{ click: () => selectIncident(report) }}>
+                    eventHandlers={{ click: () => selectIncident(report as any) }}>
                     <Popup>
                       <div className="min-w-[180px]">
                         <p className="font-semibold text-sm mb-1">{report.title}</p>
@@ -279,7 +279,7 @@ export default function Map() {
                           {report.severity}
                         </Badge>
                         <Button size="sm" className="w-full h-7 text-xs"
-                          onClick={() => selectIncident(report)} data-testid={`button-view-details-${report.id}`}>
+                          onClick={() => selectIncident(report as any)} data-testid={`button-view-details-${report.id}`}>
                           Open Command Panel
                         </Button>
                       </div>

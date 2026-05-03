@@ -36,8 +36,8 @@ export async function reverseGeocode(lat: string, lng: string): Promise<ReverseG
     source: "fallback",
   });
 
-  const result = await cb.execute(async () => {
-    return withRetry(async () => {
+  const result = await cb.execute<ReverseGeocodeResult>(async () => {
+    return withRetry<ReverseGeocodeResult>(async () => {
       const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
       const res = await fetch(url, {
         headers: { "User-Agent": "CrisisConnect/1.0 (emergency-platform)" },

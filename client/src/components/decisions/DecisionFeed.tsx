@@ -69,7 +69,7 @@ export function DecisionFeed({ compact = false }: { compact?: boolean }) {
   });
 
   const approveMut = useMutation({
-    mutationFn: (id: string) => apiRequest("PATCH", `/api/decisions/${id}/approve`),
+    mutationFn: (id: string) => apiRequest(`/api/decisions/${id}/approve`, { method: "PATCH" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/decisions"] });
       toast({ title: "Decision approved", description: "Action is being executed." });
@@ -78,7 +78,7 @@ export function DecisionFeed({ compact = false }: { compact?: boolean }) {
 
   const rejectMut = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      apiRequest("PATCH", `/api/decisions/${id}/reject`, { reason }),
+      apiRequest(`/api/decisions/${id}/reject`, { method: "PATCH", body: JSON.stringify({ reason }) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/decisions"] });
       toast({ title: "Decision rejected" });

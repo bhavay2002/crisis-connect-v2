@@ -76,8 +76,8 @@ async function startWorker() {
   // will process jobs dispatched by the API pods (requires Redis-backed queue
   // for true multi-pod isolation — see docs/scaling.md).
   const { jobQueue } = await import("./utils/jobQueue");
-  const { aiAnalysisHandler } = await import("./workers/ai-analysis.worker");
-  jobQueue.registerHandler("ai_analysis", aiAnalysisHandler);
+  const { registerAIAnalysisWorker } = await import("./workers/ai-analysis.worker");
+  registerAIAnalysisWorker();
 
   logger.info("[Worker] AI analysis job handler registered");
 

@@ -82,6 +82,7 @@ class RedisPubSub implements PubSubAdapter {
 
   private async init(url: string) {
     try {
+      // @ts-ignore — redis is an optional peer dependency loaded at runtime
       const { createClient } = await import("redis");
       this.pubClient = createClient({ url });
       this.subClient = createClient({ url });

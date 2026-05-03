@@ -84,7 +84,7 @@ export default function AidOfferMatches() {
 
   const commitMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      return apiRequest("POST", `/api/aid-offers/${offerId}/commit`, { requestId });
+      return apiRequest(`/api/aid-offers/${offerId}/commit`, { method: "POST", body: JSON.stringify({ requestId }) });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/aid-offers"] });

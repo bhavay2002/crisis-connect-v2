@@ -40,21 +40,19 @@ export async function apiRequest<T = any>(
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 
-export const getQueryFn: <T>(options: {
-  on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401 }) =>
-  async ({ queryKey }) => {
+export function getQueryFn<T>(options: { on401: UnauthorizedBehavior }): QueryFunction<T> {
+  return async ({ queryKey }) => {
     const url = queryKey[0] as string;
     const res = await fetch(url, {
       headers: getAuthHeaders(),
       credentials: "include",
     });
 
-    if (on401 === "returnNull" && res.status === 401) return null as T;
+    if (options.on401 === "returnNull" && res.status === 401) return null as T;
     await throwIfResNotOk(res);
-    return res.json();
+    return res.json() as Promise<T>;
   };
+}
 
 // ─── Global error handler ────────────────────────────────────────────────────
 

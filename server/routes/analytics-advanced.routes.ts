@@ -220,9 +220,9 @@ export function registerAdvancedAnalyticsRoutes(app: Express) {
       const submitted = reports.length;
       const verified = reports.filter(r => r.verificationCount && r.verificationCount >= 1).length;
       const withResources = reports.filter(r =>
-        resourceRequests.some(rq => rq.reportId === r.id)
+        resourceRequests.some(rq => rq.disasterReportId === r.id)
       ).length;
-      const dispatched = reports.filter(r => r.assignedTeam).length;
+      const dispatched = reports.filter(r => r.assignedTo).length;
       const resolved = reports.filter(r => r.status === "resolved").length;
 
       const funnel = [
@@ -276,7 +276,8 @@ export function registerAdvancedAnalyticsRoutes(app: Express) {
       };
 
       const roleBreakdown = users.reduce<Record<string, number>>((acc, u) => {
-        acc[u.role] = (acc[u.role] || 0) + 1;
+        const role = u.role ?? "unknown";
+        acc[role] = (acc[role] || 0) + 1;
         return acc;
       }, {});
 

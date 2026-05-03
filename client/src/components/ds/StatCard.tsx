@@ -21,6 +21,8 @@ interface StatCardProps {
   positive?:  boolean;          // green trend
   negative?:  boolean;          // red trend
   severity?:  SeverityLevel;    // tints the icon area
+  iconColor?: string;           // explicit icon color override (e.g. "text-blue-400")
+  iconBg?:    string;           // explicit icon background override (e.g. "bg-blue-900/30")
   size?:      "sm" | "md" | "lg";
   loading?:   boolean;
   className?: string;

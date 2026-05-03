@@ -26,14 +26,14 @@ export class CircuitBreaker {
     this.timeout = opts.timeout ?? 30_000;
   }
 
-  async execute<T>(fn: () => Promise<T>, fallback?: () => T): Promise<T> {
+  async execute<T>(fn: () => Promise<T>, fallback?: () => T | Promise<T>): Promise<T> {
     if (this.state === "OPEN") {
       if (Date.now() - (this.lastFailureAt ?? 0) > this.timeout) {
         this.state = "HALF_OPEN";
         logger.info(`[CircuitBreaker:${this.name}] → HALF_OPEN`);
       } else {
         logger.warn(`[CircuitBreaker:${this.name}] OPEN — using fallback`);
-        if (fallback) return fallback();
+        if (fallback) return await fallback();
         throw new Error(`Circuit breaker OPEN for ${this.name}`);
       }
     }
@@ -46,7 +46,7 @@ export class CircuitBreaker {
       this.onFailure();
       if (fallback) {
         logger.warn(`[CircuitBreaker:${this.name}] failed — fallback used`);
-        return fallback();
+        return await fallback();
       }
       throw err;
     }

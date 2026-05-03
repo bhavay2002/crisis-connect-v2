@@ -6,7 +6,7 @@ import {
   ChevronRight, CheckCircle2, XCircle, AlertTriangle, Zap,
   BarChart3, RefreshCw, ArrowUpRight, Info, Shield
 } from "lucide-react";
-import { SectionHeader } from "@/components/shared/SectionHeader";
+import { SectionHeader } from "@/components/ds/SectionHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

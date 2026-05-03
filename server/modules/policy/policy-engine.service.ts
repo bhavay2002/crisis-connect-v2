@@ -61,26 +61,33 @@ function evaluateCondition(condition: Condition, ctx: EvaluationContext): boolea
 async function executeAction(action: Action, ctx: EvaluationContext): Promise<void> {
   switch (action.type) {
     case "NOTIFY_AUTHORITY":
-      eventBus.publish("ALERT_BROADCAST", {
-        message: `[Policy Engine] Authority notification triggered for incident ${ctx.incidentId ?? ctx.reportId}`,
-        severity: ctx.severity ?? "high",
-        automated: true,
+      eventBus.publish({
+        type: "ALERT_BROADCAST",
+        payload: {
+          message: `[Policy Engine] Authority notification triggered for incident ${ctx.incidentId ?? ctx.reportId}`,
+          severity: ctx.severity ?? "high",
+          sentBy: "policy-engine",
+        },
       });
       break;
     case "BROADCAST_ALERT":
-      eventBus.publish("ALERT_BROADCAST", {
-        message: action.parameters?.message ?? `Alert: Incident ${ctx.incidentId} requires attention`,
-        severity: ctx.severity ?? "medium",
-        automated: true,
+      eventBus.publish({
+        type: "ALERT_BROADCAST",
+        payload: {
+          message: String(action.parameters?.message ?? `Alert: Incident ${ctx.incidentId} requires attention`),
+          severity: ctx.severity ?? "medium",
+          sentBy: "policy-engine",
+        },
       });
       break;
     case "ESCALATE":
-      eventBus.publish("CRISIS_UPDATED", {
-        reportId: ctx.reportId,
-        incidentId: ctx.incidentId,
-        escalated: true,
-        reason: "Policy engine escalation",
-        automated: true,
+      eventBus.publish({
+        type: "CRISIS_UPDATED",
+        payload: {
+          reportId: ctx.reportId ?? "",
+          status: "escalated",
+          updatedBy: "policy-engine",
+        },
       });
       break;
     case "LOG":

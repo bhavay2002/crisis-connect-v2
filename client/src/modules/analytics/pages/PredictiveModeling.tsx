@@ -60,7 +60,7 @@ export default function PredictiveModeling() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: { area: string; latitude: string; longitude: string }) => {
-      return await apiRequest('POST', '/api/predictions/generate', data);
+      return await apiRequest('/api/predictions/generate', { method: 'POST', body: JSON.stringify(data) });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/predictions'] });

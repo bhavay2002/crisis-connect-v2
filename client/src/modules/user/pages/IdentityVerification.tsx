@@ -34,7 +34,7 @@ export default function IdentityVerification() {
   // Send Email Verification
   const sendEmailMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/auth/send-email-verification");
+      return apiRequest("/api/auth/send-email-verification", { method: "POST" });
     },
     onSuccess: (data: any) => {
       setEmailOTPSent(true);
@@ -58,7 +58,7 @@ export default function IdentityVerification() {
   // Verify Email
   const verifyEmailMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/auth/verify-email", { code: emailCode });
+      return apiRequest("/api/auth/verify-email", { method: "POST", body: JSON.stringify({ code: emailCode }) });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
@@ -82,7 +82,7 @@ export default function IdentityVerification() {
   // Send Phone Verification
   const sendPhoneMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/auth/send-phone-verification", { phoneNumber });
+      return apiRequest("/api/auth/send-phone-verification", { method: "POST", body: JSON.stringify({ phoneNumber }) });
     },
     onSuccess: (data: any) => {
       setPhoneOTPSent(true);
@@ -106,7 +106,7 @@ export default function IdentityVerification() {
   // Verify Phone
   const verifyPhoneMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/auth/verify-phone", { code: phoneCode, phoneNumber });
+      return apiRequest("/api/auth/verify-phone", { method: "POST", body: JSON.stringify({ code: phoneCode, phoneNumber }) });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
@@ -131,7 +131,7 @@ export default function IdentityVerification() {
   // Verify Aadhaar
   const verifyAadhaarMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/auth/verify-aadhaar", { aadhaarNumber });
+      return apiRequest("/api/auth/verify-aadhaar", { method: "POST", body: JSON.stringify({ aadhaarNumber }) });
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });

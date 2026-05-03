@@ -353,7 +353,7 @@ export default function GovernanceDashboard() {
             icon={Clock}
             iconColor={pendingDecisions > 0 ? "text-yellow-400" : "text-green-400"}
             iconBg={pendingDecisions > 0 ? "bg-yellow-900/30 border-yellow-500/20" : "bg-green-900/30 border-green-500/20"}
-            trend={pendingDecisions > 0 ? { direction: "up", label: "need attention" } : undefined}
+            trend={pendingDecisions > 0 ? "need attention" : undefined}
           />
           <StatCard
             label="Override Rate"

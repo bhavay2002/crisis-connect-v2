@@ -182,7 +182,7 @@ export class SLAEscalationService {
       const alert = await db.select().from(sosAlerts).where(eq(sosAlerts.id, sosId));
       if (!alert[0] || alert[0].status === "resolved" || alert[0].status === "cancelled") return;
 
-      logger.error("SLA escalation level 3: public broadcast alert", { sosId });
+      logger.error("SLA escalation level 3: public broadcast alert", undefined, { sosId });
       broadcast({
         type: "sos_sla_escalation",
         data: {

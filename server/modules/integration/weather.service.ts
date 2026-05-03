@@ -48,8 +48,8 @@ export async function fetchWeather(lat: string, lng: string, region = "Unknown")
     return row;
   };
 
-  return cb.execute(async () => {
-    return withRetry(async () => {
+  return cb.execute<typeof weatherData.$inferSelect>(async () => {
+    return withRetry<typeof weatherData.$inferSelect>(async () => {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&timezone=auto`;
       const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
       if (!res.ok) throw new Error(`Open-Meteo ${res.status}`);

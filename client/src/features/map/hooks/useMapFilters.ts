@@ -11,7 +11,7 @@ interface Report {
   longitude?: string | null;
   type: string;
   severity: string;
-  createdAt: string;
+  createdAt: string | Date;
 }
 
 const DEFAULT_FILTERS: MapFilters = { type: "all", severity: "all", timeRange: "all" };

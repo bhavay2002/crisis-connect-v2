@@ -157,7 +157,7 @@ export async function runSimulation(config: SimulationConfig): Promise<typeof si
     injectedIds.push(report.id);
     reportsCreated++;
 
-    eventBus.publish("CRISIS_CREATED", { reportId: report.id, type: reportType, severity, location: report.location, simulated: true });
+    eventBus.publish({ type: "CRISIS_CREATED", payload: { reportId: report.id, type: reportType, severity, location: report.location } });
 
     // Inject SOS alerts at sosRatio
     if (Math.random() < template.sosRatio) {
