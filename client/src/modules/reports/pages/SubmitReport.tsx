@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { UploadResult } from "@uppy/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -147,7 +146,7 @@ export default function SubmitReport() {
     };
   };
 
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+  const handleUploadComplete = async (result: { successful: Array<{ name: string; uploadURL: string }> }) => {
     try {
       const newFiles: Array<{ url: string; name: string }> = [];
       
