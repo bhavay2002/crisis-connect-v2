@@ -47,7 +47,6 @@ const TrustDashboard         = lazy(() => import("@/modules/admin/pages/TrustDas
 const OrganizationsPage      = lazy(() => import("@/modules/admin/pages/OrganizationsPage"));
 const DeveloperPlatformPage  = lazy(() => import("@/modules/admin/pages/DeveloperPlatformPage"));
 const MonitoringPage         = lazy(() => import("@/modules/admin/pages/MonitoringPage"));
-const SimulationPage         = lazy(() => import("@/modules/admin/pages/SimulationPage"));
 const DigitalTwinPage        = lazy(() => import("@/modules/admin/pages/DigitalTwinPage"));
 const AIOverridePage         = lazy(() => import("@/modules/admin/pages/AIOverridePage"));
 
@@ -154,7 +153,6 @@ function Router() {
         <Route path="/organizations"  component={() => <S><OrganizationsPage /></S>} />
         <Route path="/developer"      component={() => <S><DeveloperPlatformPage /></S>} />
         <Route path="/monitoring"     component={() => <S><MonitoringPage /></S>} />
-        <Route path="/simulation"     component={() => <S><SimulationPage /></S>} />
         <Route path="/digital-twin"   component={() => <S><DigitalTwinPage /></S>} />
         <Route path="/ai-override"    component={() => <S><AIOverridePage /></S>} />
 

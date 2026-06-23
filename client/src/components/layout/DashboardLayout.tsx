@@ -68,7 +68,6 @@ const NAV_GROUPS = [
     label: "Top 1% Platform",
     items: [
       { title: "Decision Engine",   url: "/decision-engine", icon: Brain,      roles: ["admin","authority","super_admin"] },
-      { title: "Simulation Engine", url: "/simulation",      icon: Zap,        roles: ["admin","authority","super_admin"] },
       { title: "Digital Twin",      url: "/digital-twin",    icon: Globe,      roles: ["admin","authority","super_admin"] },
       { title: "AI Override",       url: "/ai-override",     icon: ShieldAlert,roles: ["admin","authority","super_admin"] },
       { title: "AI Governance",     url: "/governance",      icon: ShieldCheck,roles: ["admin","authority","super_admin"] },

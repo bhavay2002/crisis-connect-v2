@@ -6,7 +6,7 @@ All pages are listed in **sidebar order** by section. Password for all demo acco
 
 ## Demo Login Accounts
 
-| Role | Email |
+| Role | Email |COMPLETELY 
 |---|---|
 | Admin | `emma.admin@crisisconnect.com` |
 | Government | `priya.gov@crisisconnect.com` |
