@@ -40,11 +40,9 @@ const VolunteerDashboard = lazy(() => import("@/modules/aid/pages/VolunteerDashb
 const MatchingEngine     = lazy(() => import("@/modules/aid/pages/MatchingEngine"));
 
 // ─── Admin ───────────────────────────────────────────────────────────────────
-const AdminDashboard         = lazy(() => import("@/modules/admin/pages/AdminDashboard"));
+const AdminConsolePage       = lazy(() => import("@/modules/admin/pages/AdminConsolePage"));
 const ClusterManagementPage  = lazy(() => import("@/modules/admin/pages/ClusterManagementPage"));
 const BroadcastAlerts        = lazy(() => import("@/modules/admin/pages/BroadcastAlerts"));
-const TrustDashboard         = lazy(() => import("@/modules/admin/pages/TrustDashboard"));
-const OrganizationsPage      = lazy(() => import("@/modules/admin/pages/OrganizationsPage"));
 const DeveloperPlatformPage  = lazy(() => import("@/modules/admin/pages/DeveloperPlatformPage"));
 const MonitoringPage         = lazy(() => import("@/modules/admin/pages/MonitoringPage"));
 const DigitalTwinPage        = lazy(() => import("@/modules/admin/pages/DigitalTwinPage"));
@@ -144,13 +142,15 @@ function Router() {
         <Route path="/aid-matching"                 component={() => <S><AidMatchingDashboard /></S>} />
         <Route path="/matching-engine"              component={() => <S><MatchingEngine /></S>} />
 
-        {/* Admin */}
-        <Route path="/admin"          component={() => <S><AdminDashboard /></S>} />
+        {/* Admin — unified console */}
+        <Route path="/admin"          component={() => <S><AdminConsolePage /></S>} />
         <Route path="/clusters"       component={() => <S><ClusterManagementPage /></S>} />
         <Route path="/broadcast-alerts" component={() => <S><BroadcastAlerts /></S>} />
-        <Route path="/trust"          component={() => <S><TrustDashboard /></S>} />
-        <Route path="/organizations"  component={() => <S><OrganizationsPage /></S>} />
         <Route path="/developer"      component={() => <S><DeveloperPlatformPage /></S>} />
+        {/* Merged-into-/admin redirects */}
+        <Route path="/trust"          component={() => { window.location.replace("/admin?tab=fraud");    return null; }} />
+        <Route path="/organizations"  component={() => { window.location.replace("/admin?tab=organizations"); return null; }} />
+        <Route path="/platform-settings" component={() => { window.location.replace("/admin?tab=settings"); return null; }} />
         <Route path="/monitoring"     component={() => <S><MonitoringPage /></S>} />
         <Route path="/digital-twin"   component={() => <S><DigitalTwinPage /></S>} />
         <Route path="/ai-override"       component={() => <S><AIOverridePage /></S>} />
@@ -187,7 +187,7 @@ function Router() {
 
         {/* Reliability + Executive + Platform */}
         <Route path="/executive"        component={() => <S><IntelligenceCenter /></S>} />
-        <Route path="/data-governance"  component={() => <S><GovernanceAdminPage /></S>} />
+        <Route path="/data-governance"  component={() => { window.location.replace("/admin?tab=governance"); return null; }} />
         <Route path="/api-analytics"    component={() => <S><UsageAnalyticsPage /></S>} />
         <Route path="/async-pipeline"   component={() => <S><AsyncPipelinePage /></S>} />
         <Route path="/adaptive-fusion"  component={() => <S><AIControlCenter /></S>} />
