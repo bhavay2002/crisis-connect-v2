@@ -17,7 +17,7 @@ import {
   User, Settings, LogOut, Moon, Sun, Map as MapIcon, Package,
   Heart, Sparkles, Award, Shield, Zap, MessageSquare, Wifi, WifiOff,
   Brain, Building2, ShieldCheck, Code, Activity, Globe, ShieldAlert,
-  ChevronDown, Radio, Menu, X, Layers, LineChart, Lock,
+  ChevronDown, Radio, Menu, X, Layers, LineChart, Lock, Megaphone,
 } from "lucide-react";
 import { useLowBandwidth } from "@/context/LowBandwidthContext";
 import { useOfflineSync } from "@/context/OfflineSyncContext";
@@ -45,13 +45,13 @@ const NAV_GROUPS = [
   {
     label: "Response & Aid",
     items: [
-      { title: "Volunteer Hub",        url: "/volunteer",         icon: Heart,    roles: ["volunteer","ngo","admin","authority","super_admin"] },
+      { title: "Volunteer Hub",        url: "/dashboard",         icon: Heart,    roles: ["volunteer","ngo","admin","authority","super_admin"] },
       { title: "Aid Matching",         url: "/aid-matching",      icon: Sparkles, roles: ["volunteer","ngo","admin","authority","super_admin"] },
       { title: "Matching Engine",      url: "/matching-engine",   icon: Zap,      roles: ["volunteer","ngo","admin","authority","super_admin"] },
       { title: "Resource Requests",    url: "/resource-requests", icon: Package,  roles: ["citizen","volunteer","ngo","admin","authority","super_admin"] },
       { title: "Resource Management",  url: "/resource-management",icon: Package, roles: ["ngo","admin","authority","super_admin"] },
       { title: "Response Teams",       url: "/teams",             icon: Users,    roles: ["volunteer","ngo","admin","authority","super_admin"] },
-      { title: "Broadcast Alerts",     url: "/broadcast-alerts",  icon: Radio,    roles: ["ngo","admin","authority","super_admin"] },
+      { title: "Alerts",               url: "/alerts",            icon: Megaphone, roles: ["ngo","admin","authority","super_admin"] },
     ],
   },
   {
@@ -89,7 +89,7 @@ const NAV_GROUPS = [
   {
     label: "Personal",
     items: [
-      { title: "Messages",     url: "/chat",        icon: MessageSquare, roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Messages",     url: "/messages",    icon: MessageSquare, roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
       { title: "My Profile",   url: "/profile",                    icon: User,       roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
       { title: "Verification", url: "/profile?tab=verification",   icon: Shield,     roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
       { title: "Reputation",   url: "/profile?tab=reputation",     icon: Award,      roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },

@@ -41,8 +41,8 @@ const MatchingEngine     = lazy(() => import("@/modules/aid/pages/MatchingEngine
 
 // ─── Admin ───────────────────────────────────────────────────────────────────
 const AdminConsolePage       = lazy(() => import("@/modules/admin/pages/AdminConsolePage"));
+const AlertsPage             = lazy(() => import("@/modules/admin/pages/AlertsPage"));
 const ClusterManagementPage  = lazy(() => import("@/modules/admin/pages/ClusterManagementPage"));
-const BroadcastAlerts        = lazy(() => import("@/modules/admin/pages/BroadcastAlerts"));
 const DeveloperPlatformPage  = lazy(() => import("@/modules/admin/pages/DeveloperPlatformPage"));
 const MonitoringPage         = lazy(() => import("@/modules/admin/pages/MonitoringPage"));
 const DigitalTwinPage        = lazy(() => import("@/modules/admin/pages/DigitalTwinPage"));
@@ -144,10 +144,11 @@ function Router() {
 
         {/* Admin — unified console */}
         <Route path="/admin"          component={() => <S><AdminConsolePage /></S>} />
+        <Route path="/alerts"         component={() => <S><AlertsPage /></S>} />
         <Route path="/clusters"       component={() => <S><ClusterManagementPage /></S>} />
-        <Route path="/broadcast-alerts" component={() => <S><BroadcastAlerts /></S>} />
         <Route path="/developer"      component={() => <S><DeveloperPlatformPage /></S>} />
-        {/* Merged-into-/admin redirects */}
+        {/* Legacy redirects */}
+        <Route path="/broadcast-alerts" component={() => { window.location.replace("/alerts"); return null; }} />
         <Route path="/trust"          component={() => { window.location.replace("/admin?tab=fraud");    return null; }} />
         <Route path="/organizations"  component={() => { window.location.replace("/admin?tab=organizations"); return null; }} />
         <Route path="/platform-settings" component={() => { window.location.replace("/admin?tab=settings"); return null; }} />
@@ -179,6 +180,11 @@ function Router() {
         <Route path="/compliance"               component={() => { window.location.replace("/profile?tab=privacy"); return null; }} />
         <Route path="/notifications"            component={() => <S><Notifications /></S>} />
         <Route path="/notification-preferences" component={() => <S><NotificationPreferences /></S>} />
+        {/* Messages (standalone — /chat redirects here) */}
+        <Route path="/messages"   component={() => <S><ChatPage /></S>} />
+        <Route path="/chat"       component={() => { window.location.replace("/messages"); return null; }} />
+        {/* Volunteer Hub lives at /dashboard (role-based render) */}
+        <Route path="/volunteer"  component={() => { window.location.replace("/dashboard"); return null; }} />
 
         {/* Decision Engine + Orchestration */}
         <Route path="/decision-engine"  component={() => <S><DecisionEnginePage /></S>} />

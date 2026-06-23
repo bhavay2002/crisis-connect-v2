@@ -111,7 +111,7 @@ export function VolunteerCommandDashboard() {
       <div className="px-5 py-3 border-b border-border/60 bg-slate-950 flex items-center gap-4 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-orange-500" />
-          <span className="font-black text-sm">Volunteer Command</span>
+          <span className="font-black text-sm">Volunteer Hub</span>
         </div>
         <div className="flex items-center gap-3 ml-auto">
           {criticalCount > 0 && (
@@ -309,7 +309,7 @@ export function VolunteerCommandDashboard() {
               { label: "All Resource Requests", url: "/resource-requests",  icon: Package,       desc: "See full pending list"           },
               { label: "Aid Matching",           url: "/aid-matching",        icon: Zap,           desc: "AI-powered resource matching"    },
               { label: "Report Incidents",       url: "/submit",              icon: AlertTriangle, desc: "File a new emergency report"     },
-              { label: "Team Chat",              url: "/chat",                icon: Users,         desc: "Coordinate with your team"       },
+              { label: "Team Messages",          url: "/messages",            icon: Users,         desc: "Coordinate with your team"       },
             ].map(({ label, url, icon: Icon, desc }) => (
               <motion.button key={url} onClick={() => setLocation(url)}
                 {...MOTION.cardHover}

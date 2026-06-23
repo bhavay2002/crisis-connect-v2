@@ -373,7 +373,7 @@ function ContextPanel({ resources }: { resources: ResourceRequest[] }) {
                 <Navigation className="w-3.5 h-3.5 mr-1.5" />Dispatch Nearest Unit
               </Button>
               <Button variant="outline" className="w-full h-8 text-xs border-orange-500/40 text-orange-400 hover:bg-orange-500/10"
-                onClick={() => setLocation(`/broadcast-alerts?ref=${s.id}`)} data-testid="button-broadcast-alert">
+                onClick={() => setLocation(`/alerts?ref=${s.id}`)} data-testid="button-broadcast-alert">
                 <Radio className="w-3.5 h-3.5 mr-1.5" />Broadcast Alert
               </Button>
               <div className="grid grid-cols-2 gap-1.5">
