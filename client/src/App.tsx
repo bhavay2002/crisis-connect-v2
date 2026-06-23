@@ -49,6 +49,7 @@ const DeveloperPlatformPage  = lazy(() => import("@/modules/admin/pages/Develope
 const MonitoringPage         = lazy(() => import("@/modules/admin/pages/MonitoringPage"));
 const DigitalTwinPage        = lazy(() => import("@/modules/admin/pages/DigitalTwinPage"));
 const AIOverridePage         = lazy(() => import("@/modules/admin/pages/AIOverridePage"));
+const AIControlCenter        = lazy(() => import("@/pages/AIControlCenter"));
 
 // ─── Analytics / AI ──────────────────────────────────────────────────────────
 const IntelligenceCenter   = lazy(() => import("@/modules/analytics/pages/IntelligenceCenter"));
@@ -155,7 +156,11 @@ function Router() {
         <Route path="/developer"      component={() => <S><DeveloperPlatformPage /></S>} />
         <Route path="/monitoring"     component={() => <S><MonitoringPage /></S>} />
         <Route path="/digital-twin"   component={() => <S><DigitalTwinPage /></S>} />
-        <Route path="/ai-override"    component={() => <S><AIOverridePage /></S>} />
+        <Route path="/ai-override"       component={() => <S><AIOverridePage /></S>} />
+        <Route path="/ai-control-center" component={() => <S><AIControlCenter /></S>} />
+        <Route path="/ai-governance"  component={() => <S><AIControlCenter /></S>} />
+        <Route path="/governance"     component={() => <S><AIControlCenter /></S>} />
+        <Route path="/explainability" component={() => <S><AIControlCenter /></S>} />
 
         {/* Analytics / AI — unified Intelligence Center */}
         <Route path="/intelligence"   component={() => <S><IntelligenceCenter /></S>} />
@@ -180,8 +185,7 @@ function Router() {
 
         {/* Decision Engine + Orchestration */}
         <Route path="/decision-engine"  component={() => <S><DecisionEnginePage /></S>} />
-        <Route path="/governance"       component={() => <S><GovernanceDashboard /></S>} />
-        <Route path="/policy-engine"    component={() => <S><PolicyEnginePage /></S>} />
+        <Route path="/policy-engine"    component={() => <S><AIControlCenter /></S>} />
         <Route path="/data-fusion"      component={() => <S><DataFusionPage /></S>} />
 
         {/* Reliability + Executive + Platform */}
@@ -189,7 +193,7 @@ function Router() {
         <Route path="/data-governance"  component={() => <S><GovernanceAdminPage /></S>} />
         <Route path="/api-analytics"    component={() => <S><UsageAnalyticsPage /></S>} />
         <Route path="/async-pipeline"   component={() => <S><AsyncPipelinePage /></S>} />
-        <Route path="/adaptive-fusion"  component={() => <S><AdaptiveFusionPage /></S>} />
+        <Route path="/adaptive-fusion"  component={() => <S><AIControlCenter /></S>} />
         <Route path="/dev-portal"         component={() => <S><DevPortalPage /></S>} />
         <Route path="/command-console"  component={() => <S><CommandConsolePage /></S>} />
 

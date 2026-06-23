@@ -60,7 +60,7 @@ const NAV_GROUPS = [
       { title: "Intelligence Center", url: "/intelligence",   icon: BarChart3,  roles: ["admin","government","authority","super_admin"] },
       { title: "AI Copilot",          url: "/copilot",        icon: Brain,      roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
       { title: "Risk Map",            url: "/risk-map",       icon: Shield,     roles: ["volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "AI Audit",            url: "/explainability", icon: Brain,      roles: ["admin","government","authority","super_admin"] },
+      { title: "AI Control Center",   url: "/ai-control-center", icon: ShieldCheck, roles: ["admin","government","authority","super_admin"] },
       { title: "Multimodal AI",       url: "/multimodal-ai",  icon: Brain,      roles: ["admin","authority","super_admin"] },
     ],
   },
@@ -69,9 +69,6 @@ const NAV_GROUPS = [
     items: [
       { title: "Decision Engine",   url: "/decision-engine", icon: Brain,      roles: ["admin","authority","super_admin"] },
       { title: "Digital Twin",      url: "/digital-twin",    icon: Globe,      roles: ["admin","authority","super_admin"] },
-      { title: "AI Override",       url: "/ai-override",     icon: ShieldAlert,roles: ["admin","authority","super_admin"] },
-      { title: "AI Governance",     url: "/governance",      icon: ShieldCheck,roles: ["admin","authority","super_admin"] },
-      { title: "Policy Engine",     url: "/policy-engine",   icon: Settings,   roles: ["admin","authority","super_admin"] },
       { title: "Data Fusion",       url: "/data-fusion",     icon: Layers,     roles: ["admin","authority","super_admin"] },
       { title: "Data Governance",   url: "/data-governance", icon: Lock,       roles: ["admin","super_admin"] },
     ],
