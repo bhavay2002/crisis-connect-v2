@@ -64,12 +64,9 @@ const Map     = lazy(() => import("@/modules/map/pages/Map"));
 const RiskMap = lazy(() => import("@/modules/map/pages/RiskMap"));
 
 // ─── User / Profile ──────────────────────────────────────────────────────────
-const UserProfile            = lazy(() => import("@/modules/user/pages/UserProfile"));
-const IdentityVerification   = lazy(() => import("@/modules/user/pages/IdentityVerification"));
-const ReputationDashboard    = lazy(() => import("@/modules/user/pages/ReputationDashboard"));
+const ProfilePage            = lazy(() => import("@/modules/user/pages/ProfilePage"));
 const Notifications          = lazy(() => import("@/modules/user/pages/Notifications"));
 const NotificationPreferences= lazy(() => import("@/modules/user/pages/NotificationPreferences"));
-const CompliancePage         = lazy(() => import("@/modules/user/pages/CompliancePage"));
 
 // ─── Misc ────────────────────────────────────────────────────────────────────
 const ChatPage          = lazy(() => import("@/modules/chat/pages/ChatPage"));
@@ -176,12 +173,12 @@ function Router() {
         <Route path="/risk-map" component={() => <S><RiskMap /></S>} />
 
         {/* User */}
-        <Route path="/profile"                  component={() => <S><UserProfile /></S>} />
-        <Route path="/verify"                   component={() => <S><IdentityVerification /></S>} />
-        <Route path="/reputation"               component={() => <S><ReputationDashboard /></S>} />
+        <Route path="/profile"                  component={() => <S><ProfilePage /></S>} />
+        <Route path="/verify"                   component={() => { window.location.replace("/profile?tab=verification"); return null; }} />
+        <Route path="/reputation"               component={() => { window.location.replace("/profile?tab=reputation"); return null; }} />
+        <Route path="/compliance"               component={() => { window.location.replace("/profile?tab=privacy"); return null; }} />
         <Route path="/notifications"            component={() => <S><Notifications /></S>} />
         <Route path="/notification-preferences" component={() => <S><NotificationPreferences /></S>} />
-        <Route path="/compliance"               component={() => <S><CompliancePage /></S>} />
 
         {/* Decision Engine + Orchestration */}
         <Route path="/decision-engine"  component={() => <S><DecisionEnginePage /></S>} />

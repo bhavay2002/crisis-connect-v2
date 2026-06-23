@@ -157,7 +157,7 @@ export default function UserProfile() {
                 </div>
               ))}
             </div>
-            <Link href="/verify">
+            <Link href="/profile?tab=verification">
               <Button className="w-full mt-4" data-testid="button-complete-verification">Complete Verification</Button>
             </Link>
           </div>
@@ -196,7 +196,7 @@ export default function UserProfile() {
             ) : (
               <p className="text-sm text-muted-foreground text-center py-6">No reputation data available</p>
             )}
-            <Link href="/reputation">
+            <Link href="/profile?tab=reputation">
               <Button variant="outline" className="w-full mt-4" data-testid="button-view-reputation">View Full Reputation Dashboard</Button>
             </Link>
           </div>

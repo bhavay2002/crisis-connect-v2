@@ -86,10 +86,10 @@ const NAV_GROUPS = [
     label: "Personal",
     items: [
       { title: "Messages",     url: "/chat",        icon: MessageSquare, roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "My Profile",   url: "/profile",     icon: User,          roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "Verification", url: "/verify",      icon: Shield,        roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "Reputation",   url: "/reputation",  icon: Award,         roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "Privacy & Data",url: "/compliance", icon: ShieldCheck,   roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "My Profile",   url: "/profile",                    icon: User,       roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Verification", url: "/profile?tab=verification",   icon: Shield,     roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Reputation",   url: "/profile?tab=reputation",     icon: Award,      roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Privacy & Data",url: "/profile?tab=privacy",       icon: ShieldCheck,roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
     ],
   },
 ];
@@ -186,9 +186,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </p>
               )}
               {group.items.map((item) => {
-                const isActive =
-                  location === item.url ||
-                  (item.url !== "/dashboard" && location.startsWith(item.url));
+                const itemPath = item.url.split("?")[0];
+                const itemSearch = item.url.includes("?") ? item.url.split("?")[1] : null;
+                const currentPath = window.location.pathname;
+                const currentSearch = window.location.search.slice(1);
+                const isActive = itemSearch
+                  ? currentPath === itemPath && currentSearch === itemSearch
+                  : (location === item.url ||
+                     (item.url !== "/dashboard" && !item.url.includes("?") && location.startsWith(item.url)));
 
                 return (
                   <Link
