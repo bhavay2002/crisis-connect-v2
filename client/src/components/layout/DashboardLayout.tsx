@@ -57,12 +57,11 @@ const NAV_GROUPS = [
   {
     label: "AI & Intelligence",
     items: [
-      { title: "Analytics",    url: "/analytics",      icon: BarChart3,  roles: ["admin","government","authority","super_admin"] },
-      { title: "Intelligence", url: "/intelligence",   icon: Sparkles,   roles: ["admin","government","authority","super_admin"] },
-      { title: "AI Copilot",   url: "/copilot",        icon: Brain,      roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "Risk Map",     url: "/risk-map",       icon: Shield,     roles: ["volunteer","ngo","admin","government","authority","super_admin"] },
-      { title: "AI Audit",     url: "/explainability", icon: Brain,      roles: ["admin","government","authority","super_admin"] },
-      { title: "Multimodal AI",url: "/multimodal-ai",  icon: Brain,      roles: ["admin","authority","super_admin"] },
+      { title: "Intelligence Center", url: "/intelligence",   icon: BarChart3,  roles: ["admin","government","authority","super_admin"] },
+      { title: "AI Copilot",          url: "/copilot",        icon: Brain,      roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "Risk Map",            url: "/risk-map",       icon: Shield,     roles: ["volunteer","ngo","admin","government","authority","super_admin"] },
+      { title: "AI Audit",            url: "/explainability", icon: Brain,      roles: ["admin","government","authority","super_admin"] },
+      { title: "Multimodal AI",       url: "/multimodal-ai",  icon: Brain,      roles: ["admin","authority","super_admin"] },
     ],
   },
   {
@@ -74,7 +73,6 @@ const NAV_GROUPS = [
       { title: "AI Governance",     url: "/governance",      icon: ShieldCheck,roles: ["admin","authority","super_admin"] },
       { title: "Policy Engine",     url: "/policy-engine",   icon: Settings,   roles: ["admin","authority","super_admin"] },
       { title: "Data Fusion",       url: "/data-fusion",     icon: Layers,     roles: ["admin","authority","super_admin"] },
-      { title: "Executive View",    url: "/executive",       icon: LineChart,  roles: ["admin","authority","super_admin","government"] },
       { title: "Data Governance",   url: "/data-governance", icon: Lock,       roles: ["admin","super_admin"] },
     ],
   },

@@ -51,10 +51,9 @@ const DigitalTwinPage        = lazy(() => import("@/modules/admin/pages/DigitalT
 const AIOverridePage         = lazy(() => import("@/modules/admin/pages/AIOverridePage"));
 
 // ─── Analytics / AI ──────────────────────────────────────────────────────────
-const AnalyticsDashboard   = lazy(() => import("@/modules/analytics/pages/AnalyticsDashboard"));
+const IntelligenceCenter   = lazy(() => import("@/modules/analytics/pages/IntelligenceCenter"));
 const ImageClassification  = lazy(() => import("@/modules/analytics/pages/ImageClassification"));
 const PredictiveModeling   = lazy(() => import("@/modules/analytics/pages/PredictiveModeling"));
-const IntelligenceDashboard= lazy(() => import("@/modules/analytics/pages/IntelligenceDashboard"));
 const CrisisCopilot        = lazy(() => import("@/modules/analytics/pages/CrisisCopilot"));
 const ExplainabilityPage   = lazy(() => import("@/modules/analytics/pages/ExplainabilityPage"));
 const MultimodalPage       = lazy(() => import("@/modules/analytics/pages/MultimodalPage"));
@@ -77,7 +76,7 @@ const DecisionEnginePage   = lazy(() => import("@/pages/DecisionEnginePage"));
 const GovernanceDashboard  = lazy(() => import("@/pages/GovernanceDashboard"));
 const PolicyEnginePage     = lazy(() => import("@/pages/PolicyEnginePage"));
 const DataFusionPage       = lazy(() => import("@/pages/DataFusionPage"));
-const ExecutiveDashboardPage = lazy(() => import("@/pages/ExecutiveDashboardPage"));
+const ExecutiveDashboardPage = lazy(() => import("@/pages/ExecutiveDashboardPage")); // kept for deep-links
 const GovernanceAdminPage    = lazy(() => import("@/pages/GovernanceAdminPage"));
 const UsageAnalyticsPage     = lazy(() => import("@/pages/UsageAnalyticsPage"));
 const AsyncPipelinePage      = lazy(() => import("@/pages/AsyncPipelinePage"));
@@ -158,11 +157,11 @@ function Router() {
         <Route path="/digital-twin"   component={() => <S><DigitalTwinPage /></S>} />
         <Route path="/ai-override"    component={() => <S><AIOverridePage /></S>} />
 
-        {/* Analytics / AI */}
-        <Route path="/analytics"      component={() => <S><AnalyticsDashboard /></S>} />
+        {/* Analytics / AI — unified Intelligence Center */}
+        <Route path="/intelligence"   component={() => <S><IntelligenceCenter /></S>} />
+        <Route path="/analytics"      component={() => <S><IntelligenceCenter /></S>} />
         <Route path="/classify"       component={() => <S><ImageClassification /></S>} />
         <Route path="/predictions"    component={() => <S><PredictiveModeling /></S>} />
-        <Route path="/intelligence"   component={() => <S><IntelligenceDashboard /></S>} />
         <Route path="/copilot"        component={() => <S><CrisisCopilot /></S>} />
         <Route path="/explainability" component={() => <S><ExplainabilityPage /></S>} />
         <Route path="/multimodal-ai"  component={() => <S><MultimodalPage /></S>} />
@@ -186,7 +185,7 @@ function Router() {
         <Route path="/data-fusion"      component={() => <S><DataFusionPage /></S>} />
 
         {/* Reliability + Executive + Platform */}
-        <Route path="/executive"        component={() => <S><ExecutiveDashboardPage /></S>} />
+        <Route path="/executive"        component={() => <S><IntelligenceCenter /></S>} />
         <Route path="/data-governance"  component={() => <S><GovernanceAdminPage /></S>} />
         <Route path="/api-analytics"    component={() => <S><UsageAnalyticsPage /></S>} />
         <Route path="/async-pipeline"   component={() => <S><AsyncPipelinePage /></S>} />
