@@ -34,6 +34,7 @@ const NAV_GROUPS = [
   {
     label: "Emergency Ops",
     items: [
+      { title: "Command Console",  url: "/command-console", icon: Shield, roles: ["admin","government","authority","super_admin"] },
       { title: "Dashboard",        url: "/dashboard",   icon: LayoutDashboard, roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
       { title: "Active Reports",   url: "/reports",     icon: AlertTriangle,   roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
       { title: "Interactive Map",  url: "/map",         icon: MapIcon,         roles: ["citizen","volunteer","ngo","admin","government","authority","super_admin"] },
