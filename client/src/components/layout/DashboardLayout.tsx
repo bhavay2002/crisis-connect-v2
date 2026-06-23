@@ -75,18 +75,15 @@ const NAV_GROUPS = [
       { title: "Data Fusion",       url: "/data-fusion",     icon: Layers,     roles: ["admin","authority","super_admin"] },
       { title: "Executive View",    url: "/executive",       icon: LineChart,  roles: ["admin","authority","super_admin","government"] },
       { title: "Data Governance",   url: "/data-governance", icon: Lock,       roles: ["admin","super_admin"] },
-      { title: "API Analytics",     url: "/api-analytics",   icon: BarChart3,  roles: ["admin","super_admin"] },
-      { title: "Async Pipeline",    url: "/async-pipeline",  icon: Zap,        roles: ["admin","super_admin"] },
-      { title: "Adaptive Fusion",   url: "/adaptive-fusion", icon: Brain,      roles: ["admin","super_admin"] },
     ],
   },
   {
     label: "Administration",
     items: [
-      { title: "Organizations",     url: "/organizations", icon: Building2, roles: ["ngo","admin","government","authority","super_admin"] },
-      { title: "Trust & Fraud",     url: "/trust",         icon: Shield,    roles: ["admin","authority","super_admin"] },
-      { title: "Developer Platform",url: "/developer",     icon: Code,      roles: ["admin","government","authority","super_admin"] },
-      { title: "Monitoring",        url: "/monitoring",    icon: Activity,  roles: ["admin","government","authority","super_admin"] },
+      { title: "Organizations",      url: "/organizations", icon: Building2, roles: ["ngo","admin","government","authority","super_admin"] },
+      { title: "Trust & Fraud",      url: "/trust",         icon: Shield,    roles: ["admin","authority","super_admin"] },
+      { title: "Monitoring",         url: "/monitoring",    icon: Activity,  roles: ["admin","government","authority","super_admin"] },
+      { title: "Developer Portal",   url: "/dev-portal",    icon: Code,      roles: ["admin","super_admin"] },
     ],
   },
   {
