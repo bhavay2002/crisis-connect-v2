@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
-import { AlertTriangle, Loader2, Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react";
+import { AlertTriangle, Loader2, Eye, EyeOff, Lock, Mail, ArrowRight, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import heroImage from "@assets/generated_images/Emergency_response_team_coordination_9097dcd9.png";
 
 const loginSchema = z.object({
@@ -18,11 +18,57 @@ const loginSchema = z.object({
 });
 type LoginFormData = z.infer<typeof loginSchema>;
 
+const DEMO_ACCOUNTS = [
+  {
+    role: "Admin",
+    email: "emma.admin@crisisconnect.com",
+    name: "Emma Rodriguez",
+    color: "bg-purple-500/15 border-purple-500/30 text-purple-400",
+    dot: "bg-purple-500",
+    description: "Full platform control",
+  },
+  {
+    role: "Government",
+    email: "priya.gov@crisisconnect.com",
+    name: "Priya Sharma",
+    color: "bg-blue-500/15 border-blue-500/30 text-blue-400",
+    dot: "bg-blue-500",
+    description: "Authority command center",
+  },
+  {
+    role: "NGO",
+    email: "sofia.ngo@crisisconnect.com",
+    name: "Sofia Petrov",
+    color: "bg-green-500/15 border-green-500/30 text-green-400",
+    dot: "bg-green-500",
+    description: "Resource coordination",
+  },
+  {
+    role: "Volunteer",
+    email: "carlos.vol@crisisconnect.com",
+    name: "Carlos Mendez",
+    color: "bg-amber-500/15 border-amber-500/30 text-amber-400",
+    dot: "bg-amber-500",
+    description: "Field task queue",
+  },
+  {
+    role: "Citizen",
+    email: "tom.citizen@crisisconnect.com",
+    name: "Tom Baker",
+    color: "bg-slate-500/15 border-slate-500/30 text-slate-400",
+    dot: "bg-slate-400",
+    description: "Report & SOS",
+  },
+];
+
+const DEMO_PASSWORD = "Test1234!";
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
+  const [showDemo, setShowDemo] = useState(true);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -43,6 +89,11 @@ export default function Login() {
     onError: (error: any) =>
       toast({ variant: "destructive", title: "Login failed", description: error.message || "Invalid credentials." }),
   });
+
+  function fillAccount(email: string) {
+    form.setValue("email", email);
+    form.setValue("password", DEMO_PASSWORD);
+  }
 
   return (
     <div className="min-h-screen flex bg-slate-950">
@@ -78,7 +129,7 @@ export default function Login() {
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 bg-background">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 bg-background overflow-y-auto">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-2 mb-8">
@@ -89,7 +140,7 @@ export default function Login() {
           </div>
 
           <h1 className="text-2xl font-black mb-1">Welcome back</h1>
-          <p className="text-muted-foreground text-sm mb-8">Sign in to your command center</p>
+          <p className="text-muted-foreground text-sm mb-6">Sign in to your command center</p>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(d => loginMutation.mutate(d))} className="space-y-4">
@@ -99,7 +150,7 @@ export default function Login() {
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input type="email" placeholder="admin@test.com" className="pl-10 h-11" data-testid="input-email" {...field} />
+                      <Input type="email" placeholder="you@example.com" className="pl-10 h-11" data-testid="input-email" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -128,13 +179,52 @@ export default function Login() {
             </form>
           </Form>
 
-          {/* Demo credentials */}
-          <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-dashed">
-            <p className="text-xs text-muted-foreground text-center mb-1 font-semibold">Demo credentials</p>
-            <p className="text-xs text-center font-mono text-muted-foreground">admin@test.com / Admin1234!</p>
+          {/* Demo accounts panel */}
+          <div className="mt-5 rounded-xl border border-dashed border-border overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowDemo(!showDemo)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/70 transition-colors"
+              data-testid="button-toggle-demo"
+            >
+              <div className="flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-xs font-semibold text-foreground">Demo accounts — click to fill</span>
+              </div>
+              {showDemo ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+            </button>
+
+            {showDemo && (
+              <div className="divide-y divide-border/50">
+                {DEMO_ACCOUNTS.map((acc) => (
+                  <button
+                    key={acc.email}
+                    type="button"
+                    onClick={() => fillAccount(acc.email)}
+                    data-testid={`button-demo-${acc.role.toLowerCase()}`}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left group"
+                  >
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-bold min-w-[82px] justify-center ${acc.color}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${acc.dot}`} />
+                      {acc.role}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{acc.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{acc.description}</p>
+                    </div>
+                    <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  </button>
+                ))}
+                <div className="px-4 py-2 bg-muted/20">
+                  <p className="text-[11px] text-muted-foreground text-center">
+                    Password for all accounts: <span className="font-mono font-semibold text-foreground">Test1234!</span>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          <p className="text-sm text-center text-muted-foreground mt-6">
+          <p className="text-sm text-center text-muted-foreground mt-5">
             No account?{" "}
             <Link href="/register" className="text-red-600 font-semibold hover:underline" data-testid="link-register">Create one</Link>
           </p>
