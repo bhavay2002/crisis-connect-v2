@@ -38,10 +38,17 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace && npm run dev"
+args = "npm run dev"
 waitForPort = 5000
 
 [agent]
-integrations = ["javascript_database:1.0.0", "javascript_log_in_with_replit:1.0.0", "javascript_websocket:1.0.0", "javascript_openai_ai_integrations:1.0.0", "javascript_object_storage:1.0.0", "javascript_openai:1.0.0"]
+integrations = ["javascript_database:1.0.0", "javascript_log_in_with_replit:1.0.0", "javascript_websocket:1.0.0", "javascript_openai_ai_integrations:2.0.0", "javascript_object_storage:1.0.0", "javascript_openai:1.0.0"]
 expertMode = true
 stack = "FULLSTACK_JS"
+
+[userenv]
+
+[userenv.shared]
+JWT_SECRET = "1778d814a41974ef3a86cffba7bc8d412594ea8270987c90a96e39ad93a23837"
+JWT_REFRESH_SECRET = "59d36ad4a2179a65cf8768bbfbd3d9213a44b17cb45d479d9748edd6ccf515ca"
+ENCRYPTION_KEY = "65dc3884900e775a3e34424fc6e4e2c4b7a2654779f78444c653807a7bd876ef"
